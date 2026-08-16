@@ -1,0 +1,20 @@
+{
+  "name": "sistema-nayara",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sistema de gestao para personal trainer: alunos, presenca e pagamentos",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace server",
+    "dev:web": "npm run dev --workspace web",
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "build": "npm run build --workspace web",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
