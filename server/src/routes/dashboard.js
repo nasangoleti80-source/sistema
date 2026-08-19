@@ -51,6 +51,12 @@ router.get('/', async (req, res) => {
     (a) => !pagamentosDoMes.some((p) => p.alunoId === a.id)
   ).length;
 
+  const porCanal = {};
+  for (const aluno of db.data.alunos) {
+    const canal = aluno.comoConheceu || 'nao_informado';
+    porCanal[canal] = (porCanal[canal] || 0) + 1;
+  }
+
   res.json({
     mes,
     totalAlunosAtivos: alunosAtivos.length,
@@ -62,6 +68,7 @@ router.get('/', async (req, res) => {
     totalAtrasado,
     semCobrancaGerada,
     porAluno: porAluno.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+    porCanal,
   });
 });
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, mesAtual, formatarMoeda, formatarMesLabel as formatarMes, somarMes } from '../api.js';
+import { api, mesAtual, formatarMoeda, formatarMesLabel as formatarMes, somarMes, CANAIS_CAPTACAO } from '../api.js';
 
 const STATUS_LABEL = { pago: 'Pago', pendente: 'Pendente', atrasado: 'Atrasado', sem_cobranca: 'Sem cobrança' };
 
@@ -81,6 +81,23 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          {dados.porCanal && Object.keys(dados.porCanal).length > 0 && (
+            <>
+              <h2>De onde vêm seus alunos</h2>
+              <p className="subtitle">Contagem de todos os alunos já cadastrados, por canal.</p>
+              <div className="card">
+                {Object.entries(dados.porCanal)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([canal, qtd]) => (
+                    <div className="list-item" key={canal}>
+                      <div className="name">{CANAIS_CAPTACAO[canal] || CANAIS_CAPTACAO.nao_informado}</div>
+                      <span className="badge sem-cobranca">{qtd}</span>
+                    </div>
+                  ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

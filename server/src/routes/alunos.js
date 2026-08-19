@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes } = req.body;
+  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu } = req.body;
   if (!nome || !nome.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
   await db.read();
   const aluno = {
@@ -33,6 +33,7 @@ router.post('/', async (req, res) => {
     diaVencimento: Number(diaVencimento) || 5,
     dataInicio: dataInicio || new Date().toISOString().slice(0, 10),
     observacoes: observacoes?.trim() || '',
+    comoConheceu: comoConheceu || 'nao_informado',
     ativo: true,
     createdAt: new Date().toISOString(),
   };
@@ -46,7 +47,7 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.alunos.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Aluno não encontrado' });
   const atual = db.data.alunos[idx];
-  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, ativo } = req.body;
+  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, ativo } = req.body;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
@@ -56,6 +57,7 @@ router.put('/:id', async (req, res) => {
     diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : atual.diaVencimento,
     dataInicio: dataInicio !== undefined ? dataInicio : atual.dataInicio,
     observacoes: observacoes !== undefined ? observacoes.trim() : atual.observacoes,
+    comoConheceu: comoConheceu !== undefined ? comoConheceu : atual.comoConheceu,
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,
   };
   db.data.alunos[idx] = atualizado;

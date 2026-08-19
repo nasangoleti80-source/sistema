@@ -49,6 +49,15 @@ export const TIPOS_ALUNO = {
   consultoria: 'Consultoria semi-presencial',
 };
 
+export const CANAIS_CAPTACAO = {
+  indicacao: 'Indicação',
+  instagram: 'Instagram',
+  academia: 'Dentro da academia',
+  anuncio: 'Anúncio pago',
+  outro: 'Outro',
+  nao_informado: 'Não informado',
+};
+
 export function mesAtual() {
   return new Date().toISOString().slice(0, 7);
 }

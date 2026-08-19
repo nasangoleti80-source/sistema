@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, TIPOS_ALUNO, formatarMoeda } from '../api.js';
+import { api, TIPOS_ALUNO, CANAIS_CAPTACAO, formatarMoeda } from '../api.js';
 
 const FORM_VAZIO = {
   nome: '',
@@ -9,6 +9,7 @@ const FORM_VAZIO = {
   diaVencimento: '5',
   dataInicio: new Date().toISOString().slice(0, 10),
   observacoes: '',
+  comoConheceu: 'nao_informado',
 };
 
 export default function Alunos() {
@@ -53,6 +54,7 @@ export default function Alunos() {
       diaVencimento: String(aluno.diaVencimento),
       dataInicio: aluno.dataInicio,
       observacoes: aluno.observacoes,
+      comoConheceu: aluno.comoConheceu || 'nao_informado',
     });
     setErro('');
     setModalAberto(true);
@@ -114,7 +116,7 @@ export default function Alunos() {
           <div className="list-item" key={aluno.id}>
             <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
-              <div className="meta">{TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)}/mês</div>
+              <div className="meta">{TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)}/mês · {CANAIS_CAPTACAO[aluno.comoConheceu] || CANAIS_CAPTACAO.nao_informado}</div>
             </div>
             <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
               {aluno.ativo ? 'Pausar' : 'Reativar'}
@@ -150,6 +152,13 @@ export default function Alunos() {
 
               <label>Início do acompanhamento</label>
               <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} />
+
+              <label>Como conheceu você</label>
+              <select value={form.comoConheceu} onChange={(e) => setForm({ ...form, comoConheceu: e.target.value })}>
+                {Object.entries(CANAIS_CAPTACAO).map(([valor, label]) => (
+                  <option key={valor} value={valor}>{label}</option>
+                ))}
+              </select>
 
               <label>Observações</label>
               <textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} placeholder="Lesões, objetivos, restrições..." />
