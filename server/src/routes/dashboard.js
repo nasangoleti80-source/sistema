@@ -25,8 +25,9 @@ router.get('/', async (req, res) => {
 
   const porAluno = alunosAtivos.map((aluno) => {
     const aulas = aulasDoMes.filter((a) => a.alunoId === aluno.id);
-    const realizadas = aulas.filter((a) => a.realizada).length;
-    const faltas = aulas.filter((a) => !a.realizada).length;
+    const realizadas = aulas.filter((a) => a.status === 'presente' || a.status === 'reposicao').length;
+    const faltas = aulas.filter((a) => a.status === 'falta').length;
+    const reposicoes = aulas.filter((a) => a.status === 'reposicao').length;
     const pagamento = pagamentosDoMes.find((p) => p.alunoId === aluno.id) || null;
     return {
       alunoId: aluno.id,
@@ -34,6 +35,7 @@ router.get('/', async (req, res) => {
       tipo: aluno.tipo,
       aulasRealizadas: realizadas,
       faltas,
+      reposicoes,
       pagamento,
     };
   });
@@ -60,8 +62,9 @@ router.get('/', async (req, res) => {
   res.json({
     mes,
     totalAlunosAtivos: alunosAtivos.length,
-    totalAulasRealizadas: aulasDoMes.filter((a) => a.realizada).length,
-    totalFaltas: aulasDoMes.filter((a) => !a.realizada).length,
+    totalAulasRealizadas: aulasDoMes.filter((a) => a.status === 'presente' || a.status === 'reposicao').length,
+    totalFaltas: aulasDoMes.filter((a) => a.status === 'falta').length,
+    totalReposicoes: aulasDoMes.filter((a) => a.status === 'reposicao').length,
     totalAReceber,
     totalRecebido,
     totalPendente,

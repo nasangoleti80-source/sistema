@@ -58,6 +58,12 @@ export const CANAIS_CAPTACAO = {
   nao_informado: 'Não informado',
 };
 
+export const STATUS_AULA = {
+  presente: 'Presente',
+  falta: 'Falta',
+  reposicao: 'Reposição',
+};
+
 export function mesAtual() {
   return new Date().toISOString().slice(0, 7);
 }

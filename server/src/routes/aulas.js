@@ -14,8 +14,10 @@ router.get('/', async (req, res) => {
   res.json(aulas.sort((a, b) => (a.data < b.data ? 1 : -1)));
 });
 
+const STATUS_VALIDOS = ['presente', 'falta', 'reposicao'];
+
 router.post('/', async (req, res) => {
-  const { alunoId, data, tipo, realizada, observacao } = req.body;
+  const { alunoId, data, tipo, status, observacao } = req.body;
   if (!alunoId || !data) return res.status(400).json({ error: 'alunoId e data são obrigatórios' });
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === alunoId);
@@ -25,7 +27,7 @@ router.post('/', async (req, res) => {
     alunoId,
     data,
     tipo: tipo || 'presencial',
-    realizada: realizada !== undefined ? Boolean(realizada) : true,
+    status: STATUS_VALIDOS.includes(status) ? status : 'presente',
     observacao: observacao?.trim() || '',
     createdAt: new Date().toISOString(),
   };
@@ -39,12 +41,12 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.aulas.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Registro não encontrado' });
   const atual = db.data.aulas[idx];
-  const { data, tipo, realizada, observacao } = req.body;
+  const { data, tipo, status, observacao } = req.body;
   const atualizado = {
     ...atual,
     data: data !== undefined ? data : atual.data,
     tipo: tipo !== undefined ? tipo : atual.tipo,
-    realizada: realizada !== undefined ? Boolean(realizada) : atual.realizada,
+    status: status !== undefined && STATUS_VALIDOS.includes(status) ? status : atual.status,
     observacao: observacao !== undefined ? observacao.trim() : atual.observacao,
   };
   db.data.aulas[idx] = atualizado;

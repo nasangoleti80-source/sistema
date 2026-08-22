@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { api, mesAtual, formatarMesLabel as formatarMes, somarMes } from '../api.js';
+import { api, mesAtual, formatarMesLabel as formatarMes, somarMes, STATUS_AULA } from '../api.js';
 
 function formatarData(dataStr) {
   const [ano, mes, dia] = dataStr.split('-');
   return `${dia}/${mes}`;
 }
 
+const BADGE_STATUS = { presente: 'pago', falta: 'atrasado', reposicao: 'pendente' };
+const PROXIMO_STATUS = { presente: 'falta', falta: 'reposicao', reposicao: 'presente' };
+
 const FORM_VAZIO = {
   alunoId: '',
   data: new Date().toISOString().slice(0, 10),
   tipo: 'presencial',
-  realizada: true,
+  status: 'presente',
   observacao: '',
 };
 
@@ -62,8 +65,8 @@ export default function Presenca() {
     }
   }
 
-  async function alternarRealizada(aula) {
-    await api.atualizarAula(aula.id, { realizada: !aula.realizada });
+  async function avancarStatus(aula) {
+    await api.atualizarAula(aula.id, { status: PROXIMO_STATUS[aula.status] || 'presente' });
     await carregar();
   }
 
@@ -99,7 +102,7 @@ export default function Presenca() {
         <div className="card">
           {alunos.map((aluno) => {
             const doAluno = aulas.filter((a) => a.alunoId === aluno.id);
-            const realizadas = doAluno.filter((a) => a.realizada).length;
+            const realizadas = doAluno.filter((a) => a.status === 'presente' || a.status === 'reposicao').length;
             return (
               <div className="list-item" key={aluno.id}>
                 <div>
@@ -116,17 +119,19 @@ export default function Presenca() {
       {!carregando && aulas.length > 0 && (
         <>
           <h2>Histórico do mês</h2>
+          <p className="subtitle">Toque numa aula pra alternar entre presente, falta e reposição.</p>
           <div className="card">
             {aulas.map((aula) => (
               <div className="list-item" key={aula.id}>
-                <div onClick={() => alternarRealizada(aula)} style={{ cursor: 'pointer', flex: 1 }}>
+                <div onClick={() => avancarStatus(aula)} style={{ cursor: 'pointer', flex: 1 }}>
                   <div className="name">{formatarData(aula.data)} · {nomeAluno(aula.alunoId)}</div>
                   <div className="meta">
                     {aula.tipo === 'presencial' ? 'Aula presencial' : 'Ajuste de consultoria'}
                     {' · '}
-                    <span className={aula.realizada ? 'badge pago' : 'badge atrasado'}>
-                      {aula.realizada ? 'Realizada' : 'Faltou'}
+                    <span className={`badge ${BADGE_STATUS[aula.status] || 'pago'}`}>
+                      {STATUS_AULA[aula.status] || STATUS_AULA.presente}
                     </span>
+                    {aula.status === 'falta' && aula.observacao && ` · ${aula.observacao}`}
                   </div>
                 </div>
                 <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
@@ -158,13 +163,20 @@ export default function Presenca() {
                 <option value="consultoria_ajuste">Ajuste de consultoria (vídeo/whats)</option>
               </select>
 
-              <label className="checkbox-row" style={{ marginTop: 14 }}>
-                <input type="checkbox" checked={form.realizada} onChange={(e) => setForm({ ...form, realizada: e.target.checked })} />
-                Aula foi realizada (desmarque se o aluno faltou)
-              </label>
+              <label>Situação</label>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                {Object.entries(STATUS_AULA).map(([valor, label]) => (
+                  <option key={valor} value={valor}>{label}</option>
+                ))}
+              </select>
 
-              <label>Observação</label>
-              <textarea rows={2} value={form.observacao} onChange={(e) => setForm({ ...form, observacao: e.target.value })} placeholder="Correções feitas, evolução, etc." />
+              <label>{form.status === 'falta' ? 'Motivo da falta' : 'Observação'}</label>
+              <textarea
+                rows={2}
+                value={form.observacao}
+                onChange={(e) => setForm({ ...form, observacao: e.target.value })}
+                placeholder={form.status === 'falta' ? 'O que o aluno relatou (dor, viagem, imprevisto...)' : 'Correções feitas, evolução, etc.'}
+              />
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary">Salvar</button>

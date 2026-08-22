@@ -72,6 +72,7 @@ export default function Dashboard() {
                   <div className="name">{item.nome}</div>
                   <div className="meta">
                     {item.aulasRealizadas} aula(s) realizada(s)
+                    {item.reposicoes > 0 && ` (${item.reposicoes} reposição)`}
                     {item.faltas > 0 && ` · ${item.faltas} falta(s)`}
                   </div>
                 </div>
