@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard.jsx';
 import Alunos from './pages/Alunos.jsx';
@@ -25,14 +26,37 @@ const links = [
   { to: '/mensagens', label: 'Mensagens' },
 ];
 
+function useTema() {
+  const [tema, setTema] = useState(() => {
+    const salvo = localStorage.getItem('tema');
+    if (salvo) return salvo;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema);
+    localStorage.setItem('tema', tema);
+  }, [tema]);
+
+  return [tema, setTema];
+}
+
 export default function App() {
   const location = useLocation();
   const isPortal = location.pathname.startsWith('/portal/');
+  const [tema, setTema] = useTema();
 
   return (
     <div className="app">
-      <header className="topbar">
+      <header className="topbar row">
         <div className="brand">💪 {isPortal ? 'Meu treino' : 'Nayara PT'}</div>
+        <button
+          className="theme-toggle"
+          onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')}
+          title={tema === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+        >
+          {tema === 'dark' ? '☀️' : '🌙'}
+        </button>
       </header>
 
       <main className="content">
