@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, TIPOS_ALUNO, CANAIS_CAPTACAO, formatarMoeda } from '../api.js';
 
 const FORM_VAZIO = {
@@ -20,6 +21,7 @@ export default function Alunos() {
   const [form, setForm] = useState(FORM_VAZIO);
   const [erro, setErro] = useState('');
   const [mostrarInativos, setMostrarInativos] = useState(false);
+  const [acessoGerado, setAcessoGerado] = useState(null);
 
   async function carregar() {
     setCarregando(true);
@@ -67,13 +69,21 @@ export default function Alunos() {
       if (editando) {
         await api.atualizarAluno(editando.id, form);
       } else {
-        await api.criarAluno(form);
+        const criado = await api.criarAluno(form);
+        setAcessoGerado({ nome: criado.nome, usuario: criado.usuario, senha: criado.senhaGerada });
       }
       setModalAberto(false);
       await carregar();
     } catch (e) {
       setErro(e.message);
     }
+  }
+
+  async function gerarNovaSenha(aluno) {
+    if (!confirm(`Gerar uma nova senha de acesso pra ${aluno.nome}? A senha antiga deixa de funcionar.`)) return;
+    const r = await api.redefinirSenhaAluno(aluno.id);
+    setAcessoGerado({ nome: aluno.nome, usuario: r.usuario, senha: r.senhaGerada });
+    setModalAberto(false);
   }
 
   async function alternarAtivo(aluno) {
@@ -113,14 +123,18 @@ export default function Alunos() {
 
       <div className="card">
         {listaFiltrada.map((aluno) => (
-          <div className="list-item" key={aluno.id}>
-            <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: 1 }}>
+          <div className="list-item" key={aluno.id} style={{ flexWrap: 'wrap', gap: 8 }}>
+            <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: '1 1 200px' }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
               <div className="meta">{TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)}/mês · {CANAIS_CAPTACAO[aluno.comoConheceu] || CANAIS_CAPTACAO.nao_informado}</div>
             </div>
-            <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
-              {aluno.ativo ? 'Pausar' : 'Reativar'}
-            </button>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <Link to={`/alunos/${aluno.id}/treino`}><button className="btn-secondary btn-small">Treino</button></Link>
+              <Link to={`/alunos/${aluno.id}/avaliacao`}><button className="btn-secondary btn-small">Avaliação</button></Link>
+              <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
+                {aluno.ativo ? 'Pausar' : 'Reativar'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -163,6 +177,18 @@ export default function Alunos() {
               <label>Observações</label>
               <textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} placeholder="Lesões, objetivos, restrições..." />
 
+              {editando && (
+                <>
+                  <label>Acesso do aluno ao sistema</label>
+                  <div className="row" style={{ background: 'var(--bg)', borderRadius: 8, padding: '8px 10px' }}>
+                    <span style={{ fontSize: 13 }}>Usuário: <strong>{editando.usuario || '—'}</strong></span>
+                    <button type="button" className="btn-secondary btn-small" onClick={() => gerarNovaSenha(editando)}>
+                      Gerar nova senha
+                    </button>
+                  </div>
+                </>
+              )}
+
               <div className="form-actions">
                 <button type="submit" className="btn-primary">Salvar</button>
                 <button type="button" className="btn-secondary" onClick={() => setModalAberto(false)}>Cancelar</button>
@@ -173,6 +199,28 @@ export default function Alunos() {
                 )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {acessoGerado && (
+        <div className="modal-backdrop" onClick={() => setAcessoGerado(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h1>Acesso de {acessoGerado.nome}</h1>
+            <p className="subtitle">Envie esses dados pro aluno (por WhatsApp, por exemplo). A senha não fica salva em nenhum outro lugar.</p>
+            <div className="card">
+              <div className="list-item">
+                <span>Usuário</span>
+                <strong>{acessoGerado.usuario}</strong>
+              </div>
+              <div className="list-item">
+                <span>Senha</span>
+                <strong>{acessoGerado.senha}</strong>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button className="btn-primary" onClick={() => setAcessoGerado(null)}>Entendi</button>
+            </div>
           </div>
         </div>
       )}

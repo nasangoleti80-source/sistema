@@ -1,10 +1,40 @@
 const BASE = '/api';
 
+export function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+export function getSessao() {
+  try {
+    return JSON.parse(localStorage.getItem('sessao') || 'null');
+  } catch {
+    return null;
+  }
+}
+
+export function salvarSessao(token, sessao) {
+  localStorage.setItem('token', token);
+  localStorage.setItem('sessao', JSON.stringify(sessao));
+}
+
+export function limparSessao() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('sessao');
+}
+
 async function request(path, options = {}) {
+  const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...options,
   });
+  if (res.status === 401) {
+    limparSessao();
+    window.dispatchEvent(new Event('sessao-expirada'));
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Erro na requisição (${res.status})`);
@@ -13,7 +43,58 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+async function requestUpload(path, formData) {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (res.status === 401) {
+    limparSessao();
+    window.dispatchEvent(new Event('sessao-expirada'));
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Erro na requisição (${res.status})`);
+  }
+  return res.json();
+}
+
 export const api = {
+  // Autenticação
+  statusAuth: () => request('/auth/status'),
+  setupTreinador: (senha) => request('/auth/setup-treinador', { method: 'POST', body: JSON.stringify({ senha }) }),
+  loginTreinador: (senha) => request('/auth/login-treinador', { method: 'POST', body: JSON.stringify({ senha }) }),
+  loginAluno: (usuario, senha) => request('/auth/login-aluno', { method: 'POST', body: JSON.stringify({ usuario, senha }) }),
+  trocarSenhaTreinador: (senhaAtual, novaSenha) =>
+    request('/auth/trocar-senha-treinador', { method: 'POST', body: JSON.stringify({ senhaAtual, novaSenha }) }),
+  redefinirSenhaAluno: (alunoId) => request(`/alunos/${alunoId}/redefinir-senha`, { method: 'POST' }),
+
+  // Avaliações
+  listarAvaliacoes: (alunoId) => request(`/avaliacoes?alunoId=${alunoId}`),
+  criarAvaliacao: (dados) => request('/avaliacoes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarAvaliacao: (id, dados) => request(`/avaliacoes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerAvaliacao: (id) => request(`/avaliacoes/${id}`, { method: 'DELETE' }),
+  enviarFoto: (avaliacaoId, alunoId, arquivo, tipo) => {
+    const fd = new FormData();
+    fd.append('foto', arquivo);
+    fd.append('tipo', tipo);
+    return requestUpload(`/avaliacoes/${avaliacaoId}/fotos/${alunoId}`, fd);
+  },
+  atualizarFoto: (avaliacaoId, fotoId, dados) =>
+    request(`/avaliacoes/${avaliacaoId}/fotos/${fotoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerFoto: (avaliacaoId, fotoId) => request(`/avaliacoes/${avaliacaoId}/fotos/${fotoId}`, { method: 'DELETE' }),
+  urlFoto: (alunoId, arquivo) => `${BASE}/avaliacoes/fotos/${alunoId}/${arquivo}?token=${encodeURIComponent(getToken())}`,
+
+  // Treinos
+  obterTreino: (alunoId) => request(`/treinos?alunoId=${alunoId}`),
+  salvarTreino: (alunoId, dados) => request(`/treinos/${alunoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+
+  // Portal do aluno
+  meuTreino: () => request('/meu/treino'),
+  minhaEvolucao: () => request('/meu/evolucao'),
+
   // Alunos
   listarAlunos: (ativo) => request(`/alunos${ativo !== undefined ? `?ativo=${ativo}` : ''}`),
   obterAluno: (id) => request(`/alunos/${id}`),

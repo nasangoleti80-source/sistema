@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { nanoid } from 'nanoid';
 import { db } from '../db.js';
+import { autenticar, exigirTreinador } from '../auth.js';
 
 const router = Router();
+
+router.use(autenticar, exigirTreinador);
 
 // GET /api/aulas?mes=YYYY-MM&alunoId=xxx
 router.get('/', async (req, res) => {
