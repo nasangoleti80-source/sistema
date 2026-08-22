@@ -41,6 +41,59 @@ export const api = {
 
   // Dashboard
   obterDashboard: (mes) => request(`/dashboard?mes=${mes}`),
+
+  // Avaliações físicas
+  listarAvaliacoes: (alunoId) => request(`/avaliacoes${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarAvaliacao: (dados) => request('/avaliacoes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarAvaliacao: (id, dados) => request(`/avaliacoes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerAvaliacao: (id) => request(`/avaliacoes/${id}`, { method: 'DELETE' }),
+
+  // Exercícios
+  listarExercicios: () => request('/exercicios'),
+  criarExercicio: (dados) => request('/exercicios', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarExercicio: (id, dados) => request(`/exercicios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerExercicio: (id) => request(`/exercicios/${id}`, { method: 'DELETE' }),
+
+  // Treinos (musculação)
+  listarTreinos: (alunoId) => request(`/treinos${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  obterTreino: (id) => request(`/treinos/${id}`),
+  criarTreino: (dados) => request('/treinos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarTreino: (id, dados) => request(`/treinos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerTreino: (id) => request(`/treinos/${id}`, { method: 'DELETE' }),
+  gerarTreinoIA: (dados) => request('/treinos/gerar-ia', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Endurance
+  listarEndurance: (alunoId) => request(`/endurance${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarEndurance: (dados) => request('/endurance', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarEndurance: (id, dados) => request(`/endurance/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerEndurance: (id) => request(`/endurance/${id}`, { method: 'DELETE' }),
+  gerarEnduranceIA: (dados) => request('/endurance/gerar-ia', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Registros de treino realizado
+  listarRegistrosTreino: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/registros-treino${qs ? `?${qs}` : ''}`);
+  },
+  historicoCarga: (alunoId, exercicioNome) =>
+    request(`/registros-treino/historico-carga?alunoId=${alunoId}&exercicioNome=${encodeURIComponent(exercicioNome)}`),
+  registrarTreino: (dados) => request('/registros-treino', { method: 'POST', body: JSON.stringify(dados) }),
+  removerRegistroTreino: (id) => request(`/registros-treino/${id}`, { method: 'DELETE' }),
+
+  // Pacotes / planos financeiros
+  listarPacotes: (alunoId) => request(`/pacotes${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarPacote: (dados) => request('/pacotes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarPacote: (id, dados) => request(`/pacotes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerPacote: (id) => request(`/pacotes/${id}`, { method: 'DELETE' }),
+
+  // Mensagens
+  listarMensagens: (alunoId) => request(`/mensagens?alunoId=${alunoId}`),
+  enviarMensagem: (dados) => request('/mensagens', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Dietas
+  listarDietas: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
+  criarDieta: (dados) => request('/dietas', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarDieta: (id, dados) => request(`/dietas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -77,4 +130,49 @@ export function somarMes(mes, delta) {
   const [ano, m] = mes.split('-').map(Number);
   const data = new Date(ano, m - 1 + delta, 1);
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export const NIVEIS_ATIVIDADE = {
+  sedentario: 'Sedentário', leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso',
+};
+
+export const GRUPOS_MUSCULARES = {
+  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', biceps: 'Bíceps', triceps: 'Tríceps',
+  antebraco: 'Antebraço', quadriceps: 'Quadríceps', posterior: 'Posterior de coxa',
+  gluteo: 'Glúteo', panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio', outro: 'Outro',
+};
+
+export const METODOS_TREINO = {
+  convencional: 'Convencional', cluster_set: 'Cluster-set', rest_pause: 'Rest-pause',
+  drop_set: 'Drop-set', tri_set: 'Tri-set', bi_set: 'Bi-set (super-série)',
+  piramide: 'Pirâmide', german_volume: 'German Volume Training', isometria: 'Isometria',
+  excentrica: 'Ênfase excêntrica',
+};
+
+export const OBJETIVOS_TREINO = { hipertrofia: 'Hipertrofia', emagrecimento: 'Emagrecimento', saude: 'Saúde/condicionamento' };
+export const TIPOS_PERIODIZACAO = { linear: 'Linear', ondulatoria: 'Ondulatória', linear_inversa: 'Linear inversa', blocos: 'Blocos' };
+export const NIVEIS_ALUNO = { iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado', atleta: 'Atleta' };
+export const DIVISOES_TREINO = { full_body: 'Full body', AB: 'AB', ABC: 'ABC', ABCD: 'ABCD', ABCDE: 'ABCDE' };
+export const DURACOES_SESSAO = [30, 45, 60, 75];
+export const SEMANAS_MESOCICLO = [4, 5, 6];
+export const MODALIDADES_TREINO = { musculacao: 'Musculação', peso_corpo: 'Peso do corpo', hibrido: 'Híbrido' };
+export const OPCOES_AEROBIO = { automatico: 'Automático', incluir: 'Incluir', sem: 'Sem aeróbio' };
+
+export const NIVEIS_ENDURANCE = { iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado', elite: 'Elite' };
+export const MODALIDADES_ENDURANCE = { corrida: 'Corrida', ciclismo: 'Ciclismo', natacao: 'Natação', triathlon: 'Triathlon' };
+export const OBJETIVOS_ENDURANCE = {
+  '5k': '5km', '10k': '10km', '15k': '15km', meia_maratona: 'Meia maratona (21km)',
+  maratona: 'Maratona (42,2km)', ultra_50: 'Ultra 50km', ultra_100: 'Ultra 100km', base: 'Base, sem prova',
+};
+export const PERIODIZACOES_ENDURANCE = { linear: 'Linear (progressão constante)', blocos: 'Blocos (múltiplos picos)', polarizado: 'Polarizado', '80_20': '80/20' };
+export const DIAS_SEMANA = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+
+export const INTENSIDADES_TREINO = { leve: 'Leve', moderada: 'Moderada', intensa: 'Intensa', muito_intensa: 'Muito intensa' };
+
+export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parcelado)', dinheiro: 'Dinheiro' };
+
+export function formatarData(data) {
+  if (!data) return '';
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
 }

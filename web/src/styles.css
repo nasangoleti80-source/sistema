@@ -54,16 +54,18 @@ body {
   background: white;
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: auto;
 }
 
 .tabbar a {
-  flex: 1;
+  flex: 1 0 auto;
   text-align: center;
-  padding: 12px 4px;
+  padding: 12px 10px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .tabbar a.active {
