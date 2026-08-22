@@ -91,8 +91,10 @@ export default function Alunos() {
 
   return (
     <div>
-      <h1>Alunos</h1>
-      <p className="subtitle">Cadastro dos seus clientes</p>
+      <h1>
+        Seus <em>alunos</em>
+      </h1>
+      <p className="subtitle">Quem você acompanha hoje, com valor e vencimento de cada um.</p>
 
       <div className="row" style={{ marginBottom: 12 }}>
         <label className="checkbox-row" style={{ margin: 0 }}>
@@ -108,7 +110,7 @@ export default function Alunos() {
 
       {carregando && <p className="empty">Carregando...</p>}
       {!carregando && listaFiltrada.length === 0 && (
-        <p className="empty">Nenhum aluno cadastrado ainda. Toque em "Novo aluno" para começar.</p>
+        <p className="empty">Nenhum aluno cadastrado ainda. Comece pelo primeiro.</p>
       )}
 
       <div className="card">
@@ -116,7 +118,10 @@ export default function Alunos() {
           <div className="list-item" key={aluno.id}>
             <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
-              <div className="meta">{TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)}/mês · {CANAIS_CAPTACAO[aluno.comoConheceu] || CANAIS_CAPTACAO.nao_informado}</div>
+              <div className="meta">
+                {TIPOS_ALUNO[aluno.tipo]} · <span className="num">{formatarMoeda(aluno.valorMensal)}</span>/mês ·{' '}
+                {CANAIS_CAPTACAO[aluno.comoConheceu] || CANAIS_CAPTACAO.nao_informado}
+              </div>
             </div>
             <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
               {aluno.ativo ? 'Pausar' : 'Reativar'}

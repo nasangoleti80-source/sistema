@@ -79,8 +79,10 @@ export default function Presenca() {
 
   return (
     <div>
-      <h1>Presença</h1>
-      <p className="subtitle">Registre as aulas dadas para saber quem treinou no mês</p>
+      <h1>
+        Quem <em>treinou</em>
+      </h1>
+      <p className="subtitle">Registre a aula assim que ela acontece. No fim do mês a conta já está fechada.</p>
 
       <div className="month-nav">
         <button onClick={() => setMes(somarMes(mes, -1))}>‹</button>
@@ -92,7 +94,7 @@ export default function Presenca() {
       {carregando && <p className="empty">Carregando...</p>}
 
       {!carregando && alunos.length === 0 && (
-        <p className="empty">Cadastre alunos primeiro na aba "Alunos".</p>
+        <p className="empty">Cadastre um aluno na aba Alunos para começar a registrar aula.</p>
       )}
 
       {!carregando && alunos.length > 0 && (
@@ -104,7 +106,9 @@ export default function Presenca() {
               <div className="list-item" key={aluno.id}>
                 <div>
                   <div className="name">{aluno.nome}</div>
-                  <div className="meta">{realizadas} aula(s) realizada(s) neste mês</div>
+                  <div className="meta">
+                    <span className="num">{realizadas}</span> aula(s) neste mês
+                  </div>
                 </div>
                 <button className="btn-primary btn-small" onClick={() => abrirNovo(aluno.id)}>+ Aula</button>
               </div>
@@ -120,7 +124,9 @@ export default function Presenca() {
             {aulas.map((aula) => (
               <div className="list-item" key={aula.id}>
                 <div onClick={() => alternarRealizada(aula)} style={{ cursor: 'pointer', flex: 1 }}>
-                  <div className="name">{formatarData(aula.data)} · {nomeAluno(aula.alunoId)}</div>
+                  <div className="name">
+                    <span className="num">{formatarData(aula.data)}</span> · {nomeAluno(aula.alunoId)}
+                  </div>
                   <div className="meta">
                     {aula.tipo === 'presencial' ? 'Aula presencial' : 'Ajuste de consultoria'}
                     {' · '}

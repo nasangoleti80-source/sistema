@@ -21,8 +21,10 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1>Resumo do mês</h1>
-      <p className="subtitle">Visão geral de aulas e pagamentos</p>
+      <h1>
+        Resumo do <em>mês</em>
+      </h1>
+      <p className="subtitle">O que entrou, o que ainda falta e quem treinou.</p>
 
       <div className="month-nav">
         <button onClick={() => setMes(somarMes(mes, -1))}>‹</button>
@@ -57,7 +59,9 @@ export default function Dashboard() {
           {dados.semCobrancaGerada > 0 && (
             <div className="card">
               <div className="row">
-                <span>{dados.semCobrancaGerada} aluno(s) sem cobrança gerada este mês</span>
+                <span>
+                  <strong className="num">{dados.semCobrancaGerada}</strong> aluno(s) ainda sem cobrança gerada neste mês
+                </span>
                 <Link to="/pagamentos"><button className="btn-primary btn-small">Resolver</button></Link>
               </div>
             </div>
@@ -65,14 +69,19 @@ export default function Dashboard() {
 
           <h2>Por aluno</h2>
           <div className="card">
-            {dados.porAluno.length === 0 && <p className="empty">Nenhum aluno ativo cadastrado.</p>}
+            {dados.porAluno.length === 0 && <p className="empty">Nenhum aluno ativo por enquanto.</p>}
             {dados.porAluno.map((item) => (
               <div className="list-item" key={item.alunoId}>
                 <div>
                   <div className="name">{item.nome}</div>
                   <div className="meta">
-                    {item.aulasRealizadas} aula(s) realizada(s)
-                    {item.faltas > 0 && ` · ${item.faltas} falta(s)`}
+                    <span className="num">{item.aulasRealizadas}</span> aula(s) realizada(s)
+                    {item.faltas > 0 && (
+                      <>
+                        {' · '}
+                        <span className="num">{item.faltas}</span> falta(s)
+                      </>
+                    )}
                   </div>
                 </div>
                 <span className={`badge ${item.pagamento ? item.pagamento.status : 'sem-cobranca'}`}>
@@ -85,7 +94,7 @@ export default function Dashboard() {
           {dados.porCanal && Object.keys(dados.porCanal).length > 0 && (
             <>
               <h2>De onde vêm seus alunos</h2>
-              <p className="subtitle">Contagem de todos os alunos já cadastrados, por canal.</p>
+              <p className="subtitle">Todos os alunos já cadastrados, por canal de entrada.</p>
               <div className="card">
                 {Object.entries(dados.porCanal)
                   .sort((a, b) => b[1] - a[1])

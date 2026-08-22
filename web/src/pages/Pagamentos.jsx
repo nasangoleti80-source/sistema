@@ -82,8 +82,10 @@ export default function Pagamentos() {
 
   return (
     <div>
-      <h1>Pagamentos</h1>
-      <p className="subtitle">Controle de cobrança mensal dos seus alunos</p>
+      <h1>
+        A <em>cobrança</em> do mês
+      </h1>
+      <p className="subtitle">Gere as cobranças de uma vez e marque quem já pagou.</p>
 
       <div className="month-nav">
         <button onClick={() => setMes(somarMes(mes, -1))}>‹</button>
@@ -108,7 +110,7 @@ export default function Pagamentos() {
         <div className="card">
           <div className="row">
             <div>
-              <strong>{alunosSemCobranca.length} aluno(s)</strong> ainda sem cobrança gerada este mês
+              <strong className="num">{alunosSemCobranca.length}</strong> aluno(s) ainda sem cobrança neste mês
             </div>
             <button className="btn-primary" onClick={gerarCobrancas} disabled={gerando}>
               {gerando ? 'Gerando...' : 'Gerar cobranças'}
@@ -119,7 +121,7 @@ export default function Pagamentos() {
 
       {carregando && <p className="empty">Carregando...</p>}
       {!carregando && pagamentos.length === 0 && alunosSemCobranca.length === 0 && (
-        <p className="empty">Cadastre alunos ativos na aba "Alunos" para gerar cobranças.</p>
+        <p className="empty">Cadastre alunos ativos na aba Alunos para gerar as cobranças do mês.</p>
       )}
 
       {!carregando && pagamentos.length > 0 && (
@@ -128,7 +130,9 @@ export default function Pagamentos() {
             <div className="list-item" key={p.id} onClick={() => abrirEdicao(p)} style={{ cursor: 'pointer' }}>
               <div>
                 <div className="name">{nomeAluno(p.alunoId)}</div>
-                <div className="meta">{formatarMoeda(p.valor)} · vence dia {p.diaVencimento}</div>
+                <div className="meta">
+                  <span className="num">{formatarMoeda(p.valor)}</span> · vence dia <span className="num">{p.diaVencimento}</span>
+                </div>
               </div>
               <span className={`badge ${p.status}`}>{STATUS_LABEL[p.status]}</span>
             </div>
