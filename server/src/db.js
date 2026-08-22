@@ -15,6 +15,14 @@ const defaultData = {
   alunos: [],
   aulas: [],
   pagamentos: [],
+  avaliacoes: [],
+  exercicios: [],
+  treinos: [],
+  planosEndurance: [],
+  registrosTreino: [],
+  pacotes: [],
+  mensagens: [],
+  dietas: [],
 };
 
 export const db = new Low(adapter, defaultData);
@@ -22,8 +30,8 @@ export const db = new Low(adapter, defaultData);
 export async function initDb() {
   await db.read();
   db.data ||= structuredClone(defaultData);
-  db.data.alunos ||= [];
-  db.data.aulas ||= [];
-  db.data.pagamentos ||= [];
+  for (const chave of Object.keys(defaultData)) {
+    db.data[chave] ||= [];
+  }
   await db.write();
 }
