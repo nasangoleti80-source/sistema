@@ -59,6 +59,35 @@ router.get('/', async (req, res) => {
     porCanal[canal] = (porCanal[canal] || 0) + 1;
   }
 
+  const hojeMD = hoje.slice(5); // MM-DD
+  const em7dias = new Date();
+  em7dias.setDate(em7dias.getDate() + 7);
+  const aniversariantes = alunosAtivos
+    .filter((a) => a.dataNascimento)
+    .map((a) => {
+      const md = a.dataNascimento.slice(5); // MM-DD
+      const [mes, dia] = md.split('-').map(Number);
+      const proxima = new Date(new Date().getFullYear(), mes - 1, dia);
+      if (proxima < new Date(hoje)) proxima.setFullYear(proxima.getFullYear() + 1);
+      return { alunoId: a.id, nome: a.nome, dataNascimento: a.dataNascimento, proximaData: proxima.toISOString().slice(0, 10), hoje: md === hojeMD };
+    })
+    .filter((a) => new Date(a.proximaData) <= em7dias)
+    .sort((a, b) => (a.proximaData < b.proximaData ? -1 : 1));
+
+  const registrosDoMes = db.data.registrosTreino.filter((r) => r.data.startsWith(mes));
+  const treinoStatusPorAluno = alunosAtivos.map((aluno) => {
+    const registros = registrosDoMes.filter((r) => r.alunoId === aluno.id);
+    const ultimo = db.data.registrosTreino
+      .filter((r) => r.alunoId === aluno.id)
+      .sort((a, b) => (a.data < b.data ? 1 : -1))[0];
+    return {
+      alunoId: aluno.id,
+      nome: aluno.nome,
+      treinosNoMes: registros.length,
+      ultimoTreinoData: ultimo?.data || null,
+    };
+  });
+
   res.json({
     mes,
     totalAlunosAtivos: alunosAtivos.length,
@@ -72,6 +101,8 @@ router.get('/', async (req, res) => {
     semCobrancaGerada,
     porAluno: porAluno.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     porCanal,
+    aniversariantes,
+    treinoStatusPorAluno,
   });
 });
 
