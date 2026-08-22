@@ -260,6 +260,109 @@ label {
 }
 .checkbox-row input { width: auto; }
 
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.view-toggle button {
+  flex: 1;
+  background: var(--card);
+  color: var(--muted);
+  border-radius: 0;
+  padding: 9px 10px;
+}
+
+.view-toggle button.active {
+  background: var(--green);
+  color: white;
+}
+
+.cal-head {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.cal-head div {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding-bottom: 4px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.cal-cell.vazia {
+  border-color: transparent;
+  background: transparent;
+  cursor: default;
+}
+
+.cal-cell.hoje { border-color: var(--green); border-width: 2px; }
+.cal-cell.selecionada { background: #eef2f0; border-color: var(--green-dark); }
+
+.cal-day-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cal-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: auto;
+}
+
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-dot.presente { background: var(--green); }
+.cal-dot.falta { background: var(--red); }
+.cal-dot.reposicao { background: var(--amber); }
+
+.cal-legenda {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cal-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 @media (min-width: 640px) {
   .tabbar { position: static; border-top: none; border-bottom: 1px solid var(--border); }
   .modal-backdrop { align-items: center; }
