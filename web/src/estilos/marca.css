@@ -37,8 +37,8 @@
   --raio-p:       12px;
 }
 
-/* Tema claro — só para página de venda longa, e-book e o chat do app. */
-[data-tema="claro"] {
+/* Tema claro — leitura longa e o chat. O botão no topo alterna data-theme. */
+[data-theme="light"] {
   --noite:       var(--osso);
   --sup:         #F6F3ED;
   --sup-2:       #E2DCD1;

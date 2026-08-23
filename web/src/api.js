@@ -42,11 +42,18 @@ export const api = {
   // Dashboard
   obterDashboard: (mes) => request(`/dashboard?mes=${mes}`),
 
+  // Avaliações físicas
+  listarAvaliacoes: (alunoId) => request(`/avaliacoes${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarAvaliacao: (dados) => request('/avaliacoes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarAvaliacao: (id, dados) => request(`/avaliacoes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerAvaliacao: (id) => request(`/avaliacoes/${id}`, { method: 'DELETE' }),
+
   // Exercícios
-  listarExercicios: (grupo) => request(`/exercicios${grupo ? `?grupo=${grupo}` : ''}`),
+  listarExercicios: () => request('/exercicios'),
   criarExercicio: (dados) => request('/exercicios', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarExercicio: (id, dados) => request(`/exercicios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
-  removerExercicio: (id) => request(`/exercicios/${id}`, { method: 'DELETE' }),
+  removerExercicio: (id, confirmar) =>
+    request(`/exercicios/${id}${confirmar ? '?confirmar=true' : ''}`, { method: 'DELETE' }),
   removerMidia: (id, midiaId) => request(`/exercicios/${id}/midia/${midiaId}`, { method: 'DELETE' }),
 
   /** O corpo é o arquivo cru — o servidor grava em fluxo, sem carregar na memória. */
@@ -61,52 +68,46 @@ export const api = {
     });
   },
 
-  // Treinos
+  // Treinos (musculação)
   listarTreinos: (alunoId) => request(`/treinos${alunoId ? `?alunoId=${alunoId}` : ''}`),
   obterTreino: (id) => request(`/treinos/${id}`),
   criarTreino: (dados) => request('/treinos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarTreino: (id, dados) => request(`/treinos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerTreino: (id) => request(`/treinos/${id}`, { method: 'DELETE' }),
-  duplicarTreino: (id, dados = {}) => request(`/treinos/${id}/duplicar`, { method: 'POST', body: JSON.stringify(dados) }),
+  gerarTreinoIA: (dados) => request('/treinos/gerar-ia', { method: 'POST', body: JSON.stringify(dados) }),
 
-  criarSessao: (treinoId, dados) => request(`/treinos/${treinoId}/sessoes`, { method: 'POST', body: JSON.stringify(dados) }),
-  atualizarSessao: (treinoId, sessaoId, dados) =>
-    request(`/treinos/${treinoId}/sessoes/${sessaoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
-  removerSessao: (treinoId, sessaoId) => request(`/treinos/${treinoId}/sessoes/${sessaoId}`, { method: 'DELETE' }),
+  // Endurance
+  listarEndurance: (alunoId) => request(`/endurance${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarEndurance: (dados) => request('/endurance', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarEndurance: (id, dados) => request(`/endurance/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerEndurance: (id) => request(`/endurance/${id}`, { method: 'DELETE' }),
+  gerarEnduranceIA: (dados) => request('/endurance/gerar-ia', { method: 'POST', body: JSON.stringify(dados) }),
 
-  criarItem: (treinoId, sessaoId, dados) =>
-    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens`, { method: 'POST', body: JSON.stringify(dados) }),
-  atualizarItem: (treinoId, sessaoId, itemId, dados) =>
-    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens/${itemId}`, { method: 'PUT', body: JSON.stringify(dados) }),
-  removerItem: (treinoId, sessaoId, itemId) =>
-    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens/${itemId}`, { method: 'DELETE' }),
-  reordenarItens: (treinoId, sessaoId, ordem) =>
-    request(`/treinos/${treinoId}/sessoes/${sessaoId}/ordem`, { method: 'PUT', body: JSON.stringify({ ordem }) }),
-};
+  // Registros de treino realizado
+  listarRegistrosTreino: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/registros-treino${qs ? `?${qs}` : ''}`);
+  },
+  historicoCarga: (alunoId, exercicioNome) =>
+    request(`/registros-treino/historico-carga?alunoId=${alunoId}&exercicioNome=${encodeURIComponent(exercicioNome)}`),
+  registrarTreino: (dados) => request('/registros-treino', { method: 'POST', body: JSON.stringify(dados) }),
+  removerRegistroTreino: (id) => request(`/registros-treino/${id}`, { method: 'DELETE' }),
 
-export const GRUPOS_MUSCULARES = {
-  peitoral: 'Peitoral',
-  dorsais: 'Dorsais',
-  ombros: 'Ombros',
-  biceps: 'Bíceps',
-  triceps: 'Tríceps',
-  quadriceps: 'Quadríceps',
-  posteriores: 'Posteriores de coxa',
-  gluteo: 'Glúteo',
-  panturrilha: 'Panturrilha',
-  abdomen: 'Abdômen',
-  cardio: 'Cardio',
-  outro: 'Outro',
-};
+  // Pacotes / planos financeiros
+  listarPacotes: (alunoId) => request(`/pacotes${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarPacote: (dados) => request('/pacotes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarPacote: (id, dados) => request(`/pacotes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerPacote: (id) => request(`/pacotes/${id}`, { method: 'DELETE' }),
 
-export const EQUIPAMENTOS = {
-  maquina: 'Máquina',
-  polia: 'Polia / cabo',
-  barra: 'Barra',
-  halter: 'Halter',
-  peso_corpo: 'Peso do corpo',
-  elastico: 'Elástico',
-  livre: 'Sem equipamento',
+  // Mensagens
+  listarMensagens: (alunoId) => request(`/mensagens?alunoId=${alunoId}`),
+  enviarMensagem: (dados) => request('/mensagens', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Dietas
+  listarDietas: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
+  criarDieta: (dados) => request('/dietas', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarDieta: (id, dados) => request(`/dietas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -139,65 +140,120 @@ export function formatarMesLabel(mes) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-/** Semana começando na segunda, como a academia pensa. 0 é domingo no JS. */
-export const DIAS_SEMANA = [
-  { valor: 1, letra: 'S', nome: 'Segunda' },
-  { valor: 2, letra: 'T', nome: 'Terça' },
-  { valor: 3, letra: 'Q', nome: 'Quarta' },
-  { valor: 4, letra: 'Q', nome: 'Quinta' },
-  { valor: 5, letra: 'S', nome: 'Sexta' },
-  { valor: 6, letra: 'S', nome: 'Sábado' },
-  { valor: 0, letra: 'D', nome: 'Domingo' },
-];
+export function somarMes(mes, delta) {
+  const [ano, m] = mes.split('-').map(Number);
+  const data = new Date(ano, m - 1 + delta, 1);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export const NIVEIS_ATIVIDADE = {
+  sedentario: 'Sedentário', leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso',
+};
+
+export const GRUPOS_MUSCULARES = {
+  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', biceps: 'Bíceps', triceps: 'Tríceps',
+  antebraco: 'Antebraço', quadriceps: 'Quadríceps', posterior: 'Posterior de coxa',
+  gluteo: 'Glúteo', panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio', outro: 'Outro',
+};
+
+export const METODOS_TREINO = {
+  convencional: 'Convencional', cluster_set: 'Cluster-set', rest_pause: 'Rest-pause',
+  drop_set: 'Drop-set', tri_set: 'Tri-set', bi_set: 'Bi-set (super-série)',
+  piramide: 'Pirâmide', german_volume: 'German Volume Training', isometria: 'Isometria',
+  excentrica: 'Ênfase excêntrica',
+};
+
+export const OBJETIVOS_TREINO = { hipertrofia: 'Hipertrofia', emagrecimento: 'Emagrecimento', saude: 'Saúde/condicionamento' };
+export const TIPOS_PERIODIZACAO = { linear: 'Linear', ondulatoria: 'Ondulatória', linear_inversa: 'Linear inversa', blocos: 'Blocos' };
+export const NIVEIS_ALUNO = { iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado', atleta: 'Atleta' };
+export const DIVISOES_TREINO = { full_body: 'Full body', AB: 'AB', ABC: 'ABC', ABCD: 'ABCD', ABCDE: 'ABCDE' };
+export const DURACOES_SESSAO = [30, 45, 60, 75];
+export const SEMANAS_MESOCICLO = [4, 5, 6];
+export const MODALIDADES_TREINO = { musculacao: 'Musculação', peso_corpo: 'Peso do corpo', hibrido: 'Híbrido' };
+export const OPCOES_AEROBIO = { automatico: 'Automático', incluir: 'Incluir', sem: 'Sem aeróbio' };
+
+export const NIVEIS_ENDURANCE = { iniciante: 'Iniciante', intermediario: 'Intermediário', avancado: 'Avançado', elite: 'Elite' };
+export const MODALIDADES_ENDURANCE = { corrida: 'Corrida', ciclismo: 'Ciclismo', natacao: 'Natação', triathlon: 'Triathlon' };
+export const OBJETIVOS_ENDURANCE = {
+  '5k': '5km', '10k': '10km', '15k': '15km', meia_maratona: 'Meia maratona (21km)',
+  maratona: 'Maratona (42,2km)', ultra_50: 'Ultra 50km', ultra_100: 'Ultra 100km', base: 'Base, sem prova',
+};
+export const PERIODIZACOES_ENDURANCE = { linear: 'Linear (progressão constante)', blocos: 'Blocos (múltiplos picos)', polarizado: 'Polarizado', '80_20': '80/20' };
+export const DIAS_SEMANA = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+
+export const INTENSIDADES_TREINO = { leve: 'Leve', moderada: 'Moderada', intensa: 'Intensa', muito_intensa: 'Muito intensa' };
+
+export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parcelado)', dinheiro: 'Dinheiro' };
+
+export function formatarData(data) {
+  if (!data) return '';
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+
+/* ------------------------------------------------------------------ volume */
 
 /**
- * Séries por grupo muscular na semana — a conta que diz se o treino está
- * equilibrado. Uma sessão que roda duas vezes na semana conta duas vezes.
- *
- * A faixa de 10 a 20 séries semanais por grupo é a referência usual para
- * hipertrofia; abaixo disso o estímulo costuma ser pouco.
+ * Séries por grupo muscular no treino inteiro. Nos treinos daqui o exercício é
+ * guardado pelo nome, e o grupo vem junto no próprio item — então a conta não
+ * depende do catálogo.
  */
-export function volumeSemanal(treino, exercicios) {
-  const porId = new Map(exercicios.map((e) => [e.id, e]));
+export function volumeDoTreino(treino) {
   const total = {};
-  for (const sessao of treino.sessoes) {
-    const vezes = Math.max(1, sessao.dias.length);
-    for (const item of sessao.itens) {
-      const grupo = porId.get(item.exercicioId)?.grupo || 'outro';
-      total[grupo] = (total[grupo] || 0) + item.series * vezes;
+  for (const dia of treino.dias || []) {
+    for (const ex of dia.exercicios || []) {
+      const grupo = ex.grupoMuscular || 'outro';
+      total[grupo] = (total[grupo] || 0) + (Number(ex.series) || 0);
     }
   }
   return Object.entries(total).sort((a, b) => b[1] - a[1]);
 }
 
-/** Séries por grupo dentro de uma sessão só. */
-export function volumeSessao(sessao, exercicios) {
-  const porId = new Map(exercicios.map((e) => [e.id, e]));
+/** Séries por grupo em um dia só. */
+export function volumeDoDia(dia) {
   const total = {};
-  for (const item of sessao.itens) {
-    const grupo = porId.get(item.exercicioId)?.grupo || 'outro';
-    total[grupo] = (total[grupo] || 0) + item.series;
+  for (const ex of dia.exercicios || []) {
+    const grupo = ex.grupoMuscular || 'outro';
+    total[grupo] = (total[grupo] || 0) + (Number(ex.series) || 0);
   }
   return Object.entries(total).sort((a, b) => b[1] - a[1]);
 }
 
-/** Estimativa grosseira, só para ela ter noção do tempo em quadra. */
-export function duracaoEstimada(sessao) {
-  const segundos = sessao.itens.reduce(
-    (soma, i) => soma + i.series * (40 + (i.descanso || 0)),
-    0
-  );
-  return Math.round(segundos / 60);
+/** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
+export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
+
+/**
+ * Liga o exercício do treino ao catálogo pelo nome, para puxar foto, vídeo e a
+ * dica de onde o aparelho fica. Comparação sem acento e sem caixa, porque o
+ * nome vem digitado à mão ou gerado pela IA.
+ */
+const normalizar = (s) =>
+  (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // tira acento
+    .replace(/\s+/g, ' ')               // "puxada  alta" vira "puxada alta"
+    .toLowerCase()
+    .trim();
+
+export function indexarCatalogo(exercicios) {
+  return new Map(exercicios.map((e) => [normalizar(e.nome), e]));
+}
+
+export function acharNoCatalogo(indice, nome) {
+  return indice.get(normalizar(nome)) || null;
+}
+
+/** A imagem que representa o exercício: capa do vídeo, ou a primeira foto. */
+export function capaDoExercicio(exercicio) {
+  if (!exercicio?.midia?.length) return null;
+  const foto = exercicio.midia.find((m) => m.tipo === 'foto');
+  const item = foto || exercicio.midia[0];
+  return `/midia/${item.capa || item.arquivo}`;
 }
 
 export function formatarTamanho(bytes) {
   if (!bytes) return '';
   const mb = bytes / 1024 / 1024;
   return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
-}
-
-export function somarMes(mes, delta) {
-  const [ano, m] = mes.split('-').map(Number);
-  const data = new Date(ano, m - 1 + delta, 1);
-  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
 }

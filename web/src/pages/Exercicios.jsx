@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, EQUIPAMENTOS, GRUPOS_MUSCULARES, formatarTamanho } from '../api.js';
+import { api, GRUPOS_MUSCULARES, capaDoExercicio, formatarTamanho } from '../api.js';
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 
 const FORM_VAZIO = {
   nome: '',
-  grupo: 'peitoral',
-  equipamento: 'maquina',
+  grupoMuscular: 'peito',
+  equipamento: '',
   ondeFica: '',
-  comoFazer: '',
+  descricao: '',
+  videoUrl: '',
 };
 
 export default function Exercicios() {
@@ -40,14 +41,15 @@ export default function Exercicios() {
     setErro('');
   }
 
-  function abrirEdicao(exercicio) {
-    setAberto(exercicio);
+  function abrirEdicao(ex) {
+    setAberto(ex);
     setForm({
-      nome: exercicio.nome,
-      grupo: exercicio.grupo,
-      equipamento: exercicio.equipamento,
-      ondeFica: exercicio.ondeFica || '',
-      comoFazer: exercicio.comoFazer || '',
+      nome: ex.nome,
+      grupoMuscular: ex.grupoMuscular,
+      equipamento: ex.equipamento || '',
+      ondeFica: ex.ondeFica || '',
+      descricao: ex.descricao || '',
+      videoUrl: ex.videoUrl || '',
     });
     setErro('');
   }
@@ -56,15 +58,10 @@ export default function Exercicios() {
     e.preventDefault();
     setErro('');
     try {
-      if (aberto === 'novo') {
-        const criado = await api.criarExercicio(form);
-        await carregar();
-        setAberto(criado); // segue aberto para ela já mandar a foto
-      } else {
-        const atualizado = await api.atualizarExercicio(aberto.id, form);
-        await carregar();
-        setAberto(atualizado);
-      }
+      const salvo =
+        aberto === 'novo' ? await api.criarExercicio(form) : await api.atualizarExercicio(aberto.id, form);
+      await carregar();
+      setAberto(salvo); // segue aberto para ela já mandar a foto
     } catch (e) {
       setErro(e.message);
     }
@@ -72,7 +69,13 @@ export default function Exercicios() {
 
   async function excluir() {
     if (!confirm(`Excluir "${aberto.nome}"? As fotos e vídeos dele também vão embora.`)) return;
-    await api.removerExercicio(aberto.id);
+    try {
+      await api.removerExercicio(aberto.id);
+    } catch (e) {
+      // 409: o exercício aparece em algum treino. A mensagem já diz quais.
+      if (!confirm(`${e.message}\n\nExcluir mesmo assim?`)) return;
+      await api.removerExercicio(aberto.id, true);
+    }
     setAberto(null);
     await carregar();
   }
@@ -118,11 +121,11 @@ export default function Exercicios() {
     ? exercicios.filter(
         (e) =>
           e.nome.toLowerCase().includes(termo) ||
-          (GRUPOS_MUSCULARES[e.grupo] || '').toLowerCase().includes(termo)
+          (GRUPOS_MUSCULARES[e.grupoMuscular] || '').toLowerCase().includes(termo)
       )
     : exercicios;
 
-  const comMidia = exercicios.filter((e) => e.midia.length > 0).length;
+  const comMidia = exercicios.filter((e) => e.midia?.length).length;
 
   return (
     <div>
@@ -176,28 +179,20 @@ export default function Exercicios() {
 
       {lista.length > 0 && (
         <div className="card">
-          {lista.map((exercicio) => {
-            const capa = exercicio.midia.find((m) => m.tipo === 'foto') || exercicio.midia[0];
-            const temVideo = exercicio.midia.some((m) => m.tipo === 'video');
+          {lista.map((ex) => {
+            const capa = capaDoExercicio(ex);
+            const temVideo = ex.midia?.some((m) => m.tipo === 'video') || Boolean(ex.videoUrl);
             return (
-              <button
-                type="button"
-                className="list-item item-exercicio"
-                key={exercicio.id}
-                onClick={() => abrirEdicao(exercicio)}
-              >
+              <button type="button" className="list-item item-exercicio" key={ex.id} onClick={() => abrirEdicao(ex)}>
                 <span className="miniatura">
-                  {capa ? (
-                    <img src={`/midia/${capa.capa || capa.arquivo}`} alt="" loading="lazy" />
-                  ) : (
-                    <span className="miniatura-vazia">sem foto</span>
-                  )}
+                  {capa ? <img src={capa} alt="" loading="lazy" /> : <span className="miniatura-vazia">sem foto</span>}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                  <span className="name">{exercicio.nome}</span>
+                  <span className="name">{ex.nome}</span>
                   <span className="meta">
-                    {GRUPOS_MUSCULARES[exercicio.grupo]} · {EQUIPAMENTOS[exercicio.equipamento]}
-                    {exercicio.ondeFica && ` · ${exercicio.ondeFica}`}
+                    {GRUPOS_MUSCULARES[ex.grupoMuscular] || ex.grupoMuscular}
+                    {ex.equipamento && ` · ${ex.equipamento}`}
+                    {ex.ondeFica && ` · ${ex.ondeFica}`}
                   </span>
                 </span>
                 {temVideo && <span className="badge pago">vídeo</span>}
@@ -223,7 +218,10 @@ export default function Exercicios() {
               />
 
               <label>Grupo muscular</label>
-              <select value={form.grupo} onChange={(e) => setForm({ ...form, grupo: e.target.value })}>
+              <select
+                value={form.grupoMuscular}
+                onChange={(e) => setForm({ ...form, grupoMuscular: e.target.value })}
+              >
                 {Object.entries(GRUPOS_MUSCULARES).map(([valor, texto]) => (
                   <option key={valor} value={valor}>
                     {texto}
@@ -232,16 +230,11 @@ export default function Exercicios() {
               </select>
 
               <label>Equipamento</label>
-              <select
+              <input
                 value={form.equipamento}
                 onChange={(e) => setForm({ ...form, equipamento: e.target.value })}
-              >
-                {Object.entries(EQUIPAMENTOS).map(([valor, texto]) => (
-                  <option key={valor} value={valor}>
-                    {texto}
-                  </option>
-                ))}
-              </select>
+                placeholder="Máquina, barra, halter, polia…"
+              />
 
               <label>Onde fica na academia</label>
               <input
@@ -253,9 +246,16 @@ export default function Exercicios() {
               <label>Como fazer</label>
               <textarea
                 rows={3}
-                value={form.comoFazer}
-                onChange={(e) => setForm({ ...form, comoFazer: e.target.value })}
+                value={form.descricao}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                 placeholder="Onde ficar, o que segurar, o erro mais comum…"
+              />
+
+              <label>Link de vídeo (YouTube, opcional)</label>
+              <input
+                value={form.videoUrl}
+                onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+                placeholder="https://…"
               />
 
               <div className="form-actions">
@@ -281,18 +281,24 @@ export default function Exercicios() {
               <>
                 <h2>Foto e vídeo</h2>
 
-                {aberto.midia.length === 0 && (
+                {!aberto.midia?.length && (
                   <p className="empty" style={{ padding: '18px 10px' }}>
                     Uma foto do aparelho já ajuda muito. O vídeo de execução pode vir depois.
                   </p>
                 )}
 
-                {aberto.midia.length > 0 && (
+                {aberto.midia?.length > 0 && (
                   <div className="galeria">
                     {aberto.midia.map((m) => (
                       <figure className="midia" key={m.id}>
                         {m.tipo === 'video' ? (
-                          <video src={`/midia/${m.arquivo}`} poster={m.capa ? `/midia/${m.capa}` : undefined} controls playsInline preload="none" />
+                          <video
+                            src={`/midia/${m.arquivo}`}
+                            poster={m.capa ? `/midia/${m.capa}` : undefined}
+                            controls
+                            playsInline
+                            preload="none"
+                          />
                         ) : (
                           <img src={`/midia/${m.arquivo}`} alt={m.legenda || ''} loading="lazy" />
                         )}

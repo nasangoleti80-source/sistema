@@ -9,10 +9,10 @@ const limpar = (v) => (typeof v === 'string' ? v.trim() : '');
 
 router.get('/', async (req, res) => {
   await db.read();
-  const { grupo } = req.query;
-  let lista = db.data.exercicios;
-  if (grupo) lista = lista.filter((e) => e.grupo === grupo);
-  res.json(lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')));
+  const { grupoMuscular } = req.query;
+  let exercicios = db.data.exercicios;
+  if (grupoMuscular) exercicios = exercicios.filter((e) => e.grupoMuscular === grupoMuscular);
+  res.json(exercicios.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')));
 });
 
 router.get('/:id', async (req, res) => {
@@ -23,17 +23,19 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nome, grupo, equipamento, ondeFica, comoFazer } = req.body;
-  if (!limpar(nome)) return res.status(400).json({ error: 'O nome do exercício é obrigatório' });
+  const { nome, grupoMuscular, videoUrl, descricao, equipamento, ondeFica } = req.body;
+  if (!limpar(nome)) return res.status(400).json({ error: 'Nome é obrigatório' });
   await db.read();
   const exercicio = {
     id: nanoid(10),
     nome: limpar(nome),
-    grupo: grupo || 'outro',
-    equipamento: equipamento || 'maquina',
-    // O diferencial: onde o aparelho fica nesta academia.
+    grupoMuscular: grupoMuscular || 'outro',
+    videoUrl: limpar(videoUrl),
+    descricao: limpar(descricao),
+    equipamento: limpar(equipamento),
+    // Onde o aparelho fica nesta academia — o que a aluna com vergonha precisa saber.
     ondeFica: limpar(ondeFica),
-    comoFazer: limpar(comoFazer),
+    // Fotos e vídeos enviados pela treinadora, ao lado do videoUrl externo.
     midia: [],
     createdAt: new Date().toISOString(),
   };
@@ -47,17 +49,16 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.exercicios.findIndex((e) => e.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Exercício não encontrado' });
   const atual = db.data.exercicios[idx];
-  const { nome, grupo, equipamento, ondeFica, comoFazer } = req.body;
-  if (nome !== undefined && !limpar(nome)) {
-    return res.status(400).json({ error: 'O nome do exercício é obrigatório' });
-  }
+  const { nome, grupoMuscular, videoUrl, descricao, equipamento, ondeFica } = req.body;
+  if (nome !== undefined && !limpar(nome)) return res.status(400).json({ error: 'Nome é obrigatório' });
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? limpar(nome) : atual.nome,
-    grupo: grupo !== undefined ? grupo : atual.grupo,
-    equipamento: equipamento !== undefined ? equipamento : atual.equipamento,
+    grupoMuscular: grupoMuscular !== undefined ? grupoMuscular : atual.grupoMuscular,
+    videoUrl: videoUrl !== undefined ? limpar(videoUrl) : atual.videoUrl,
+    descricao: descricao !== undefined ? limpar(descricao) : atual.descricao,
+    equipamento: equipamento !== undefined ? limpar(equipamento) : atual.equipamento,
     ondeFica: ondeFica !== undefined ? limpar(ondeFica) : atual.ondeFica,
-    comoFazer: comoFazer !== undefined ? limpar(comoFazer) : atual.comoFazer,
   };
   db.data.exercicios[idx] = atualizado;
   await db.write();
@@ -69,19 +70,20 @@ router.delete('/:id', async (req, res) => {
   const idx = db.data.exercicios.findIndex((e) => e.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Exercício não encontrado' });
 
-  // Apagar em silêncio deixaria um buraco no treino que a aluna abre no celular.
+  // No treino o exercício é referenciado pelo nome, então excluir do catálogo não
+  // quebra o treino — mas a aluna perde a foto e o vídeo. Avisa antes.
+  const nome = db.data.exercicios[idx].nome;
   const emUso = db.data.treinos.filter((t) =>
-    t.sessoes.some((s) => s.itens.some((i) => i.exercicioId === req.params.id))
+    (t.dias || []).some((d) => (d.exercicios || []).some((e) => e.nome === nome))
   );
-  if (emUso.length) {
-    const nomes = emUso.map((t) => t.nome).join(', ');
+  if (emUso.length && req.query.confirmar !== 'true') {
     return res.status(409).json({
-      error: `Este exercício está em ${emUso.length} treino(s): ${nomes}. Tire ele de lá antes de excluir.`,
+      error: `"${nome}" aparece em ${emUso.length} treino(s). Se excluir, a aluna perde a foto e o vídeo dele.`,
+      emUso: emUso.map((t) => t.nome),
     });
   }
 
-  // Leva os arquivos junto, senão a pasta de mídia vira um cemitério.
-  for (const m of db.data.exercicios[idx].midia) {
+  for (const m of db.data.exercicios[idx].midia || []) {
     apagar(m.arquivo);
     apagar(m.capa);
   }
@@ -97,9 +99,9 @@ router.delete('/:id', async (req, res) => {
  *   POST /api/exercicios/:id/midia?legenda=...&capaDe=<idDaMidia>
  *   Content-Type: video/mp4
  *
- * Com `capaDe`, o arquivo entra como imagem de capa do vídeo indicado, em vez
- * de virar um item novo. É o quadro que o navegador da Nayara extrai do vídeo
- * na hora do envio, para a aluna ver uma imagem parada antes de tocar.
+ * Com `capaDe`, o arquivo entra como imagem de capa do vídeo indicado, em vez de
+ * virar um item novo. É o quadro que o navegador extrai do vídeo no envio, para
+ * a aluna ver uma imagem parada antes de tocar.
  */
 router.post('/:id/midia', async (req, res) => {
   const tipo = req.get('content-type');
@@ -112,8 +114,9 @@ router.post('/:id/midia', async (req, res) => {
   if (!exercicio) return res.status(404).json({ error: 'Exercício não encontrado' });
 
   const { capaDe } = req.query;
-  const alvo = capaDe ? exercicio.midia.find((m) => m.id === capaDe) : null;
-  if (capaDe && !alvo) return res.status(404).json({ error: 'Mídia não encontrada' });
+  if (capaDe && !(exercicio.midia || []).some((m) => m.id === capaDe)) {
+    return res.status(404).json({ error: 'Mídia não encontrada' });
+  }
 
   let gravado;
   try {
@@ -133,6 +136,7 @@ router.post('/:id/midia', async (req, res) => {
     apagar(gravado.arquivo);
     return res.status(404).json({ error: 'Exercício não encontrado' });
   }
+  atual.midia ||= [];
 
   if (capaDe) {
     const item = atual.midia.find((m) => m.id === capaDe);
@@ -164,7 +168,7 @@ router.delete('/:id/midia/:midiaId', async (req, res) => {
   await db.read();
   const exercicio = db.data.exercicios.find((e) => e.id === req.params.id);
   if (!exercicio) return res.status(404).json({ error: 'Exercício não encontrado' });
-  const idx = exercicio.midia.findIndex((m) => m.id === req.params.midiaId);
+  const idx = (exercicio.midia || []).findIndex((m) => m.id === req.params.midiaId);
   if (idx === -1) return res.status(404).json({ error: 'Mídia não encontrada' });
   apagar(exercicio.midia[idx].arquivo);
   apagar(exercicio.midia[idx].capa);

@@ -18,7 +18,7 @@
   color-scheme: dark;
 }
 
-:root[data-tema='claro'] {
+:root[data-theme='light'] {
   color-scheme: light;
 }
 
@@ -97,10 +97,18 @@ body {
   backdrop-filter: blur(16px);
   border-top: 1px solid var(--linha);
   padding-bottom: env(safe-area-inset-bottom);
+  /* São dez abas: espremer todas daria 39px cada no celular. Rola na horizontal. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabbar::-webkit-scrollbar {
+  display: none;
 }
 
 .tabbar a {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 84px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -836,4 +844,112 @@ label {
 
 .quatro label {
   margin-top: 0;
+}
+
+
+/* ------------------------------------------------ cabeçalho do portal e tema */
+
+/* O portal da aluna não mostra a assinatura da treinadora, e sim onde ela está. */
+.brand-portal {
+  font-family: var(--fonte-black);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.theme-toggle {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: 50%;
+  color: var(--texto-fraco);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  color: var(--azul-claro);
+  border-color: var(--linha2, #243040);
+}
+
+/* A barra do topo passa a alinhar assinatura à esquerda e o botão à direita. */
+.topbar.row {
+  justify-content: flex-start;
+}
+
+/* ------------------------------------ exercício do treino ligado ao catálogo */
+
+.ex-treino {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--linha);
+}
+
+.ex-treino:last-child {
+  border-bottom: none;
+}
+
+.ex-ordem {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: 12px;
+  color: var(--texto-tenue);
+  text-align: right;
+}
+
+/* A informação que resolve o medo de chegar na academia: destaque-a. */
+.onde-fica {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--azul-claro);
+}
+
+/* Exercício que a IA inventou e não existe no catálogo: sem foto para a aluna. */
+.fora-catalogo {
+  color: var(--atencao);
+}
+
+.ex-detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--sup-2);
+  border-radius: var(--raio-p);
+}
+
+.ex-detalhe video {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  background: var(--noite);
+  border-radius: 10px;
+}
+
+.ex-como {
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.ex-link {
+  align-self: flex-start;
+  color: var(--azul-claro);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.volume-treino {
+  margin-top: 12px;
+  background: var(--sup-2);
 }

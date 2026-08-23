@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, mesAtual, formatarMoeda, formatarMesLabel as formatarMes, somarMes, CANAIS_CAPTACAO } from '../api.js';
+import { api, mesAtual, formatarMoeda, formatarMesLabel as formatarMes, somarMes, formatarData, CANAIS_CAPTACAO } from '../api.js';
 
 const STATUS_LABEL = { pago: 'Pago', pendente: 'Pendente', atrasado: 'Atrasado', sem_cobranca: 'Sem cobrança' };
 
@@ -55,6 +55,34 @@ export default function Dashboard() {
               <div className="label">Faltas</div>
             </div>
           </div>
+
+          {dados.aniversariantes?.length > 0 && (
+            <div className="card">
+              <div className="name">🎂 Aniversários próximos</div>
+              {dados.aniversariantes.map((a) => (
+                <div className="list-item" key={a.alunoId}>
+                  <span>{a.nome}</span>
+                  <span className="badge pendente">{a.hoje ? 'Hoje!' : formatarData(a.proximaData)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {dados.treinoStatusPorAluno?.length > 0 && (
+            <>
+              <h2>Treino no mês</h2>
+              <div className="card">
+                {dados.treinoStatusPorAluno.map((t) => (
+                  <div className="list-item" key={t.alunoId}>
+                    <div className="name">{t.nome}</div>
+                    <span className={`badge ${t.treinosNoMes > 0 ? 'pago' : 'atrasado'}`}>
+                      {t.treinosNoMes > 0 ? `${t.treinosNoMes} treino(s)` : 'Sem treino este mês'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {dados.semCobrancaGerada > 0 && (
             <div className="card">
