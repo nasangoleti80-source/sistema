@@ -68,6 +68,18 @@ router.delete('/:id', async (req, res) => {
   await db.read();
   const idx = db.data.exercicios.findIndex((e) => e.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Exercício não encontrado' });
+
+  // Apagar em silêncio deixaria um buraco no treino que a aluna abre no celular.
+  const emUso = db.data.treinos.filter((t) =>
+    t.sessoes.some((s) => s.itens.some((i) => i.exercicioId === req.params.id))
+  );
+  if (emUso.length) {
+    const nomes = emUso.map((t) => t.nome).join(', ');
+    return res.status(409).json({
+      error: `Este exercício está em ${emUso.length} treino(s): ${nomes}. Tire ele de lá antes de excluir.`,
+    });
+  }
+
   // Leva os arquivos junto, senão a pasta de mídia vira um cemitério.
   for (const m of db.data.exercicios[idx].midia) {
     apagar(m.arquivo);

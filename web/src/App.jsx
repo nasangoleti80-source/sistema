@@ -5,6 +5,9 @@ import Alunos from './pages/Alunos.jsx';
 import Presenca from './pages/Presenca.jsx';
 import Pagamentos from './pages/Pagamentos.jsx';
 import Exercicios from './pages/Exercicios.jsx';
+import Treinos from './pages/Treinos.jsx';
+import Programa from './pages/Programa.jsx';
+import Sessao from './pages/Sessao.jsx';
 
 const traco = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' };
 
@@ -46,7 +49,7 @@ const abas = [
   { to: '/alunos', label: 'Alunos', Icone: IconeAlunos },
   { to: '/presenca', label: 'Presença', Icone: IconePresenca },
   { to: '/pagamentos', label: 'Cobrança', Icone: IconePagamentos },
-  { to: '/exercicios', label: 'Exercícios', Icone: IconeExercicios },
+  { to: '/treinos', label: 'Treinos', Icone: IconeExercicios },
 ];
 
 export default function App() {
@@ -74,6 +77,10 @@ export default function App() {
           <Route path="/presenca" element={<Presenca />} />
           <Route path="/pagamentos" element={<Pagamentos />} />
           <Route path="/exercicios" element={<Exercicios />} />
+          <Route path="/treinos" element={<Treinos />} />
+          <Route path="/treinos/:alunoId" element={<Treinos />} />
+          <Route path="/treinos/programa/:treinoId" element={<Programa />} />
+          <Route path="/treinos/programa/:treinoId/sessao/:sessaoId" element={<Sessao />} />
         </Routes>
       </main>
     </div>

@@ -72,6 +72,7 @@ router.delete('/:id', async (req, res) => {
   db.data.alunos.splice(idx, 1);
   db.data.aulas = db.data.aulas.filter((a) => a.alunoId !== req.params.id);
   db.data.pagamentos = db.data.pagamentos.filter((p) => p.alunoId !== req.params.id);
+  db.data.treinos = db.data.treinos.filter((t) => t.alunoId !== req.params.id);
   await db.write();
   res.status(204).end();
 });

@@ -9,6 +9,7 @@ import aulasRouter from './routes/aulas.js';
 import pagamentosRouter from './routes/pagamentos.js';
 import dashboardRouter from './routes/dashboard.js';
 import exerciciosRouter from './routes/exercicios.js';
+import treinosRouter from './routes/treinos.js';
 import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,6 +24,7 @@ app.use('/api/aulas', aulasRouter);
 app.use('/api/pagamentos', pagamentosRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/exercicios', exerciciosRouter);
+app.use('/api/treinos', treinosRouter);
 
 // Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
 // reaproveitado, então o navegador pode guardar para sempre.

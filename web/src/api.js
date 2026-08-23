@@ -60,6 +60,28 @@ export const api = {
       body: blob,
     });
   },
+
+  // Treinos
+  listarTreinos: (alunoId) => request(`/treinos${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  obterTreino: (id) => request(`/treinos/${id}`),
+  criarTreino: (dados) => request('/treinos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarTreino: (id, dados) => request(`/treinos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerTreino: (id) => request(`/treinos/${id}`, { method: 'DELETE' }),
+  duplicarTreino: (id, dados = {}) => request(`/treinos/${id}/duplicar`, { method: 'POST', body: JSON.stringify(dados) }),
+
+  criarSessao: (treinoId, dados) => request(`/treinos/${treinoId}/sessoes`, { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarSessao: (treinoId, sessaoId, dados) =>
+    request(`/treinos/${treinoId}/sessoes/${sessaoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerSessao: (treinoId, sessaoId) => request(`/treinos/${treinoId}/sessoes/${sessaoId}`, { method: 'DELETE' }),
+
+  criarItem: (treinoId, sessaoId, dados) =>
+    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens`, { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarItem: (treinoId, sessaoId, itemId, dados) =>
+    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens/${itemId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerItem: (treinoId, sessaoId, itemId) =>
+    request(`/treinos/${treinoId}/sessoes/${sessaoId}/itens/${itemId}`, { method: 'DELETE' }),
+  reordenarItens: (treinoId, sessaoId, ordem) =>
+    request(`/treinos/${treinoId}/sessoes/${sessaoId}/ordem`, { method: 'PUT', body: JSON.stringify({ ordem }) }),
 };
 
 export const GRUPOS_MUSCULARES = {
@@ -115,6 +137,57 @@ export function formatarMesLabel(mes) {
   const data = new Date(ano, m - 1, 1);
   const texto = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/** Semana começando na segunda, como a academia pensa. 0 é domingo no JS. */
+export const DIAS_SEMANA = [
+  { valor: 1, letra: 'S', nome: 'Segunda' },
+  { valor: 2, letra: 'T', nome: 'Terça' },
+  { valor: 3, letra: 'Q', nome: 'Quarta' },
+  { valor: 4, letra: 'Q', nome: 'Quinta' },
+  { valor: 5, letra: 'S', nome: 'Sexta' },
+  { valor: 6, letra: 'S', nome: 'Sábado' },
+  { valor: 0, letra: 'D', nome: 'Domingo' },
+];
+
+/**
+ * Séries por grupo muscular na semana — a conta que diz se o treino está
+ * equilibrado. Uma sessão que roda duas vezes na semana conta duas vezes.
+ *
+ * A faixa de 10 a 20 séries semanais por grupo é a referência usual para
+ * hipertrofia; abaixo disso o estímulo costuma ser pouco.
+ */
+export function volumeSemanal(treino, exercicios) {
+  const porId = new Map(exercicios.map((e) => [e.id, e]));
+  const total = {};
+  for (const sessao of treino.sessoes) {
+    const vezes = Math.max(1, sessao.dias.length);
+    for (const item of sessao.itens) {
+      const grupo = porId.get(item.exercicioId)?.grupo || 'outro';
+      total[grupo] = (total[grupo] || 0) + item.series * vezes;
+    }
+  }
+  return Object.entries(total).sort((a, b) => b[1] - a[1]);
+}
+
+/** Séries por grupo dentro de uma sessão só. */
+export function volumeSessao(sessao, exercicios) {
+  const porId = new Map(exercicios.map((e) => [e.id, e]));
+  const total = {};
+  for (const item of sessao.itens) {
+    const grupo = porId.get(item.exercicioId)?.grupo || 'outro';
+    total[grupo] = (total[grupo] || 0) + item.series;
+  }
+  return Object.entries(total).sort((a, b) => b[1] - a[1]);
+}
+
+/** Estimativa grosseira, só para ela ter noção do tempo em quadra. */
+export function duracaoEstimada(sessao) {
+  const segundos = sessao.itens.reduce(
+    (soma, i) => soma + i.series * (40 + (i.descanso || 0)),
+    0
+  );
+  return Math.round(segundos / 60);
 }
 
 export function formatarTamanho(bytes) {
