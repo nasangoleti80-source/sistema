@@ -1,6 +1,8 @@
 node_modules/
 dist/
-server/data/db.json
+# Dados e mídia da Nayara: banco, fotos e vídeos dos exercícios.
+# Nada disso vai para o git — é conteúdo, não código.
+server/data/
 .env
 *.log
 .DS_Store

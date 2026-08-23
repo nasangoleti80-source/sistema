@@ -41,6 +41,50 @@ export const api = {
 
   // Dashboard
   obterDashboard: (mes) => request(`/dashboard?mes=${mes}`),
+
+  // Exercícios
+  listarExercicios: (grupo) => request(`/exercicios${grupo ? `?grupo=${grupo}` : ''}`),
+  criarExercicio: (dados) => request('/exercicios', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarExercicio: (id, dados) => request(`/exercicios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerExercicio: (id) => request(`/exercicios/${id}`, { method: 'DELETE' }),
+  removerMidia: (id, midiaId) => request(`/exercicios/${id}/midia/${midiaId}`, { method: 'DELETE' }),
+
+  /** O corpo é o arquivo cru — o servidor grava em fluxo, sem carregar na memória. */
+  enviarMidia: (id, blob, { legenda = '', capaDe } = {}) => {
+    const qs = new URLSearchParams();
+    if (legenda) qs.set('legenda', legenda);
+    if (capaDe) qs.set('capaDe', capaDe);
+    return request(`/exercicios/${id}/midia${qs.toString() ? `?${qs}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': blob.type },
+      body: blob,
+    });
+  },
+};
+
+export const GRUPOS_MUSCULARES = {
+  peitoral: 'Peitoral',
+  dorsais: 'Dorsais',
+  ombros: 'Ombros',
+  biceps: 'Bíceps',
+  triceps: 'Tríceps',
+  quadriceps: 'Quadríceps',
+  posteriores: 'Posteriores de coxa',
+  gluteo: 'Glúteo',
+  panturrilha: 'Panturrilha',
+  abdomen: 'Abdômen',
+  cardio: 'Cardio',
+  outro: 'Outro',
+};
+
+export const EQUIPAMENTOS = {
+  maquina: 'Máquina',
+  polia: 'Polia / cabo',
+  barra: 'Barra',
+  halter: 'Halter',
+  peso_corpo: 'Peso do corpo',
+  elastico: 'Elástico',
+  livre: 'Sem equipamento',
 };
 
 export const TIPOS_ALUNO = {
@@ -71,6 +115,12 @@ export function formatarMesLabel(mes) {
   const data = new Date(ano, m - 1, 1);
   const texto = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+export function formatarTamanho(bytes) {
+  if (!bytes) return '';
+  const mb = bytes / 1024 / 1024;
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
 }
 
 export function somarMes(mes, delta) {

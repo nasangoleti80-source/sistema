@@ -541,3 +541,113 @@ label {
     transition: none !important;
   }
 }
+
+/* --------------------------------------------------------------- exercícios */
+
+/* Linha da lista vira botão: precisa desmanchar a aparência padrão. */
+.item-exercicio {
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--linha);
+  border-radius: 0;
+  font: inherit;
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-exercicio:last-child {
+  border-bottom: none;
+}
+
+.item-exercicio .name,
+.item-exercicio .meta {
+  display: block;
+}
+
+.miniatura {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 54px;
+  height: 54px;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+}
+
+.miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.miniatura-vazia {
+  font-family: var(--fonte-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.midia {
+  margin: 0;
+  overflow: hidden;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+}
+
+.midia img,
+.midia video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--noite);
+}
+
+.midia figcaption {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px;
+  font-size: 11px;
+  color: var(--texto-fraco);
+}
+
+.midia figcaption .badge {
+  padding: 3px 6px;
+  font-size: 9px;
+}
+
+.midia figcaption .num {
+  margin-right: auto;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.midia figcaption button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.dica {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  background: var(--sup-2);
+  border-radius: var(--raio-p);
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+  line-height: 1.55;
+}

@@ -15,6 +15,7 @@ const defaultData = {
   alunos: [],
   aulas: [],
   pagamentos: [],
+  exercicios: [],
 };
 
 export const db = new Low(adapter, defaultData);
@@ -25,5 +26,6 @@ export async function initDb() {
   db.data.alunos ||= [];
   db.data.aulas ||= [];
   db.data.pagamentos ||= [];
+  db.data.exercicios ||= [];
   await db.write();
 }

@@ -8,6 +8,8 @@ import alunosRouter from './routes/alunos.js';
 import aulasRouter from './routes/aulas.js';
 import pagamentosRouter from './routes/pagamentos.js';
 import dashboardRouter from './routes/dashboard.js';
+import exerciciosRouter from './routes/exercicios.js';
+import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,6 +22,11 @@ app.use('/api/alunos', alunosRouter);
 app.use('/api/aulas', aulasRouter);
 app.use('/api/pagamentos', pagamentosRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/exercicios', exerciciosRouter);
+
+// Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
+// reaproveitado, então o navegador pode guardar para sempre.
+app.use('/midia', express.static(PASTA_MIDIA, { maxAge: '365d', immutable: true }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
