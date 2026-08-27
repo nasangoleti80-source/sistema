@@ -6,10 +6,13 @@ import Presenca from './pages/Presenca.jsx';
 import Pagamentos from './pages/Pagamentos.jsx';
 import TreinoAluno from './pages/TreinoAluno.jsx';
 import AvaliacaoAluno from './pages/AvaliacaoAluno.jsx';
+import DietaAluno from './pages/DietaAluno.jsx';
+import BancoAlimentos from './pages/BancoAlimentos.jsx';
 import Chat from './pages/Chat.jsx';
 import ChatAluno from './pages/ChatAluno.jsx';
 import MeuTreino from './pages/MeuTreino.jsx';
 import MinhaEvolucao from './pages/MinhaEvolucao.jsx';
+import MinhaDieta from './pages/MinhaDieta.jsx';
 import MeuChat from './pages/MeuChat.jsx';
 import Login from './pages/Login.jsx';
 import { useAuth } from './auth.jsx';
@@ -26,6 +29,7 @@ const linksTreinador = [
 const linksAluno = [
   { to: '/', label: 'Meu treino', end: true },
   { to: '/evolucao', label: 'Evolução' },
+  { to: '/dieta', label: 'Dieta' },
   { to: '/chat', label: 'Chat' },
 ];
 
@@ -68,6 +72,8 @@ export default function App() {
               <Route path="/alunos" element={<Alunos />} />
               <Route path="/alunos/:id/treino" element={<TreinoAluno />} />
               <Route path="/alunos/:id/avaliacao" element={<AvaliacaoAluno />} />
+              <Route path="/alunos/:id/dieta" element={<DietaAluno />} />
+              <Route path="/banco-alimentos" element={<BancoAlimentos />} />
               <Route path="/presenca" element={<Presenca />} />
               <Route path="/pagamentos" element={<Pagamentos />} />
               <Route path="/chat" element={<Chat />} />
@@ -78,6 +84,7 @@ export default function App() {
             <>
               <Route path="/" element={<MeuTreino />} />
               <Route path="/evolucao" element={<MinhaEvolucao />} />
+              <Route path="/dieta" element={<MinhaDieta />} />
               <Route path="/chat" element={<MeuChat />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>

@@ -18,6 +18,8 @@ const defaultData = {
   avaliacoes: [],
   treinos: [],
   mensagens: [],
+  alimentosBanco: [],
+  dietas: [],
   treinador: null,
   config: {},
 };
@@ -33,6 +35,8 @@ export async function initDb() {
   db.data.avaliacoes ||= [];
   db.data.treinos ||= [];
   db.data.mensagens ||= [];
+  db.data.alimentosBanco ||= [];
+  db.data.dietas ||= [];
   db.data.treinador ||= null;
   db.data.config ||= {};
   await db.write();

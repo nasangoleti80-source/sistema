@@ -131,6 +131,7 @@ export default function Alunos() {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <Link to={`/alunos/${aluno.id}/treino`}><button className="btn-secondary btn-small">Treino</button></Link>
               <Link to={`/alunos/${aluno.id}/avaliacao`}><button className="btn-secondary btn-small">Avaliação</button></Link>
+              <Link to={`/alunos/${aluno.id}/dieta`}><button className="btn-secondary btn-small">Dieta</button></Link>
               <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
                 {aluno.ativo ? 'Pausar' : 'Reativar'}
               </button>

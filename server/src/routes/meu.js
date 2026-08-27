@@ -36,6 +36,14 @@ router.get('/evolucao', async (req, res) => {
   res.json(avaliacoes);
 });
 
+// GET /api/meu/dieta
+router.get('/dieta', async (req, res) => {
+  await db.read();
+  const dieta = db.data.dietas.find((d) => d.alunoId === req.usuario.alunoId) || null;
+  if (!dieta) return res.json(null);
+  res.json({ orientacoes: dieta.orientacoes, refeicoes: dieta.refeicoes });
+});
+
 // GET /api/meu/mensagens - histórico da conversa com a treinadora, marca como lida
 router.get('/mensagens', async (req, res) => {
   await db.read();

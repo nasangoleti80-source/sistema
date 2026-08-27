@@ -102,9 +102,22 @@ export const api = {
     return requestUpload(`/mensagens/${alunoId}/midia`, fd);
   },
 
+  // Banco de alimentos
+  listarGruposAlimentos: () => request('/alimentos'),
+  criarGrupoAlimentos: (nome) => request('/alimentos', { method: 'POST', body: JSON.stringify({ nome }) }),
+  renomearGrupoAlimentos: (id, nome) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify({ nome }) }),
+  removerGrupoAlimentos: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
+  adicionarItemAlimento: (grupoId, dados) => request(`/alimentos/${grupoId}/itens`, { method: 'POST', body: JSON.stringify(dados) }),
+  removerItemAlimento: (grupoId, itemId) => request(`/alimentos/${grupoId}/itens/${itemId}`, { method: 'DELETE' }),
+
+  // Dieta
+  obterDieta: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
+  salvarDieta: (alunoId, dados) => request(`/dietas/${alunoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+
   // Portal do aluno
   meuTreino: () => request('/meu/treino'),
   minhaEvolucao: () => request('/meu/evolucao'),
+  minhaDieta: () => request('/meu/dieta'),
   meuChat: () => request('/meu/mensagens'),
   minhasNaoLidas: () => request('/meu/mensagens/nao-lidas'),
   enviarMinhaMensagem: (texto) => request('/meu/mensagens', { method: 'POST', body: JSON.stringify({ texto }) }),
