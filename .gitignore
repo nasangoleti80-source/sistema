@@ -2,6 +2,7 @@ node_modules/
 dist/
 server/data/db.json
 server/data/uploads/
+server/data/chat-uploads/
 .env
 *.log
 .DS_Store

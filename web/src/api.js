@@ -91,9 +91,28 @@ export const api = {
   obterTreino: (alunoId) => request(`/treinos?alunoId=${alunoId}`),
   salvarTreino: (alunoId, dados) => request(`/treinos/${alunoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
 
+  // Chat (treinadora)
+  listarConversas: () => request('/mensagens'),
+  naoLidasTreinador: () => request('/mensagens/nao-lidas'),
+  obterConversa: (alunoId) => request(`/mensagens/${alunoId}`),
+  enviarMensagem: (alunoId, texto) => request(`/mensagens/${alunoId}`, { method: 'POST', body: JSON.stringify({ texto }) }),
+  enviarMensagemMidia: (alunoId, arquivo) => {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo);
+    return requestUpload(`/mensagens/${alunoId}/midia`, fd);
+  },
+
   // Portal do aluno
   meuTreino: () => request('/meu/treino'),
   minhaEvolucao: () => request('/meu/evolucao'),
+  meuChat: () => request('/meu/mensagens'),
+  minhasNaoLidas: () => request('/meu/mensagens/nao-lidas'),
+  enviarMinhaMensagem: (texto) => request('/meu/mensagens', { method: 'POST', body: JSON.stringify({ texto }) }),
+  enviarMinhaMidia: (arquivo) => {
+    const fd = new FormData();
+    fd.append('arquivo', arquivo);
+    return requestUpload('/meu/mensagens/midia', fd);
+  },
 
   // Alunos
   listarAlunos: (ativo) => request(`/alunos${ativo !== undefined ? `?ativo=${ativo}` : ''}`),

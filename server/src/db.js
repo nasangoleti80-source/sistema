@@ -17,6 +17,7 @@ const defaultData = {
   pagamentos: [],
   avaliacoes: [],
   treinos: [],
+  mensagens: [],
   treinador: null,
   config: {},
 };
@@ -31,6 +32,7 @@ export async function initDb() {
   db.data.pagamentos ||= [];
   db.data.avaliacoes ||= [];
   db.data.treinos ||= [];
+  db.data.mensagens ||= [];
   db.data.treinador ||= null;
   db.data.config ||= {};
   await db.write();
