@@ -11,6 +11,7 @@ const FORM_VAZIO = {
   dataInicio: new Date().toISOString().slice(0, 10),
   observacoes: '',
   comoConheceu: 'nao_informado',
+  premium: false,
 };
 
 export default function Alunos() {
@@ -57,6 +58,7 @@ export default function Alunos() {
       dataInicio: aluno.dataInicio,
       observacoes: aluno.observacoes,
       comoConheceu: aluno.comoConheceu || 'nao_informado',
+      premium: Boolean(aluno.premium),
     });
     setErro('');
     setModalAberto(true);
@@ -103,6 +105,15 @@ export default function Alunos() {
     <div>
       <h1>Alunos</h1>
       <p className="subtitle">Cadastro dos seus clientes</p>
+
+      <Link to="/premium" style={{ textDecoration: 'none' }}>
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div className="row">
+            <div className="name">🔒 Área Premium</div>
+            <span className="meta">Gerenciar vídeos ›</span>
+          </div>
+        </div>
+      </Link>
 
       <div className="row" style={{ marginBottom: 12 }}>
         <label className="checkbox-row" style={{ margin: 0 }}>
@@ -177,6 +188,15 @@ export default function Alunos() {
 
               <label>Observações</label>
               <textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} placeholder="Lesões, objetivos, restrições..." />
+
+              <label className="checkbox-row" style={{ marginTop: 14 }}>
+                <input
+                  type="checkbox"
+                  checked={form.premium}
+                  onChange={(e) => setForm({ ...form, premium: e.target.checked })}
+                />
+                Acesso liberado à Área Premium (vídeos)
+              </label>
 
               {editando && (
                 <>

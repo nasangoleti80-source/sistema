@@ -36,6 +36,25 @@ router.get('/evolucao', async (req, res) => {
   res.json(avaliacoes);
 });
 
+// GET /api/meu/premium - status + biblioteca de vídeos se liberado
+router.get('/premium', async (req, res) => {
+  await db.read();
+  const aluno = db.data.alunos.find((a) => a.id === req.usuario.alunoId);
+  const liberado = Boolean(aluno?.premium);
+  if (!liberado) return res.json({ liberado: false, videos: [] });
+  const videos = db.data.videosPremium
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .map((v) => ({
+      id: v.id,
+      titulo: v.titulo,
+      descricao: v.descricao,
+      categoria: v.categoria,
+      createdAt: v.createdAt,
+      url: `/api/videos/midia/${v.arquivo}`,
+    }));
+  res.json({ liberado: true, videos });
+});
+
 // GET /api/meu/dieta
 router.get('/dieta', async (req, res) => {
   await db.read();

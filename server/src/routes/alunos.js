@@ -55,6 +55,7 @@ router.post('/', async (req, res) => {
     observacoes: observacoes?.trim() || '',
     comoConheceu: comoConheceu || 'nao_informado',
     ativo: true,
+    premium: false,
     usuario,
     senhaHash: await hashSenha(senhaGerada),
     createdAt: new Date().toISOString(),
@@ -69,7 +70,7 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.alunos.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Aluno não encontrado' });
   const atual = db.data.alunos[idx];
-  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, ativo } = req.body;
+  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, ativo, premium } = req.body;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
@@ -81,6 +82,7 @@ router.put('/:id', async (req, res) => {
     observacoes: observacoes !== undefined ? observacoes.trim() : atual.observacoes,
     comoConheceu: comoConheceu !== undefined ? comoConheceu : atual.comoConheceu,
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,
+    premium: premium !== undefined ? Boolean(premium) : atual.premium,
   };
   db.data.alunos[idx] = atualizado;
   await db.write();

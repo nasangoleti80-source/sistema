@@ -20,6 +20,7 @@ const defaultData = {
   mensagens: [],
   alimentosBanco: [],
   dietas: [],
+  videosPremium: [],
   treinador: null,
   config: {},
 };
@@ -37,6 +38,7 @@ export async function initDb() {
   db.data.mensagens ||= [];
   db.data.alimentosBanco ||= [];
   db.data.dietas ||= [];
+  db.data.videosPremium ||= [];
   db.data.treinador ||= null;
   db.data.config ||= {};
   await db.write();

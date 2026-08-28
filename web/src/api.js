@@ -114,10 +114,23 @@ export const api = {
   obterDieta: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
   salvarDieta: (alunoId, dados) => request(`/dietas/${alunoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
 
+  // Vídeos Premium
+  listarVideos: () => request('/videos'),
+  criarVideo: (titulo, descricao, categoria, arquivo) => {
+    const fd = new FormData();
+    fd.append('titulo', titulo);
+    fd.append('descricao', descricao);
+    fd.append('categoria', categoria);
+    fd.append('arquivo', arquivo);
+    return requestUpload('/videos', fd);
+  },
+  removerVideo: (id) => request(`/videos/${id}`, { method: 'DELETE' }),
+
   // Portal do aluno
   meuTreino: () => request('/meu/treino'),
   minhaEvolucao: () => request('/meu/evolucao'),
   minhaDieta: () => request('/meu/dieta'),
+  meuPremium: () => request('/meu/premium'),
   meuChat: () => request('/meu/mensagens'),
   minhasNaoLidas: () => request('/meu/mensagens/nao-lidas'),
   enviarMinhaMensagem: (texto) => request('/meu/mensagens', { method: 'POST', body: JSON.stringify({ texto }) }),
@@ -169,6 +182,15 @@ export const CANAIS_CAPTACAO = {
   anuncio: 'Anúncio pago',
   outro: 'Outro',
   nao_informado: 'Não informado',
+};
+
+export const CATEGORIAS_VIDEO = {
+  cardio: 'Cardio',
+  gluteos: 'Glúteos',
+  tecnica: 'Como fazer o exercício',
+  ajustes: 'Ajustes de postura',
+  dicas: 'Dicas',
+  desafio: 'Desafio da semana',
 };
 
 export const STATUS_AULA = {
