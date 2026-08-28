@@ -7,6 +7,7 @@ import Pagamentos from './pages/Pagamentos.jsx';
 import TreinoAluno from './pages/TreinoAluno.jsx';
 import AvaliacaoAluno from './pages/AvaliacaoAluno.jsx';
 import DietaAluno from './pages/DietaAluno.jsx';
+import AnamneseAluno from './pages/AnamneseAluno.jsx';
 import BancoAlimentos from './pages/BancoAlimentos.jsx';
 import Premium from './pages/Premium.jsx';
 import Planos from './pages/Planos.jsx';
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="/alunos/:id/treino" element={<TreinoAluno />} />
               <Route path="/alunos/:id/avaliacao" element={<AvaliacaoAluno />} />
               <Route path="/alunos/:id/dieta" element={<DietaAluno />} />
+              <Route path="/alunos/:id/anamnese" element={<AnamneseAluno />} />
               <Route path="/banco-alimentos" element={<BancoAlimentos />} />
               <Route path="/premium" element={<Premium />} />
               <Route path="/planos" element={<Planos />} />

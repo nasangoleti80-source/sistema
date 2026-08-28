@@ -196,6 +196,7 @@ export default function Alunos() {
               <Link to={`/alunos/${aluno.id}/treino`}><button className="btn-secondary btn-small">Treino</button></Link>
               <Link to={`/alunos/${aluno.id}/avaliacao`}><button className="btn-secondary btn-small">Avaliação</button></Link>
               <Link to={`/alunos/${aluno.id}/dieta`}><button className="btn-secondary btn-small">Dieta</button></Link>
+              <Link to={`/alunos/${aluno.id}/anamnese`}><button className="btn-secondary btn-small">Anamnese</button></Link>
               <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
                 {aluno.ativo ? 'Pausar' : 'Reativar'}
               </button>
@@ -249,7 +250,7 @@ export default function Alunos() {
                       const preco = planoAtual?.precos[valor];
                       const info =
                         preco?.valorCheio != null
-                          ? ` — ${formatarMoeda(preco.valorCheio)}${preco.valorDesconto != null ? ` (${formatarMoeda(preco.valorDesconto)} c/ desconto)` : ''}`
+                          ? ` — ${formatarMoeda(preco.valorCheio)} (≈${formatarMoeda(preco.valorCheio / MESES_PERIODICIDADE[valor])}/mês)${preco.valorDesconto != null ? ` · ${formatarMoeda(preco.valorDesconto)} c/ desconto` : ''}`
                           : '';
                       return (
                         <option key={valor} value={valor}>{label}{info}</option>

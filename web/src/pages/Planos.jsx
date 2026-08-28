@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, PERIODICIDADES, formatarMoeda } from '../api.js';
 
+const MESES_PERIODICIDADE = { mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 };
+
 export default function Planos() {
   const [planos, setPlanos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -129,6 +131,7 @@ export default function Planos() {
                 {plano.precos[periodicidade]?.valorCheio != null && (
                   <span className="meta" style={{ marginLeft: 10 }}>
                     Atual: {formatarMoeda(plano.precos[periodicidade].valorCheio)}
+                    {` (≈${formatarMoeda(plano.precos[periodicidade].valorCheio / MESES_PERIODICIDADE[periodicidade])}/mês)`}
                     {plano.precos[periodicidade].valorDesconto != null && ` · com desconto ${formatarMoeda(plano.precos[periodicidade].valorDesconto)}`}
                   </span>
                 )}

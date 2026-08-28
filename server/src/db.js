@@ -26,6 +26,13 @@ function precosVazios() {
   return precos;
 }
 
+// Valores passados pela Nayara em 28/08/2026. Presencial fica de fora (varia por local/residência).
+const PRECOS_PADRAO = {
+  plano_consultoria_online: { mensal: 197, trimestral: 497, semestral: 897 },
+  plano_consultoria_semi_presencial: { mensal: 299, trimestral: 797, semestral: 1494 },
+  plano_consultoria_online_treino_dieta: { mensal: 397, trimestral: 1047, semestral: 1974, anual: 3564 },
+};
+
 const defaultData = {
   alunos: [],
   aulas: [],
@@ -37,6 +44,7 @@ const defaultData = {
   dietas: [],
   videosPremium: [],
   planos: [],
+  anamneses: [],
   treinador: null,
   config: {},
 };
@@ -56,12 +64,21 @@ export async function initDb() {
   db.data.dietas ||= [];
   db.data.videosPremium ||= [];
   db.data.planos ||= [];
+  db.data.anamneses ||= [];
   db.data.treinador ||= null;
   db.data.config ||= {};
 
   if (db.data.planos.length === 0) {
     for (const nome of PLANOS_PADRAO) {
-      db.data.planos.push({ id: `plano_${nome.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, nome, precos: precosVazios() });
+      const id = `plano_${nome.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+      const precos = precosVazios();
+      const valoresConhecidos = PRECOS_PADRAO[id];
+      if (valoresConhecidos) {
+        for (const [periodicidade, valorCheio] of Object.entries(valoresConhecidos)) {
+          precos[periodicidade].valorCheio = valorCheio;
+        }
+      }
+      db.data.planos.push({ id, nome, precos });
     }
   }
 

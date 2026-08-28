@@ -134,6 +134,10 @@ export const api = {
   salvarPrecoPlano: (id, periodicidade, dados) =>
     request(`/planos/${id}/precos/${periodicidade}`, { method: 'PUT', body: JSON.stringify(dados) }),
 
+  // Anamnese
+  obterAnamnese: (alunoId) => request(`/anamneses?alunoId=${alunoId}`),
+  salvarAnamnese: (alunoId, dados) => request(`/anamneses/${alunoId}`, { method: 'PUT', body: JSON.stringify(dados) }),
+
   // Portal do aluno
   meuTreino: () => request('/meu/treino'),
   minhaEvolucao: () => request('/meu/evolucao'),
