@@ -9,6 +9,7 @@ import AvaliacaoAluno from './pages/AvaliacaoAluno.jsx';
 import DietaAluno from './pages/DietaAluno.jsx';
 import BancoAlimentos from './pages/BancoAlimentos.jsx';
 import Premium from './pages/Premium.jsx';
+import Planos from './pages/Planos.jsx';
 import Chat from './pages/Chat.jsx';
 import ChatAluno from './pages/ChatAluno.jsx';
 import MeuTreino from './pages/MeuTreino.jsx';
@@ -78,6 +79,7 @@ export default function App() {
               <Route path="/alunos/:id/dieta" element={<DietaAluno />} />
               <Route path="/banco-alimentos" element={<BancoAlimentos />} />
               <Route path="/premium" element={<Premium />} />
+              <Route path="/planos" element={<Planos />} />
               <Route path="/presenca" element={<Presenca />} />
               <Route path="/pagamentos" element={<Pagamentos />} />
               <Route path="/chat" element={<Chat />} />

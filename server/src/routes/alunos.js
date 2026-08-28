@@ -1,11 +1,21 @@
 import { Router } from 'express';
 import { nanoid } from 'nanoid';
-import { db } from '../db.js';
+import { db, PERIODICIDADES } from '../db.js';
 import { autenticar, exigirTreinador, hashSenha, gerarUsuario, gerarSenhaAleatoria } from '../auth.js';
 
 const router = Router();
 
 router.use(autenticar, exigirTreinador);
+
+const MESES_PERIODICIDADE = { mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 };
+
+function calcularProximoVencimento(dataInicio, periodicidade) {
+  const meses = MESES_PERIODICIDADE[periodicidade];
+  if (!dataInicio || !meses) return null;
+  const [ano, mes, dia] = dataInicio.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
 
 function semSenha(aluno) {
   const { senhaHash, ...resto } = aluno;
@@ -39,19 +49,24 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu } = req.body;
+  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, planoId, periodicidade } = req.body;
   if (!nome || !nome.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
   await db.read();
   const usuario = await gerarUsuarioUnico(nome);
   const senhaGerada = gerarSenhaAleatoria();
+  const inicio = dataInicio || new Date().toISOString().slice(0, 10);
+  const periodicidadeValida = PERIODICIDADES.includes(periodicidade) ? periodicidade : null;
   const aluno = {
     id: nanoid(10),
     nome: nome.trim(),
     telefone: telefone?.trim() || '',
     tipo: tipo || 'presencial_domicilio',
+    planoId: planoId || null,
+    periodicidade: periodicidadeValida,
+    proximoVencimento: calcularProximoVencimento(inicio, periodicidadeValida),
     valorMensal: Number(valorMensal) || 0,
     diaVencimento: Number(diaVencimento) || 5,
-    dataInicio: dataInicio || new Date().toISOString().slice(0, 10),
+    dataInicio: inicio,
     observacoes: observacoes?.trim() || '',
     comoConheceu: comoConheceu || 'nao_informado',
     ativo: true,
@@ -70,15 +85,24 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.alunos.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Aluno não encontrado' });
   const atual = db.data.alunos[idx];
-  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, ativo, premium } = req.body;
+  const { nome, telefone, tipo, valorMensal, diaVencimento, dataInicio, observacoes, comoConheceu, ativo, premium, planoId, periodicidade } = req.body;
+  const novaPeriodicidade =
+    periodicidade !== undefined ? (PERIODICIDADES.includes(periodicidade) ? periodicidade : null) : atual.periodicidade;
+  const novaDataInicio = dataInicio !== undefined ? dataInicio : atual.dataInicio;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
     telefone: telefone !== undefined ? telefone.trim() : atual.telefone,
     tipo: tipo !== undefined ? tipo : atual.tipo,
+    planoId: planoId !== undefined ? (planoId || null) : atual.planoId,
+    periodicidade: novaPeriodicidade,
+    proximoVencimento:
+      periodicidade !== undefined || dataInicio !== undefined
+        ? calcularProximoVencimento(novaDataInicio, novaPeriodicidade)
+        : atual.proximoVencimento,
     valorMensal: valorMensal !== undefined ? Number(valorMensal) : atual.valorMensal,
     diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : atual.diaVencimento,
-    dataInicio: dataInicio !== undefined ? dataInicio : atual.dataInicio,
+    dataInicio: novaDataInicio,
     observacoes: observacoes !== undefined ? observacoes.trim() : atual.observacoes,
     comoConheceu: comoConheceu !== undefined ? comoConheceu : atual.comoConheceu,
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,

@@ -126,6 +126,14 @@ export const api = {
   },
   removerVideo: (id) => request(`/videos/${id}`, { method: 'DELETE' }),
 
+  // Planos e preços
+  listarPlanos: () => request('/planos'),
+  criarPlano: (nome) => request('/planos', { method: 'POST', body: JSON.stringify({ nome }) }),
+  renomearPlano: (id, nome) => request(`/planos/${id}`, { method: 'PUT', body: JSON.stringify({ nome }) }),
+  removerPlano: (id) => request(`/planos/${id}`, { method: 'DELETE' }),
+  salvarPrecoPlano: (id, periodicidade, dados) =>
+    request(`/planos/${id}/precos/${periodicidade}`, { method: 'PUT', body: JSON.stringify(dados) }),
+
   // Portal do aluno
   meuTreino: () => request('/meu/treino'),
   minhaEvolucao: () => request('/meu/evolucao'),
@@ -182,6 +190,14 @@ export const CANAIS_CAPTACAO = {
   anuncio: 'Anúncio pago',
   outro: 'Outro',
   nao_informado: 'Não informado',
+};
+
+export const PERIODICIDADES = {
+  mensal: 'Mensal',
+  bimestral: 'Bimestral',
+  trimestral: 'Trimestral',
+  semestral: 'Semestral',
+  anual: 'Anual',
 };
 
 export const CATEGORIAS_VIDEO = {

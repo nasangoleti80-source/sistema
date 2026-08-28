@@ -15,6 +15,7 @@ import mensagensRouter from './routes/mensagens.js';
 import alimentosRouter from './routes/alimentos.js';
 import dietasRouter from './routes/dietas.js';
 import videosRouter from './routes/videos.js';
+import planosRouter from './routes/planos.js';
 import meuRouter from './routes/meu.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,7 @@ app.use('/api/mensagens', mensagensRouter);
 app.use('/api/alimentos', alimentosRouter);
 app.use('/api/dietas', dietasRouter);
 app.use('/api/videos', videosRouter);
+app.use('/api/planos', planosRouter);
 app.use('/api/meu', meuRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
