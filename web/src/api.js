@@ -234,7 +234,7 @@ export const TIPOS_REFEICAO = {
 };
 
 export const UNIDADES_ALIMENTO = {
-  g: 'g', ml: 'ml', unidade: 'unidade(s)', fatia: 'fatia(s)',
+  g: 'g', ml: 'ml', unidade: 'unidade(s)', fatia: 'fatia(s)', dose: 'dose(s)',
   colher_sopa: 'colher(es) de sopa', colher_cha: 'colher(es) de chá',
   xicara: 'xícara(s)', porcao: 'porção',
 };

@@ -3,7 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { initDb } from './db.js';
+import { db, initDb } from './db.js';
+import { seedSubstitutosCafeManha } from './seeds/substitutosCafeManha.js';
 import alunosRouter from './routes/alunos.js';
 import aulasRouter from './routes/aulas.js';
 import pagamentosRouter from './routes/pagamentos.js';
@@ -59,6 +60,7 @@ if (fs.existsSync(webDist)) {
 }
 
 await initDb();
+await seedSubstitutosCafeManha(db);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
