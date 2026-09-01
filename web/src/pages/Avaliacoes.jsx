@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, formatarData } from '../api.js';
+import { api, formatarData, NIVEIS_ATIVIDADE } from '../api.js';
+
+const ANAMNESE_VAZIA = {
+  queixasDor: '',
+  objetivo: '',
+  condicoesSaude: '',
+  restricoesMedicas: '',
+  medicamentos: '',
+  cirurgias: '',
+  historicoFamiliar: '',
+  nivelAtividade: 'sedentario',
+  fumante: false,
+  ingereAlcool: false,
+  qualidadeSono: 'boa',
+  observacoes: '',
+};
 
 const DOBRAS_CAMPOS = [
   ['triceps', 'Tríceps'], ['subescapular', 'Subescapular'], ['axilarMedia', 'Axilar média'],
@@ -40,6 +55,9 @@ export default function Avaliacoes() {
   const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
   const [comparar, setComparar] = useState([null, null]);
+  const [anamnese, setAnamneseState] = useState(ANAMNESE_VAZIA);
+  const [anamneseAberta, setAnamneseAberta] = useState(false);
+  const [salvandoAnamnese, setSalvandoAnamnese] = useState(false);
 
   async function carregar() {
     setCarregando(true);
@@ -47,6 +65,7 @@ export default function Avaliacoes() {
       const [a, avals] = await Promise.all([api.obterAluno(alunoId), api.listarAvaliacoes(alunoId)]);
       setAluno(a);
       setAvaliacoes(avals);
+      setAnamneseState({ ...ANAMNESE_VAZIA, ...a.anamnese });
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -55,6 +74,24 @@ export default function Avaliacoes() {
   }
 
   useEffect(() => { carregar(); }, [alunoId]);
+
+  function setAnamnese(campo, valor) {
+    setAnamneseState((a) => ({ ...a, [campo]: valor }));
+  }
+
+  async function salvarAnamnese(e) {
+    e.preventDefault();
+    setErro('');
+    setSalvandoAnamnese(true);
+    try {
+      const atualizado = await api.atualizarAluno(alunoId, { anamnese });
+      setAluno(atualizado);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setSalvandoAnamnese(false);
+    }
+  }
 
   async function salvar(e) {
     e.preventDefault();
@@ -105,6 +142,83 @@ export default function Avaliacoes() {
       <h1>Avaliação física — {aluno.nome}</h1>
       <p className="subtitle">Altura cadastrada: {aluno.altura || '—'} cm · Sexo: {aluno.sexo}</p>
       {erro && <div className="error-msg">{erro}</div>}
+
+      <div className="card">
+        <div className="row" style={{ cursor: 'pointer' }} onClick={() => setAnamneseAberta((v) => !v)}>
+          <h2 style={{ margin: 0 }}>Anamnese de saúde</h2>
+          <button type="button" className="btn-secondary btn-small">{anamneseAberta ? 'Fechar' : 'Ver / editar'}</button>
+        </div>
+
+        {!anamneseAberta && (
+          <p className="meta" style={{ marginTop: 8 }}>
+            {anamnese.objetivo || anamnese.queixasDor
+              ? `Objetivo: ${anamnese.objetivo || '—'} · Queixas: ${anamnese.queixasDor || 'nenhuma'}`
+              : 'Nenhuma anamnese preenchida ainda.'}
+          </p>
+        )}
+
+        {anamneseAberta && (
+          <form onSubmit={salvarAnamnese}>
+            <label>Objetivo do aluno</label>
+            <input value={anamnese.objetivo} onChange={(e) => setAnamnese('objetivo', e.target.value)} placeholder="Emagrecimento, hipertrofia, saúde, performance..." />
+
+            <label>Dores / queixas atuais</label>
+            <textarea rows={2} value={anamnese.queixasDor} onChange={(e) => setAnamnese('queixasDor', e.target.value)} placeholder="Ex: dor lombar ao agachar, dor no ombro direito..." />
+
+            <label>Condições de saúde (doenças, cardiopatias, diabetes...)</label>
+            <textarea rows={2} value={anamnese.condicoesSaude} onChange={(e) => setAnamnese('condicoesSaude', e.target.value)} />
+
+            <label>Restrições médicas</label>
+            <input value={anamnese.restricoesMedicas} onChange={(e) => setAnamnese('restricoesMedicas', e.target.value)} />
+
+            <label>Medicamentos em uso</label>
+            <input value={anamnese.medicamentos} onChange={(e) => setAnamnese('medicamentos', e.target.value)} />
+
+            <label>Cirurgias / lesões anteriores</label>
+            <input value={anamnese.cirurgias} onChange={(e) => setAnamnese('cirurgias', e.target.value)} />
+
+            <label>Histórico familiar relevante</label>
+            <input value={anamnese.historicoFamiliar} onChange={(e) => setAnamnese('historicoFamiliar', e.target.value)} />
+
+            <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <label>Nível de atividade atual</label>
+                <select value={anamnese.nivelAtividade} onChange={(e) => setAnamnese('nivelAtividade', e.target.value)}>
+                  {Object.entries(NIVEIS_ATIVIDADE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label>Qualidade do sono</label>
+                <select value={anamnese.qualidadeSono} onChange={(e) => setAnamnese('qualidadeSono', e.target.value)}>
+                  <option value="ruim">Ruim</option>
+                  <option value="regular">Regular</option>
+                  <option value="boa">Boa</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="row" style={{ gap: 16, marginTop: 10 }}>
+              <label className="checkbox-row" style={{ margin: 0 }}>
+                <input type="checkbox" checked={anamnese.fumante} onChange={(e) => setAnamnese('fumante', e.target.checked)} />
+                Fumante
+              </label>
+              <label className="checkbox-row" style={{ margin: 0 }}>
+                <input type="checkbox" checked={anamnese.ingereAlcool} onChange={(e) => setAnamnese('ingereAlcool', e.target.checked)} />
+                Ingere álcool
+              </label>
+            </div>
+
+            <label>Observações gerais da anamnese</label>
+            <textarea rows={2} value={anamnese.observacoes} onChange={(e) => setAnamnese('observacoes', e.target.value)} />
+
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={salvandoAnamnese}>
+                {salvandoAnamnese ? 'Salvando...' : 'Salvar anamnese'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Nova avaliação</h2>
