@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { nanoid } from 'nanoid';
 import { db } from '../db.js';
-import { calcularIdade } from '../lib/calculos.js';
+import { calcularIdade, calcularVencimentoPlano } from '../lib/calculos.js';
 
 const router = Router();
 
@@ -46,20 +46,26 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const {
-    nome, telefone, email, tipo, valorMensal, diaVencimento, dataInicio,
+    nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, dataNascimento, altura, sexo, anamnese,
   } = req.body;
   if (!nome || !nome.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
   await db.read();
+  const inicio = dataInicio || new Date().toISOString().slice(0, 10);
+  const periodicidadeFinal = periodicidade || 'mensal';
+  const vencimento = calcularVencimentoPlano(inicio, periodicidadeFinal);
   const aluno = {
     id: nanoid(10),
     nome: nome.trim(),
     telefone: telefone?.trim() || '',
     email: email?.trim() || '',
-    tipo: tipo || 'presencial_domicilio',
+    tipo: tipo || 'presencial',
     valorMensal: Number(valorMensal) || 0,
-    diaVencimento: Number(diaVencimento) || 5,
-    dataInicio: dataInicio || new Date().toISOString().slice(0, 10),
+    periodicidade: periodicidadeFinal,
+    desconto: desconto?.trim() || '',
+    dataInicio: inicio,
+    dataVencimento: vencimento,
+    diaVencimento: Number(vencimento.slice(8, 10)),
     observacoes: observacoes?.trim() || '',
     comoConheceu: comoConheceu || 'nao_informado',
     dataNascimento: dataNascimento || '',
@@ -80,9 +86,17 @@ router.put('/:id', async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Aluno não encontrado' });
   const atual = db.data.alunos[idx];
   const {
-    nome, telefone, email, tipo, valorMensal, diaVencimento, dataInicio,
+    nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
   } = req.body;
+
+  const inicioFinal = dataInicio !== undefined ? dataInicio : atual.dataInicio;
+  const periodicidadeFinal = periodicidade !== undefined ? periodicidade : (atual.periodicidade || 'mensal');
+  const recalcularVencimento = dataInicio !== undefined || periodicidade !== undefined;
+  const vencimento = recalcularVencimento
+    ? calcularVencimentoPlano(inicioFinal, periodicidadeFinal)
+    : atual.dataVencimento;
+
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
@@ -90,8 +104,11 @@ router.put('/:id', async (req, res) => {
     email: email !== undefined ? email.trim() : atual.email,
     tipo: tipo !== undefined ? tipo : atual.tipo,
     valorMensal: valorMensal !== undefined ? Number(valorMensal) : atual.valorMensal,
-    diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : atual.diaVencimento,
-    dataInicio: dataInicio !== undefined ? dataInicio : atual.dataInicio,
+    periodicidade: periodicidadeFinal,
+    desconto: desconto !== undefined ? desconto.trim() : atual.desconto || '',
+    dataInicio: inicioFinal,
+    dataVencimento: vencimento,
+    diaVencimento: vencimento ? Number(vencimento.slice(8, 10)) : atual.diaVencimento,
     observacoes: observacoes !== undefined ? observacoes.trim() : atual.observacoes,
     comoConheceu: comoConheceu !== undefined ? comoConheceu : atual.comoConheceu,
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,

@@ -1,36 +1,21 @@
 import { useEffect, useState } from 'react';
-import { api, TIPOS_ALUNO, CANAIS_CAPTACAO, NIVEIS_ATIVIDADE, formatarMoeda } from '../api.js';
+import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData } from '../api.js';
 import { Link } from 'react-router-dom';
-
-const ANAMNESE_VAZIA = {
-  queixasDor: '',
-  objetivo: '',
-  condicoesSaude: '',
-  restricoesMedicas: '',
-  medicamentos: '',
-  cirurgias: '',
-  historicoFamiliar: '',
-  nivelAtividade: 'sedentario',
-  fumante: false,
-  ingereAlcool: false,
-  qualidadeSono: 'boa',
-  observacoes: '',
-};
 
 const FORM_VAZIO = {
   nome: '',
   telefone: '',
   email: '',
-  tipo: 'presencial_domicilio',
+  tipo: 'presencial',
   valorMensal: '',
-  diaVencimento: '5',
+  desconto: '',
+  periodicidade: 'mensal',
   dataInicio: new Date().toISOString().slice(0, 10),
   observacoes: '',
   comoConheceu: 'nao_informado',
   dataNascimento: '',
   altura: '',
   sexo: 'masculino',
-  anamnese: ANAMNESE_VAZIA,
 };
 
 export default function Alunos() {
@@ -73,21 +58,17 @@ export default function Alunos() {
       email: aluno.email || '',
       tipo: aluno.tipo,
       valorMensal: String(aluno.valorMensal),
-      diaVencimento: String(aluno.diaVencimento),
+      desconto: aluno.desconto || '',
+      periodicidade: aluno.periodicidade || 'mensal',
       dataInicio: aluno.dataInicio,
       observacoes: aluno.observacoes,
       comoConheceu: aluno.comoConheceu || 'nao_informado',
       dataNascimento: aluno.dataNascimento || '',
       altura: aluno.altura ? String(aluno.altura) : '',
       sexo: aluno.sexo || 'masculino',
-      anamnese: { ...ANAMNESE_VAZIA, ...aluno.anamnese },
     });
     setErro('');
     setModalAberto(true);
-  }
-
-  function setAnamnese(campo, valor) {
-    setForm((f) => ({ ...f, anamnese: { ...f.anamnese, [campo]: valor } }));
   }
 
   async function salvar(e) {
@@ -157,7 +138,8 @@ export default function Alunos() {
             <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
               <div className="meta">
-                {TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)}/mês
+                {TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)} ({PERIODICIDADES[aluno.periodicidade] || 'Mensal'})
+                {aluno.dataVencimento && ` · vence ${formatarData(aluno.dataVencimento)}`}
                 {aluno.idade != null && ` · ${aluno.idade} anos`}
                 {aluno.altura ? ` · ${aluno.altura}cm` : ''}
               </div>
@@ -214,14 +196,34 @@ export default function Alunos() {
                 ))}
               </select>
 
-              <label>Valor mensal (R$)</label>
-              <input type="number" min="0" step="0.01" value={form.valorMensal} onChange={(e) => setForm({ ...form, valorMensal: e.target.value })} />
+              <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Valor (R$)</label>
+                  <input type="number" min="0" step="0.01" value={form.valorMensal} onChange={(e) => setForm({ ...form, valorMensal: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Desconto / Black Friday</label>
+                  <input value={form.desconto} onChange={(e) => setForm({ ...form, desconto: e.target.value })} placeholder="Ex: 10% Black Friday" />
+                </div>
+              </div>
 
-              <label>Dia de vencimento</label>
-              <input type="number" min="1" max="28" value={form.diaVencimento} onChange={(e) => setForm({ ...form, diaVencimento: e.target.value })} />
+              <label>Periodicidade do plano</label>
+              <select value={form.periodicidade} onChange={(e) => setForm({ ...form, periodicidade: e.target.value })}>
+                {Object.entries(PERIODICIDADES).map(([valor, label]) => (
+                  <option key={valor} value={valor}>{label}</option>
+                ))}
+              </select>
 
-              <label>Início do acompanhamento</label>
-              <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} />
+              <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Início do acompanhamento</label>
+                  <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Vencimento (calculado)</label>
+                  <input value={formatarData(calcularVencimentoPlano(form.dataInicio, form.periodicidade))} disabled />
+                </div>
+              </div>
 
               <label>Como conheceu você</label>
               <select value={form.comoConheceu} onChange={(e) => setForm({ ...form, comoConheceu: e.target.value })}>
@@ -232,60 +234,6 @@ export default function Alunos() {
 
               <label>Observações</label>
               <textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} placeholder="Lesões, objetivos, restrições..." />
-
-              <h2>Anamnese de saúde</h2>
-
-              <label>Objetivo do aluno</label>
-              <input value={form.anamnese.objetivo} onChange={(e) => setAnamnese('objetivo', e.target.value)} placeholder="Emagrecimento, hipertrofia, saúde, performance..." />
-
-              <label>Dores / queixas atuais</label>
-              <textarea rows={2} value={form.anamnese.queixasDor} onChange={(e) => setAnamnese('queixasDor', e.target.value)} placeholder="Ex: dor lombar ao agachar, dor no ombro direito..." />
-
-              <label>Condições de saúde (doenças, cardiopatias, diabetes...)</label>
-              <textarea rows={2} value={form.anamnese.condicoesSaude} onChange={(e) => setAnamnese('condicoesSaude', e.target.value)} />
-
-              <label>Restrições médicas</label>
-              <input value={form.anamnese.restricoesMedicas} onChange={(e) => setAnamnese('restricoesMedicas', e.target.value)} />
-
-              <label>Medicamentos em uso</label>
-              <input value={form.anamnese.medicamentos} onChange={(e) => setAnamnese('medicamentos', e.target.value)} />
-
-              <label>Cirurgias / lesões anteriores</label>
-              <input value={form.anamnese.cirurgias} onChange={(e) => setAnamnese('cirurgias', e.target.value)} />
-
-              <label>Histórico familiar relevante</label>
-              <input value={form.anamnese.historicoFamiliar} onChange={(e) => setAnamnese('historicoFamiliar', e.target.value)} />
-
-              <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <label>Nível de atividade atual</label>
-                  <select value={form.anamnese.nivelAtividade} onChange={(e) => setAnamnese('nivelAtividade', e.target.value)}>
-                    {Object.entries(NIVEIS_ATIVIDADE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label>Qualidade do sono</label>
-                  <select value={form.anamnese.qualidadeSono} onChange={(e) => setAnamnese('qualidadeSono', e.target.value)}>
-                    <option value="ruim">Ruim</option>
-                    <option value="regular">Regular</option>
-                    <option value="boa">Boa</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="row" style={{ gap: 16, marginTop: 10 }}>
-                <label className="checkbox-row" style={{ margin: 0 }}>
-                  <input type="checkbox" checked={form.anamnese.fumante} onChange={(e) => setAnamnese('fumante', e.target.checked)} />
-                  Fumante
-                </label>
-                <label className="checkbox-row" style={{ margin: 0 }}>
-                  <input type="checkbox" checked={form.anamnese.ingereAlcool} onChange={(e) => setAnamnese('ingereAlcool', e.target.checked)} />
-                  Ingere álcool
-                </label>
-              </div>
-
-              <label>Observações gerais da anamnese</label>
-              <textarea rows={2} value={form.anamnese.observacoes} onChange={(e) => setAnamnese('observacoes', e.target.value)} />
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary">Salvar</button>

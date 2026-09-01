@@ -111,10 +111,29 @@ export const api = {
 };
 
 export const TIPOS_ALUNO = {
-  presencial_domicilio: 'Presencial (residência)',
-  presencial_academia: 'Presencial (academia)',
-  consultoria: 'Consultoria semi-presencial',
+  presencial: 'Presencial',
+  consultoria_online: 'Consultoria online',
+  consultoria_semipresencial: 'Consultoria semi-presencial',
+  consultoria_online_treino_dieta: 'Consultoria online (treino + dieta)',
+  dieta: 'Dieta',
 };
+
+export const PERIODICIDADES = {
+  mensal: 'Mensal',
+  trimestral: 'Trimestral',
+  semestral: 'Semestral',
+  anual: 'Anual',
+};
+
+const MESES_POR_PERIODICIDADE = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 };
+
+export function calcularVencimentoPlano(dataInicio, periodicidade) {
+  if (!dataInicio) return '';
+  const meses = MESES_POR_PERIODICIDADE[periodicidade] || 1;
+  const [ano, mes, dia] = dataInicio.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return data.toISOString().slice(0, 10);
+}
 
 export const CANAIS_CAPTACAO = {
   indicacao: 'Indicação',

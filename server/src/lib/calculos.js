@@ -10,6 +10,16 @@ export function calcularIdade(dataNascimento, referencia = new Date()) {
   return idade;
 }
 
+const MESES_POR_PERIODICIDADE = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 };
+
+export function calcularVencimentoPlano(dataInicio, periodicidade) {
+  if (!dataInicio) return null;
+  const meses = MESES_POR_PERIODICIDADE[periodicidade] || 1;
+  const [ano, mes, dia] = dataInicio.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return data.toISOString().slice(0, 10);
+}
+
 export function calcularIMC(pesoKg, alturaCm) {
   if (!pesoKg || !alturaCm) return null;
   const alturaM = alturaCm / 100;
