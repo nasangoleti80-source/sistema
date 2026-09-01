@@ -23,6 +23,22 @@ function ItemDieta({ item }) {
   );
 }
 
+// Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
+// inteira (ex: "Opção 03"), não alimento por alimento.
+function RefeicaoBanco({ banco }) {
+  const [escolhida, setEscolhida] = useState(0);
+  if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
+  const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
+  return (
+    <div>
+      <select value={escolhida} onChange={(e) => setEscolhida(Number(e.target.value))} style={{ marginBottom: 8 }}>
+        {banco.opcoes.map((o, i) => <option key={i} value={i}>{o.nome}</option>)}
+      </select>
+      {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+    </div>
+  );
+}
+
 export default function Portal() {
   const { alunoId } = useParams();
   const [aluno, setAluno] = useState(null);
@@ -31,6 +47,7 @@ export default function Portal() {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [pacotes, setPacotes] = useState([]);
   const [dietas, setDietas] = useState([]);
+  const [bancos, setBancos] = useState([]);
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
@@ -40,7 +57,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, bo] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -50,6 +67,7 @@ export default function Portal() {
         api.listarMensagens(alunoId),
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
+        api.listarBancosOpcoes(),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -59,6 +77,7 @@ export default function Portal() {
       setDietas(d.filter((dt) => dt.ativa));
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
+      setBancos(bo);
     } catch (e) {
       setErro(e.message);
     }
@@ -190,8 +209,10 @@ export default function Portal() {
               {(d.refeicoes || []).map((r, i) => (
                 <div key={i} className="card" style={{ background: 'var(--bg)' }}>
                   <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
-                  {(r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
-                  {!r.itens && r.alimentos && <div className="meta">{r.alimentos}</div>}
+                  {r.bancoId
+                    ? <RefeicaoBanco banco={bancos.find((b) => b.id === r.bancoId)} />
+                    : (r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+                  {!r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}
             </div>

@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
-
-function novoItem() {
-  return { id: crypto.randomUUID(), opcoes: [{ alimentoId: '', nome: '', quantidade: '', unidade: 'g' }] };
-}
+import ConstrutorDieta from '../components/ConstrutorDieta.jsx';
 
 function formVazio() {
-  return { nome: '', observacoes: '', refeicoesPorTipo: {} };
+  return { nome: '', observacoes: '', refeicoesPorTipo: {}, bancoPorTipo: {} };
 }
 
 export default function Dietas() {
@@ -14,6 +11,8 @@ export default function Dietas() {
   const [alunoId, setAlunoId] = useState('');
   const [dietas, setDietas] = useState([]);
   const [catalogo, setCatalogo] = useState([]);
+  const [bancos, setBancos] = useState([]);
+  const [modelos, setModelos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
@@ -24,6 +23,8 @@ export default function Dietas() {
       if (lista.length && !alunoId) setAlunoId(lista[0].id);
     });
     api.listarAlimentos().then(setCatalogo);
+    api.listarBancosOpcoes().then(setBancos);
+    api.listarModelosDieta().then(setModelos);
   }, []);
 
   async function carregar(id) {
@@ -38,104 +39,67 @@ export default function Dietas() {
     setModalAberto(true);
   }
 
-  function alternarTipo(tipo) {
+  function usarModelo(e) {
+    const modeloId = e.target.value;
+    if (!modeloId) return;
+    const modelo = modelos.find((m) => m.id === modeloId);
+    if (!modelo) return;
+    const refeicoesPorTipo = {};
+    const bancoPorTipo = {};
+    for (const r of modelo.refeicoes || []) {
+      if (r.bancoId) bancoPorTipo[r.tipo] = r.bancoId;
+      else refeicoesPorTipo[r.tipo] = r.itens || [];
+    }
+    setForm((f) => ({ ...f, nome: f.nome || modelo.nome, refeicoesPorTipo, bancoPorTipo }));
+    e.target.value = '';
+  }
+
+  function toggleTipo(tipo) {
     setForm((f) => {
-      const refeicoesPorTipo = { ...f.refeicoesPorTipo };
-      if (refeicoesPorTipo[tipo]) {
-        delete refeicoesPorTipo[tipo];
-      } else {
-        refeicoesPorTipo[tipo] = [novoItem()];
+      const ativo = f.refeicoesPorTipo[tipo] !== undefined || f.bancoPorTipo[tipo] !== undefined;
+      if (ativo) {
+        const { [tipo]: _r, ...refeicoesPorTipo } = f.refeicoesPorTipo;
+        const { [tipo]: _b, ...bancoPorTipo } = f.bancoPorTipo;
+        return { ...f, refeicoesPorTipo, bancoPorTipo };
       }
-      return { ...f, refeicoesPorTipo };
+      return { ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [] } };
     });
   }
 
-  function addItem(tipo) {
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [...f.refeicoesPorTipo[tipo], novoItem()] },
-    }));
+  function setItens(tipo, itens) {
+    setForm((f) => ({ ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: itens } }));
   }
 
-  function removerItem(tipo, itemId) {
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: f.refeicoesPorTipo[tipo].filter((it) => it.id !== itemId) },
-    }));
-  }
-
-  function addOpcao(tipo, itemId) {
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: {
-        ...f.refeicoesPorTipo,
-        [tipo]: f.refeicoesPorTipo[tipo].map((it) =>
-          it.id === itemId
-            ? { ...it, opcoes: [...it.opcoes, { alimentoId: '', nome: '', quantidade: '', unidade: 'g' }] }
-            : it
-        ),
-      },
-    }));
-  }
-
-  function removerOpcao(tipo, itemId, idx) {
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: {
-        ...f.refeicoesPorTipo,
-        [tipo]: f.refeicoesPorTipo[tipo].map((it) =>
-          it.id === itemId ? { ...it, opcoes: it.opcoes.filter((_, i) => i !== idx) } : it
-        ),
-      },
-    }));
-  }
-
-  function setOpcao(tipo, itemId, idx, campo, valor) {
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: {
-        ...f.refeicoesPorTipo,
-        [tipo]: f.refeicoesPorTipo[tipo].map((it) => {
-          if (it.id !== itemId) return it;
-          const opcoes = [...it.opcoes];
-          opcoes[idx] = { ...opcoes[idx], [campo]: valor };
-          return { ...it, opcoes };
-        }),
-      },
-    }));
-  }
-
-  function selecionarAlimento(tipo, itemId, idx, alimentoId) {
-    const alimento = catalogo.find((a) => a.id === alimentoId);
-    setForm((f) => ({
-      ...f,
-      refeicoesPorTipo: {
-        ...f.refeicoesPorTipo,
-        [tipo]: f.refeicoesPorTipo[tipo].map((it) => {
-          if (it.id !== itemId) return it;
-          const opcoes = [...it.opcoes];
-          opcoes[idx] = alimento
-            ? { alimentoId: alimento.id, nome: alimento.nome, quantidade: alimento.quantidadePadrao ?? '', unidade: alimento.unidade }
-            : { alimentoId: '', nome: '', quantidade: '', unidade: 'g' };
-          return { ...it, opcoes };
-        }),
-      },
-    }));
+  function setBanco(tipo, bancoId) {
+    setForm((f) => {
+      const bancoPorTipo = { ...f.bancoPorTipo };
+      const refeicoesPorTipo = { ...f.refeicoesPorTipo };
+      if (bancoId) {
+        bancoPorTipo[tipo] = bancoId;
+        delete refeicoesPorTipo[tipo];
+      } else {
+        delete bancoPorTipo[tipo];
+        refeicoesPorTipo[tipo] = [];
+      }
+      return { ...f, bancoPorTipo, refeicoesPorTipo };
+    });
   }
 
   async function salvar(e) {
     e.preventDefault();
     setErro('');
     try {
-      const refeicoes = Object.entries(form.refeicoesPorTipo)
-        .map(([tipo, itens]) => ({
-          tipo,
-          nome: TIPOS_REFEICAO[tipo],
-          itens: itens
+      const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
+      const refeicoes = tiposAtivos
+        .map((tipo) => {
+          if (form.bancoPorTipo[tipo]) return { tipo, nome: TIPOS_REFEICAO[tipo], bancoId: form.bancoPorTipo[tipo] };
+          const itens = (form.refeicoesPorTipo[tipo] || [])
             .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.alimentoId) }))
-            .filter((it) => it.opcoes.length > 0),
-        }))
-        .filter((r) => r.itens.length > 0);
+            .filter((it) => it.opcoes.length > 0);
+          return { tipo, nome: TIPOS_REFEICAO[tipo], itens };
+        })
+        .filter((r) => r.bancoId || (r.itens && r.itens.length > 0));
+
       await api.criarDieta({ alunoId, nome: form.nome, observacoes: form.observacoes, refeicoes });
       setModalAberto(false);
       await carregar(alunoId);
@@ -150,7 +114,7 @@ export default function Dietas() {
     await carregar(alunoId);
   }
 
-  const tiposAtivos = Object.keys(TIPOS_REFEICAO).filter((t) => form.refeicoesPorTipo[t]);
+  const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
 
   return (
     <div>
@@ -180,23 +144,31 @@ export default function Dietas() {
             <div className="name">{d.nome} {!d.ativa && <span className="badge sem-cobranca">inativa</span>}</div>
             <button className="btn-danger btn-small" onClick={() => excluir(d)}>Excluir</button>
           </div>
-          {(d.refeicoes || []).map((r, i) => (
-            <div key={i} className="card" style={{ background: 'var(--bg)' }}>
-              <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
-              {(r.itens || []).map((item, j) => (
-                <div key={j} className="meta" style={{ marginTop: 4 }}>
-                  {item.opcoes.map((op, k) => (
-                    <span key={k}>
-                      {k > 0 && ' ou '}
-                      {op.nome} ({op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade})
-                    </span>
-                  ))}
-                </div>
-              ))}
-              {/* Compatibilidade com dietas antigas em texto livre */}
-              {!r.itens && r.alimentos && <div className="meta">{r.alimentos}</div>}
-            </div>
-          ))}
+          {(d.refeicoes || []).map((r, i) => {
+            const banco = r.bancoId ? bancos.find((b) => b.id === r.bancoId) : null;
+            return (
+              <div key={i} className="card" style={{ background: 'var(--bg)' }}>
+                <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+                {banco && (
+                  <div className="meta">
+                    📚 Banco "{banco.nome}" — {banco.opcoes?.length || 0} opção(ões): {banco.opcoes?.map((o) => o.nome).join(', ')}
+                  </div>
+                )}
+                {!banco && (r.itens || []).map((item, j) => (
+                  <div key={j} className="meta" style={{ marginTop: 4 }}>
+                    {item.opcoes.map((op, k) => (
+                      <span key={k}>
+                        {k > 0 && ' ou '}
+                        {op.nome} ({op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade})
+                      </span>
+                    ))}
+                  </div>
+                ))}
+                {/* Compatibilidade com dietas antigas em texto livre */}
+                {!r.itens && !banco && r.alimentos && <div className="meta">{r.alimentos}</div>}
+              </div>
+            );
+          })}
           {d.observacoes && <p className="meta">{d.observacoes}</p>}
         </div>
       ))}
@@ -207,74 +179,29 @@ export default function Dietas() {
             <h1>Nova dieta</h1>
             {erro && <div className="error-msg">{erro}</div>}
             <form onSubmit={salvar}>
+              {modelos.length > 0 && (
+                <>
+                  <label>Começar a partir de um modelo</label>
+                  <select defaultValue="" onChange={usarModelo}>
+                    <option value="">Selecione um modelo pronto...</option>
+                    {modelos.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                  </select>
+                </>
+              )}
+
               <label>Nome da dieta</label>
               <input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Dieta de cutting" />
 
-              <label>Refeições deste plano</label>
-              <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'flex-start', gap: 6 }}>
-                {Object.entries(TIPOS_REFEICAO).map(([tipo, label]) => (
-                  <button type="button" key={tipo}
-                    className={form.refeicoesPorTipo[tipo] ? 'btn-primary btn-small' : 'btn-secondary btn-small'}
-                    onClick={() => alternarTipo(tipo)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {tiposAtivos.map((tipo) => (
-                <div key={tipo} className="card" style={{ background: 'var(--bg)', marginTop: 12 }}>
-                  <div className="name">{TIPOS_REFEICAO[tipo]}</div>
-
-                  {form.refeicoesPorTipo[tipo].map((item) => (
-                    <div key={item.id} className="card" style={{ marginTop: 8 }}>
-                      {item.opcoes.map((op, idx) => (
-                        <div key={idx} style={{ marginBottom: idx < item.opcoes.length - 1 ? 10 : 0 }}>
-                          {idx > 0 && <div className="meta" style={{ marginBottom: 4 }}>ou:</div>}
-                          <div className="row" style={{ gap: 6 }}>
-                            <select
-                              style={{ flex: 2 }}
-                              value={op.alimentoId}
-                              onChange={(e) => selecionarAlimento(tipo, item.id, idx, e.target.value)}
-                            >
-                              <option value="">Selecione um alimento...</option>
-                              {catalogo.map((al) => <option key={al.id} value={al.id}>{al.nome}</option>)}
-                            </select>
-                            <input
-                              type="number" min="0" step="0.1" style={{ flex: 1 }}
-                              value={op.quantidade}
-                              onChange={(e) => setOpcao(tipo, item.id, idx, 'quantidade', e.target.value)}
-                              placeholder="qtd"
-                            />
-                            <select
-                              style={{ flex: 1 }}
-                              value={op.unidade}
-                              onChange={(e) => setOpcao(tipo, item.id, idx, 'unidade', e.target.value)}
-                            >
-                              {Object.entries(UNIDADES_ALIMENTO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                            </select>
-                            {item.opcoes.length > 1 && (
-                              <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(tipo, item.id, idx)}>×</button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className="row" style={{ marginTop: 8, gap: 6 }}>
-                        <button type="button" className="btn-secondary btn-small" onClick={() => addOpcao(tipo, item.id)}>
-                          🔀 Opção de troca
-                        </button>
-                        <button type="button" className="btn-danger btn-small" onClick={() => removerItem(tipo, item.id)}>
-                          Remover item
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button type="button" className="btn-secondary btn-small" style={{ marginTop: 8 }} onClick={() => addItem(tipo)}>
-                    + Item nesta refeição
-                  </button>
-                </div>
-              ))}
+              <ConstrutorDieta
+                tiposAtivos={tiposAtivos}
+                onToggleTipo={toggleTipo}
+                refeicoesPorTipo={form.refeicoesPorTipo}
+                onSetItens={setItens}
+                bancoPorTipo={form.bancoPorTipo}
+                onSetBanco={setBanco}
+                bancos={bancos}
+                catalogo={catalogo}
+              />
 
               <label>Observações gerais</label>
               <textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />

@@ -114,6 +114,18 @@ export const api = {
   criarAlimento: (dados) => request('/alimentos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
+
+  // Bancos de opções (grupos de refeições completas intercambiáveis)
+  listarBancosOpcoes: () => request('/bancos-opcoes'),
+  criarBancoOpcoes: (dados) => request('/bancos-opcoes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarBancoOpcoes: (id, dados) => request(`/bancos-opcoes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerBancoOpcoes: (id) => request(`/bancos-opcoes/${id}`, { method: 'DELETE' }),
+
+  // Modelos de dieta reutilizáveis
+  listarModelosDieta: () => request('/modelos-dieta'),
+  criarModeloDieta: (dados) => request('/modelos-dieta', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarModeloDieta: (id, dados) => request(`/modelos-dieta/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerModeloDieta: (id) => request(`/modelos-dieta/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {

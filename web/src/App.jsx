@@ -13,6 +13,8 @@ import Pacotes from './pages/Pacotes.jsx';
 import Mensagens from './pages/Mensagens.jsx';
 import Dietas from './pages/Dietas.jsx';
 import Alimentos from './pages/Alimentos.jsx';
+import BancosOpcoes from './pages/BancosOpcoes.jsx';
+import ModelosDieta from './pages/ModelosDieta.jsx';
 import Portal from './pages/Portal.jsx';
 
 const links = [
@@ -26,6 +28,8 @@ const links = [
   { to: '/pagamentos', label: 'Cobranças' },
   { to: '/dietas', label: 'Dieta' },
   { to: '/alimentos', label: 'Alimentos' },
+  { to: '/bancos-opcoes', label: 'Bancos' },
+  { to: '/modelos-dieta', label: 'Modelos' },
   { to: '/mensagens', label: 'Mensagens' },
 ];
 
@@ -88,6 +92,8 @@ export default function App() {
           <Route path="/pacotes" element={<Pacotes />} />
           <Route path="/dietas" element={<Dietas />} />
           <Route path="/alimentos" element={<Alimentos />} />
+          <Route path="/bancos-opcoes" element={<BancosOpcoes />} />
+          <Route path="/modelos-dieta" element={<ModelosDieta />} />
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/portal/:alunoId" element={<Portal />} />
         </Routes>
