@@ -23,6 +23,7 @@ const defaultData = {
   pacotes: [],
   mensagens: [],
   dietas: [],
+  alimentos: [],
 };
 
 export const db = new Low(adapter, defaultData);

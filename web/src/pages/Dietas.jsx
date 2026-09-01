@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
 
-const REFEICAO_VAZIA = { nome: '', horario: '', alimentos: '', observacao: '' };
-const FORM_VAZIO = { nome: '', refeicoes: [{ ...REFEICAO_VAZIA }], observacoes: '' };
+function novoItem() {
+  return { id: crypto.randomUUID(), opcoes: [{ alimentoId: '', nome: '', quantidade: '', unidade: 'g' }] };
+}
+
+function formVazio() {
+  return { nome: '', observacoes: '', refeicoesPorTipo: {} };
+}
 
 export default function Dietas() {
   const [alunos, setAlunos] = useState([]);
   const [alunoId, setAlunoId] = useState('');
   const [dietas, setDietas] = useState([]);
+  const [catalogo, setCatalogo] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
-  const [form, setForm] = useState(FORM_VAZIO);
+  const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
 
   useEffect(() => {
@@ -17,6 +23,7 @@ export default function Dietas() {
       setAlunos(lista);
       if (lista.length && !alunoId) setAlunoId(lista[0].id);
     });
+    api.listarAlimentos().then(setCatalogo);
   }, []);
 
   async function carregar(id) {
@@ -26,32 +33,110 @@ export default function Dietas() {
   useEffect(() => { if (alunoId) carregar(alunoId); }, [alunoId]);
 
   function abrirNovo() {
-    setForm(FORM_VAZIO);
+    setForm(formVazio());
     setErro('');
     setModalAberto(true);
   }
 
-  function setRefeicao(i, campo, valor) {
+  function alternarTipo(tipo) {
     setForm((f) => {
-      const refeicoes = [...f.refeicoes];
-      refeicoes[i] = { ...refeicoes[i], [campo]: valor };
-      return { ...f, refeicoes };
+      const refeicoesPorTipo = { ...f.refeicoesPorTipo };
+      if (refeicoesPorTipo[tipo]) {
+        delete refeicoesPorTipo[tipo];
+      } else {
+        refeicoesPorTipo[tipo] = [novoItem()];
+      }
+      return { ...f, refeicoesPorTipo };
     });
   }
 
-  function addRefeicao() {
-    setForm((f) => ({ ...f, refeicoes: [...f.refeicoes, { ...REFEICAO_VAZIA }] }));
+  function addItem(tipo) {
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [...f.refeicoesPorTipo[tipo], novoItem()] },
+    }));
   }
 
-  function removerRefeicao(i) {
-    setForm((f) => ({ ...f, refeicoes: f.refeicoes.filter((_, idx) => idx !== i) }));
+  function removerItem(tipo, itemId) {
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: f.refeicoesPorTipo[tipo].filter((it) => it.id !== itemId) },
+    }));
+  }
+
+  function addOpcao(tipo, itemId) {
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: {
+        ...f.refeicoesPorTipo,
+        [tipo]: f.refeicoesPorTipo[tipo].map((it) =>
+          it.id === itemId
+            ? { ...it, opcoes: [...it.opcoes, { alimentoId: '', nome: '', quantidade: '', unidade: 'g' }] }
+            : it
+        ),
+      },
+    }));
+  }
+
+  function removerOpcao(tipo, itemId, idx) {
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: {
+        ...f.refeicoesPorTipo,
+        [tipo]: f.refeicoesPorTipo[tipo].map((it) =>
+          it.id === itemId ? { ...it, opcoes: it.opcoes.filter((_, i) => i !== idx) } : it
+        ),
+      },
+    }));
+  }
+
+  function setOpcao(tipo, itemId, idx, campo, valor) {
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: {
+        ...f.refeicoesPorTipo,
+        [tipo]: f.refeicoesPorTipo[tipo].map((it) => {
+          if (it.id !== itemId) return it;
+          const opcoes = [...it.opcoes];
+          opcoes[idx] = { ...opcoes[idx], [campo]: valor };
+          return { ...it, opcoes };
+        }),
+      },
+    }));
+  }
+
+  function selecionarAlimento(tipo, itemId, idx, alimentoId) {
+    const alimento = catalogo.find((a) => a.id === alimentoId);
+    setForm((f) => ({
+      ...f,
+      refeicoesPorTipo: {
+        ...f.refeicoesPorTipo,
+        [tipo]: f.refeicoesPorTipo[tipo].map((it) => {
+          if (it.id !== itemId) return it;
+          const opcoes = [...it.opcoes];
+          opcoes[idx] = alimento
+            ? { alimentoId: alimento.id, nome: alimento.nome, quantidade: alimento.quantidadePadrao ?? '', unidade: alimento.unidade }
+            : { alimentoId: '', nome: '', quantidade: '', unidade: 'g' };
+          return { ...it, opcoes };
+        }),
+      },
+    }));
   }
 
   async function salvar(e) {
     e.preventDefault();
     setErro('');
     try {
-      await api.criarDieta({ ...form, alunoId });
+      const refeicoes = Object.entries(form.refeicoesPorTipo)
+        .map(([tipo, itens]) => ({
+          tipo,
+          nome: TIPOS_REFEICAO[tipo],
+          itens: itens
+            .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.alimentoId) }))
+            .filter((it) => it.opcoes.length > 0),
+        }))
+        .filter((r) => r.itens.length > 0);
+      await api.criarDieta({ alunoId, nome: form.nome, observacoes: form.observacoes, refeicoes });
       setModalAberto(false);
       await carregar(alunoId);
     } catch (e) {
@@ -65,10 +150,12 @@ export default function Dietas() {
     await carregar(alunoId);
   }
 
+  const tiposAtivos = Object.keys(TIPOS_REFEICAO).filter((t) => form.refeicoesPorTipo[t]);
+
   return (
     <div>
       <h1>Dieta</h1>
-      <p className="subtitle">Plano alimentar do cliente dentro da plataforma</p>
+      <p className="subtitle">Plano alimentar do cliente, montado a partir do catálogo de alimentos</p>
 
       <div className="row" style={{ marginBottom: 12, gap: 8 }}>
         <select value={alunoId} onChange={(e) => setAlunoId(e.target.value)}>
@@ -76,6 +163,15 @@ export default function Dietas() {
         </select>
         <button className="btn-primary" onClick={abrirNovo} disabled={!alunoId}>+ Dieta</button>
       </div>
+
+      {catalogo.length === 0 && (
+        <div className="card">
+          <p className="meta">
+            Você ainda não tem alimentos cadastrados no catálogo. Cadastre em <strong>Alimentos</strong> as
+            opções que quer usar (ex: peito de frango, arroz, batata doce) para montar as dietas mais rápido.
+          </p>
+        </div>
+      )}
 
       {dietas.length === 0 && <p className="empty">Nenhuma dieta cadastrada para este aluno.</p>}
       {dietas.map((d) => (
@@ -85,12 +181,20 @@ export default function Dietas() {
             <button className="btn-danger btn-small" onClick={() => excluir(d)}>Excluir</button>
           </div>
           {(d.refeicoes || []).map((r, i) => (
-            <div key={i} className="list-item">
-              <div>
-                <div className="name">{r.nome} {r.horario && `· ${r.horario}`}</div>
-                <div className="meta">{r.alimentos}</div>
-                {r.observacao && <div className="meta">{r.observacao}</div>}
-              </div>
+            <div key={i} className="card" style={{ background: 'var(--bg)' }}>
+              <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+              {(r.itens || []).map((item, j) => (
+                <div key={j} className="meta" style={{ marginTop: 4 }}>
+                  {item.opcoes.map((op, k) => (
+                    <span key={k}>
+                      {k > 0 && ' ou '}
+                      {op.nome} ({op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade})
+                    </span>
+                  ))}
+                </div>
+              ))}
+              {/* Compatibilidade com dietas antigas em texto livre */}
+              {!r.itens && r.alimentos && <div className="meta">{r.alimentos}</div>}
             </div>
           ))}
           {d.observacoes && <p className="meta">{d.observacoes}</p>}
@@ -106,22 +210,71 @@ export default function Dietas() {
               <label>Nome da dieta</label>
               <input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Dieta de cutting" />
 
-              <h2>Refeições</h2>
-              {form.refeicoes.map((r, i) => (
-                <div key={i} className="card" style={{ background: 'var(--bg)' }}>
-                  <div className="row">
-                    <label style={{ margin: 0 }}>Refeição {i + 1}</label>
-                    {form.refeicoes.length > 1 && (
-                      <button type="button" className="btn-danger btn-small" onClick={() => removerRefeicao(i)}>Remover</button>
-                    )}
-                  </div>
-                  <input placeholder="Nome (ex: Café da manhã)" value={r.nome} onChange={(e) => setRefeicao(i, 'nome', e.target.value)} />
-                  <input placeholder="Horário" value={r.horario} onChange={(e) => setRefeicao(i, 'horario', e.target.value)} />
-                  <textarea rows={2} placeholder="Alimentos e quantidades" value={r.alimentos} onChange={(e) => setRefeicao(i, 'alimentos', e.target.value)} />
-                  <input placeholder="Observação" value={r.observacao} onChange={(e) => setRefeicao(i, 'observacao', e.target.value)} />
+              <label>Refeições deste plano</label>
+              <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'flex-start', gap: 6 }}>
+                {Object.entries(TIPOS_REFEICAO).map(([tipo, label]) => (
+                  <button type="button" key={tipo}
+                    className={form.refeicoesPorTipo[tipo] ? 'btn-primary btn-small' : 'btn-secondary btn-small'}
+                    onClick={() => alternarTipo(tipo)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {tiposAtivos.map((tipo) => (
+                <div key={tipo} className="card" style={{ background: 'var(--bg)', marginTop: 12 }}>
+                  <div className="name">{TIPOS_REFEICAO[tipo]}</div>
+
+                  {form.refeicoesPorTipo[tipo].map((item) => (
+                    <div key={item.id} className="card" style={{ marginTop: 8 }}>
+                      {item.opcoes.map((op, idx) => (
+                        <div key={idx} style={{ marginBottom: idx < item.opcoes.length - 1 ? 10 : 0 }}>
+                          {idx > 0 && <div className="meta" style={{ marginBottom: 4 }}>ou:</div>}
+                          <div className="row" style={{ gap: 6 }}>
+                            <select
+                              style={{ flex: 2 }}
+                              value={op.alimentoId}
+                              onChange={(e) => selecionarAlimento(tipo, item.id, idx, e.target.value)}
+                            >
+                              <option value="">Selecione um alimento...</option>
+                              {catalogo.map((al) => <option key={al.id} value={al.id}>{al.nome}</option>)}
+                            </select>
+                            <input
+                              type="number" min="0" step="0.1" style={{ flex: 1 }}
+                              value={op.quantidade}
+                              onChange={(e) => setOpcao(tipo, item.id, idx, 'quantidade', e.target.value)}
+                              placeholder="qtd"
+                            />
+                            <select
+                              style={{ flex: 1 }}
+                              value={op.unidade}
+                              onChange={(e) => setOpcao(tipo, item.id, idx, 'unidade', e.target.value)}
+                            >
+                              {Object.entries(UNIDADES_ALIMENTO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                            </select>
+                            {item.opcoes.length > 1 && (
+                              <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(tipo, item.id, idx)}>×</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="row" style={{ marginTop: 8, gap: 6 }}>
+                        <button type="button" className="btn-secondary btn-small" onClick={() => addOpcao(tipo, item.id)}>
+                          🔀 Opção de troca
+                        </button>
+                        <button type="button" className="btn-danger btn-small" onClick={() => removerItem(tipo, item.id)}>
+                          Remover item
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button type="button" className="btn-secondary btn-small" style={{ marginTop: 8 }} onClick={() => addItem(tipo)}>
+                    + Item nesta refeição
+                  </button>
                 </div>
               ))}
-              <button type="button" className="btn-secondary btn-small" onClick={addRefeicao}>+ Refeição</button>
 
               <label>Observações gerais</label>
               <textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />

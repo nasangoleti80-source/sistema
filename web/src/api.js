@@ -108,6 +108,12 @@ export const api = {
   criarDieta: (dados) => request('/dietas', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarDieta: (id, dados) => request(`/dietas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' }),
+
+  // Alimentos (catálogo para montar as dietas)
+  listarAlimentos: () => request('/alimentos'),
+  criarAlimento: (dados) => request('/alimentos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -203,6 +209,29 @@ export const DIAS_SEMANA = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quart
 export const INTENSIDADES_TREINO = { leve: 'Leve', moderada: 'Moderada', intensa: 'Intensa', muito_intensa: 'Muito intensa' };
 
 export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parcelado)', dinheiro: 'Dinheiro' };
+
+export const TIPOS_REFEICAO = {
+  cafe_manha: 'Café da manhã',
+  pre_treino: 'Pré-treino',
+  cafe_manha_2: 'Café da manhã 2',
+  cafe_tarde: 'Café da tarde',
+  cafe_tarde_2: 'Café da tarde 2',
+  almoco: 'Almoço',
+  janta: 'Janta',
+  ceia: 'Ceia',
+};
+
+export const UNIDADES_ALIMENTO = {
+  g: 'g', ml: 'ml', unidade: 'unidade(s)', fatia: 'fatia(s)',
+  colher_sopa: 'colher(es) de sopa', colher_cha: 'colher(es) de chá',
+  xicara: 'xícara(s)', porcao: 'porção',
+};
+
+export const CATEGORIAS_ALIMENTO = {
+  proteina: 'Proteína', carboidrato: 'Carboidrato', gordura: 'Gordura',
+  fruta: 'Fruta', vegetal: 'Vegetal/legume', laticinio: 'Laticínio',
+  suplemento: 'Suplemento', outro: 'Outro',
+};
 
 export function formatarData(data) {
   if (!data) return '';

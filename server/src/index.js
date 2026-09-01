@@ -16,6 +16,7 @@ import registrosTreinoRouter from './routes/registrosTreino.js';
 import pacotesRouter from './routes/pacotes.js';
 import mensagensRouter from './routes/mensagens.js';
 import dietasRouter from './routes/dietas.js';
+import alimentosRouter from './routes/alimentos.js';
 import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,7 @@ app.use('/api/registros-treino', registrosTreinoRouter);
 app.use('/api/pacotes', pacotesRouter);
 app.use('/api/mensagens', mensagensRouter);
 app.use('/api/dietas', dietasRouter);
+app.use('/api/alimentos', alimentosRouter);
 
 // Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
 // reaproveitado, então o navegador pode guardar para sempre.

@@ -1,7 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
-import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO } from '../api.js';
+import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
+
+function ItemDieta({ item }) {
+  const [escolhida, setEscolhida] = useState(0);
+  const opcoes = item.opcoes || [];
+  if (opcoes.length === 0) return null;
+  const atual = opcoes[escolhida] || opcoes[0];
+  return (
+    <div className="list-item">
+      <div style={{ flex: 1 }}>
+        <div className="name">{atual.nome}</div>
+        <div className="meta">{atual.quantidade} {UNIDADES_ALIMENTO[atual.unidade] || atual.unidade}</div>
+      </div>
+      {opcoes.length > 1 && (
+        <select value={escolhida} onChange={(e) => setEscolhida(Number(e.target.value))} style={{ width: 'auto' }}>
+          {opcoes.map((op, i) => <option key={i} value={i}>{op.nome}</option>)}
+        </select>
+      )}
+    </div>
+  );
+}
 
 export default function Portal() {
   const { alunoId } = useParams();
@@ -168,8 +188,10 @@ export default function Portal() {
             <div className="card" key={d.id}>
               <div className="name">{d.nome}</div>
               {(d.refeicoes || []).map((r, i) => (
-                <div key={i} className="list-item">
-                  <div><div className="name">{r.nome} {r.horario && `· ${r.horario}`}</div><div className="meta">{r.alimentos}</div></div>
+                <div key={i} className="card" style={{ background: 'var(--bg)' }}>
+                  <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+                  {(r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+                  {!r.itens && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}
             </div>

@@ -12,6 +12,7 @@ import Endurance from './pages/Endurance.jsx';
 import Pacotes from './pages/Pacotes.jsx';
 import Mensagens from './pages/Mensagens.jsx';
 import Dietas from './pages/Dietas.jsx';
+import Alimentos from './pages/Alimentos.jsx';
 import Portal from './pages/Portal.jsx';
 
 const links = [
@@ -24,6 +25,7 @@ const links = [
   { to: '/pacotes', label: 'Pacotes' },
   { to: '/pagamentos', label: 'Cobranças' },
   { to: '/dietas', label: 'Dieta' },
+  { to: '/alimentos', label: 'Alimentos' },
   { to: '/mensagens', label: 'Mensagens' },
 ];
 
@@ -85,6 +87,7 @@ export default function App() {
           <Route path="/endurance" element={<Endurance />} />
           <Route path="/pacotes" element={<Pacotes />} />
           <Route path="/dietas" element={<Dietas />} />
+          <Route path="/alimentos" element={<Alimentos />} />
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/portal/:alunoId" element={<Portal />} />
         </Routes>
