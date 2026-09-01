@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   api, NIVEIS_ENDURANCE, MODALIDADES_ENDURANCE, OBJETIVOS_ENDURANCE,
   PERIODIZACOES_ENDURANCE, DIAS_SEMANA,
@@ -20,6 +21,7 @@ const CONFIG_VAZIA = {
 };
 
 export default function Endurance() {
+  const [searchParams] = useSearchParams();
   const [alunos, setAlunos] = useState([]);
   const [alunoId, setAlunoId] = useState('');
   const [planos, setPlanos] = useState([]);
@@ -33,7 +35,7 @@ export default function Endurance() {
   useEffect(() => {
     api.listarAlunos(true).then((lista) => {
       setAlunos(lista);
-      if (lista.length && !alunoId) setAlunoId(lista[0].id);
+      if (lista.length && !alunoId) setAlunoId(searchParams.get('alunoId') || lista[0].id);
     });
   }, []);
 

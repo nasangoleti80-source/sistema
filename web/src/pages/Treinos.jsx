@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   api, OBJETIVOS_TREINO, TIPOS_PERIODIZACAO, NIVEIS_ALUNO, DIVISOES_TREINO,
   DURACOES_SESSAO, SEMANAS_MESOCICLO, MODALIDADES_TREINO, OPCOES_AEROBIO,
@@ -21,6 +22,7 @@ const CONFIG_VAZIA = {
 };
 
 export default function Treinos() {
+  const [searchParams] = useSearchParams();
   const [alunos, setAlunos] = useState([]);
   const [alunoId, setAlunoId] = useState('');
   const [treinos, setTreinos] = useState([]);
@@ -42,7 +44,7 @@ export default function Treinos() {
   useEffect(() => {
     api.listarAlunos(true).then((lista) => {
       setAlunos(lista);
-      if (lista.length && !alunoId) setAlunoId(lista[0].id);
+      if (lista.length && !alunoId) setAlunoId(searchParams.get('alunoId') || lista[0].id);
     });
   }, []);
 

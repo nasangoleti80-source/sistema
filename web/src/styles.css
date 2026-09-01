@@ -216,6 +216,70 @@ p.subtitle {
   gap: 10px;
 }
 
+/* -------------------------------------------------------- perfil do aluno */
+
+.perfil-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.avatar-aluno {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fonte-black);
+  font-size: 18px;
+  color: var(--texto-fraco);
+}
+
+.acoes-rapidas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.acao-rapida {
+  display: block;
+  text-align: left;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  padding: 14px;
+  text-decoration: none;
+  color: var(--texto);
+  cursor: pointer;
+  width: 100%;
+}
+
+.acao-rapida:hover {
+  border-color: var(--azul-claro);
+}
+
+.acao-rapida-icone {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.acao-rapida-titulo {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.acao-rapida-sub {
+  font-size: 12px;
+  color: var(--texto-fraco);
+  margin-top: 2px;
+}
+
 /* -------------------------------------------------------------------- pílulas */
 
 .badge {

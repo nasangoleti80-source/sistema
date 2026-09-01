@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { Assinatura } from './componentes/Marca.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Alunos from './pages/Alunos.jsx';
+import PerfilAluno from './pages/PerfilAluno.jsx';
 import Presenca from './pages/Presenca.jsx';
 import Pagamentos from './pages/Pagamentos.jsx';
 import Avaliacoes from './pages/Avaliacoes.jsx';
@@ -83,6 +84,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/alunos" element={<Alunos />} />
+          <Route path="/alunos/:alunoId" element={<PerfilAluno />} />
           <Route path="/presenca" element={<Presenca />} />
           <Route path="/pagamentos" element={<Pagamentos />} />
           <Route path="/avaliacoes/:alunoId" element={<Avaliacoes />} />

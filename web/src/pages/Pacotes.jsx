@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, FORMAS_PAGAMENTO, formatarMoeda, formatarData } from '../api.js';
 
 const FORM_VAZIO = {
@@ -8,6 +9,7 @@ const FORM_VAZIO = {
 };
 
 export default function Pacotes() {
+  const [searchParams] = useSearchParams();
   const [alunos, setAlunos] = useState([]);
   const [alunoId, setAlunoId] = useState('');
   const [pacotes, setPacotes] = useState([]);
@@ -19,8 +21,12 @@ export default function Pacotes() {
   useEffect(() => {
     api.listarAlunos(true).then((lista) => {
       setAlunos(lista);
-      if (lista.length && !alunoId) setAlunoId(lista[0].id);
+      if (lista.length && !alunoId) setAlunoId(searchParams.get('alunoId') || lista[0].id);
     });
+    if (searchParams.get('novo') === '1') {
+      setForm(FORM_VAZIO);
+      setModalAberto(true);
+    }
   }, []);
 
   async function carregar(id) {

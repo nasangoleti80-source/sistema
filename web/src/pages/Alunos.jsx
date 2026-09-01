@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData } from '../api.js';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const FORM_VAZIO = {
   nome: '',
@@ -19,6 +19,7 @@ const FORM_VAZIO = {
 };
 
 export default function Alunos() {
+  const navigate = useNavigate();
   const [alunos, setAlunos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -135,7 +136,7 @@ export default function Alunos() {
       <div className="card">
         {listaFiltrada.map((aluno) => (
           <div className="list-item" key={aluno.id}>
-            <div onClick={() => abrirEdicao(aluno)} style={{ cursor: 'pointer', flex: 1 }}>
+            <div onClick={() => navigate(`/alunos/${aluno.id}`)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
               <div className="meta">
                 {TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)} ({PERIODICIDADES[aluno.periodicidade] || 'Mensal'})
@@ -144,9 +145,9 @@ export default function Alunos() {
                 {aluno.altura ? ` · ${aluno.altura}cm` : ''}
               </div>
             </div>
-            <Link to={`/avaliacoes/${aluno.id}`} className="btn-secondary btn-small" style={{ textDecoration: 'none' }}>
-              Avaliar
-            </Link>
+            <button className="btn-secondary btn-small" onClick={() => abrirEdicao(aluno)}>
+              Editar
+            </button>
             <button className="btn-secondary btn-small" onClick={() => copiarLinkPortal(aluno)}>
               Link do aluno
             </button>

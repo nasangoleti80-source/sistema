@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
 import ConstrutorDieta from '../components/ConstrutorDieta.jsx';
 
@@ -7,6 +8,7 @@ function formVazio() {
 }
 
 export default function Dietas() {
+  const [searchParams] = useSearchParams();
   const [alunos, setAlunos] = useState([]);
   const [alunoId, setAlunoId] = useState('');
   const [dietas, setDietas] = useState([]);
@@ -20,7 +22,7 @@ export default function Dietas() {
   useEffect(() => {
     api.listarAlunos(true).then((lista) => {
       setAlunos(lista);
-      if (lista.length && !alunoId) setAlunoId(lista[0].id);
+      if (lista.length && !alunoId) setAlunoId(searchParams.get('alunoId') || lista[0].id);
     });
     api.listarAlimentos().then(setCatalogo);
     api.listarBancosOpcoes().then(setBancos);
