@@ -239,6 +239,40 @@ p.subtitle {
   color: var(--texto-fraco);
 }
 
+/* ------------------------------------------------------- carrossel de opções */
+
+.carrossel-opcoes {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.opcao-card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  min-width: 150px;
+  max-width: 220px;
+  text-align: left;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  padding: 10px 12px;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.opcao-card.principal {
+  border-color: var(--azul-claro);
+  background: var(--sup);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 10px 0 12px -10px rgba(0, 0, 0, 0.5);
+}
+
 .acoes-rapidas {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -23,7 +23,7 @@ const DOBRAS_CAMPOS = [
 ];
 
 const MEDIDAS_CAMPOS = [
-  ['pescoco', 'Pescoço'], ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
+  ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
   ['quadril', 'Quadril'], ['bracoDireito', 'Braço direito'], ['bracoEsquerdo', 'Braço esquerdo'],
   ['antebracoDireito', 'Antebraço direito'], ['antebracoEsquerdo', 'Antebraço esquerdo'],
   ['coxaDireita', 'Coxa direita'], ['coxaEsquerda', 'Coxa esquerda'],
@@ -122,6 +122,17 @@ export default function Avaliacoes() {
       };
       reader.readAsDataURL(arquivo);
     });
+  }
+
+  function removerFotoDoForm(indice) {
+    setForm((f) => ({ ...f, fotos: f.fotos.filter((_, i) => i !== indice) }));
+  }
+
+  async function removerFotoSalva(avaliacao, indice) {
+    if (!confirm('Excluir esta foto?')) return;
+    const fotos = avaliacao.fotos.filter((_, i) => i !== indice);
+    await api.atualizarAvaliacao(avaliacao.id, { fotos });
+    await carregar();
   }
 
   async function excluir(id) {
@@ -259,9 +270,23 @@ export default function Avaliacoes() {
           <label>Fotos da avaliação</label>
           <input type="file" accept="image/*" multiple onChange={onFoto} />
           {form.fotos.length > 0 && (
-            <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'flex-start' }}>
               {form.fotos.map((f, i) => (
-                <img key={i} src={f.url} alt="" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8 }} />
+                <div key={i} style={{ position: 'relative' }}>
+                  <img src={f.url} alt="" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8 }} />
+                  <button
+                    type="button"
+                    onClick={() => removerFotoDoForm(i)}
+                    title="Remover foto"
+                    style={{
+                      position: 'absolute', top: -6, right: -6, width: 22, height: 22, padding: 0,
+                      borderRadius: '50%', background: 'var(--negativo)', color: 'var(--noite)',
+                      fontSize: 12, lineHeight: 1, fontWeight: 700,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -302,9 +327,23 @@ export default function Avaliacoes() {
             </div>
           </div>
           {a.fotos?.length > 0 && (
-            <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'flex-start' }}>
               {a.fotos.map((f, i) => (
-                <img key={i} src={f.url} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+                <div key={i} style={{ position: 'relative' }}>
+                  <img src={f.url} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+                  <button
+                    type="button"
+                    onClick={() => removerFotoSalva(a, i)}
+                    title="Remover foto"
+                    style={{
+                      position: 'absolute', top: -6, right: -6, width: 20, height: 20, padding: 0,
+                      borderRadius: '50%', background: 'var(--negativo)', color: 'var(--noite)',
+                      fontSize: 11, lineHeight: 1, fontWeight: 700,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
           )}

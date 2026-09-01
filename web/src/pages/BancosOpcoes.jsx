@@ -73,7 +73,7 @@ export default function BancosOpcoes() {
         .map((o) => ({
           ...o,
           itens: o.itens
-            .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.alimentoId) }))
+            .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.nome?.trim()) }))
             .filter((it) => it.opcoes.length > 0),
         }))
         .filter((o) => o.itens.length > 0);

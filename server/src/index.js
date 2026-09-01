@@ -20,6 +20,7 @@ import dietasRouter from './routes/dietas.js';
 import alimentosRouter from './routes/alimentos.js';
 import bancosOpcoesRouter from './routes/bancosOpcoes.js';
 import modelosDietaRouter from './routes/modelosDieta.js';
+import gruposTrocaRouter from './routes/gruposTroca.js';
 import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +45,7 @@ app.use('/api/dietas', dietasRouter);
 app.use('/api/alimentos', alimentosRouter);
 app.use('/api/bancos-opcoes', bancosOpcoesRouter);
 app.use('/api/modelos-dieta', modelosDietaRouter);
+app.use('/api/grupos-troca', gruposTrocaRouter);
 
 // Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
 // reaproveitado, então o navegador pode guardar para sempre.

@@ -2,39 +2,62 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
+import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
 
 function ItemDieta({ item }) {
   const [escolhida, setEscolhida] = useState(0);
   const opcoes = item.opcoes || [];
   if (opcoes.length === 0) return null;
-  const atual = opcoes[escolhida] || opcoes[0];
-  return (
-    <div className="list-item">
-      <div style={{ flex: 1 }}>
-        <div className="name">{atual.nome}</div>
-        <div className="meta">{atual.quantidade} {UNIDADES_ALIMENTO[atual.unidade] || atual.unidade}</div>
+
+  if (opcoes.length === 1) {
+    const op = opcoes[0];
+    return (
+      <div className="list-item">
+        <div>
+          <div className="name">{op.nome}</div>
+          <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
+        </div>
       </div>
-      {opcoes.length > 1 && (
-        <select value={escolhida} onChange={(e) => setEscolhida(Number(e.target.value))} style={{ width: 'auto' }}>
-          {opcoes.map((op, i) => <option key={i} value={i}>{op.nome}</option>)}
-        </select>
-      )}
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <CarrosselOpcoes
+        opcoes={opcoes}
+        escolhida={escolhida}
+        onEscolher={setEscolhida}
+        render={(op) => (
+          <>
+            <div className="name" style={{ fontSize: 14 }}>{op.nome}</div>
+            <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
+          </>
+        )}
+      />
     </div>
   );
 }
 
 // Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
-// inteira (ex: "Opção 03"), não alimento por alimento.
+// inteira (ex: "Opção 03"), não alimento por alimento. A opção escolhida
+// fica fixa à esquerda como principal; as outras deslizam ao lado.
 function RefeicaoBanco({ banco }) {
   const [escolhida, setEscolhida] = useState(0);
   if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
   const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
   return (
     <div>
-      <select value={escolhida} onChange={(e) => setEscolhida(Number(e.target.value))} style={{ marginBottom: 8 }}>
-        {banco.opcoes.map((o, i) => <option key={i} value={i}>{o.nome}</option>)}
-      </select>
-      {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+      <CarrosselOpcoes
+        opcoes={banco.opcoes}
+        escolhida={escolhida}
+        onEscolher={setEscolhida}
+        render={(o, principal) => (
+          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
+        )}
+      />
+      <div style={{ marginTop: 10 }}>
+        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+      </div>
     </div>
   );
 }

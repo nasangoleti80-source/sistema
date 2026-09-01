@@ -93,7 +93,7 @@ export default function ModelosDieta() {
         .map((tipo) => {
           if (form.bancoPorTipo[tipo]) return { tipo, nome: TIPOS_REFEICAO[tipo], bancoId: form.bancoPorTipo[tipo] };
           const itens = (form.refeicoesPorTipo[tipo] || [])
-            .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.alimentoId) }))
+            .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.nome?.trim()) }))
             .filter((it) => it.opcoes.length > 0);
           return { tipo, nome: TIPOS_REFEICAO[tipo], itens };
         })

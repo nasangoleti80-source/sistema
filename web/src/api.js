@@ -115,6 +115,11 @@ export const api = {
   atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
 
+  // Grupos de troca (blocos prontos de substituição reaproveitáveis num item)
+  listarGruposTroca: () => request('/grupos-troca'),
+  criarGrupoTroca: (dados) => request('/grupos-troca', { method: 'POST', body: JSON.stringify(dados) }),
+  removerGrupoTroca: (id) => request(`/grupos-troca/${id}`, { method: 'DELETE' }),
+
   // Bancos de opções (grupos de refeições completas intercambiáveis)
   listarBancosOpcoes: () => request('/bancos-opcoes'),
   criarBancoOpcoes: (dados) => request('/bancos-opcoes', { method: 'POST', body: JSON.stringify(dados) }),
