@@ -193,9 +193,14 @@ export const NIVEIS_ATIVIDADE = {
 };
 
 export const GRUPOS_MUSCULARES = {
-  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', biceps: 'Bíceps', triceps: 'Tríceps',
-  antebraco: 'Antebraço', quadriceps: 'Quadríceps', posterior: 'Posterior de coxa',
-  gluteo: 'Glúteo', panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio', outro: 'Outro',
+  peitoral: 'Peitoral', dorsais: 'Dorsais', trapezio: 'Trapézio', lombar: 'Lombar',
+  deltoide_anterior: 'Deltoide Anterior', deltoide_medial: 'Deltoide Medial', deltoide_posterior: 'Deltoide Posterior',
+  biceps: 'Bíceps', triceps: 'Tríceps', antebraco: 'Antebraço',
+  quadriceps: 'Quadríceps', isquiotibiais: 'Isquiotibiais', gluteo: 'Glúteo', adutor: 'Adutor',
+  panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio',
+  // mantidos por compatibilidade com exercícios cadastrados antes desta lista ficar mais detalhada
+  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', posterior: 'Posterior de coxa',
+  outro: 'Outro',
 };
 
 export const METODOS_TREINO = {
@@ -287,6 +292,31 @@ export function volumeDoDia(dia) {
 
 /** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
 export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
+
+/** Total de séries de um dia (soma de todos os exercícios). */
+export function seriesDoDia(dia) {
+  return (dia.exercicios || []).reduce((s, ex) => s + (Number(ex.series) || 0), 0);
+}
+
+/**
+ * Estimativa grosseira de duração da sessão: ~45s de execução por série,
+ * mais o descanso configurado de cada exercício.
+ */
+export function duracaoEstimadaDia(dia) {
+  const segundos = (dia.exercicios || []).reduce((s, ex) => {
+    const series = Number(ex.series) || 1;
+    const descanso = Number(ex.descansoSeg) || 60;
+    return s + series * (45 + descanso);
+  }, 0);
+  return Math.round(segundos / 60);
+}
+
+// Dias da semana no formato curto usado nos círculos "S T Q Q S S D".
+export const DIAS_SEMANA_SESSAO = [
+  { chave: 'seg', letra: 'S' }, { chave: 'ter', letra: 'T' }, { chave: 'qua', letra: 'Q' },
+  { chave: 'qui', letra: 'Q' }, { chave: 'sex', letra: 'S' }, { chave: 'sab', letra: 'S' },
+  { chave: 'dom', letra: 'D' },
+];
 
 /**
  * Liga o exercício do treino ao catálogo pelo nome, para puxar foto, vídeo e a

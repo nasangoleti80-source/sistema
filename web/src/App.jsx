@@ -9,6 +9,8 @@ import Pagamentos from './pages/Pagamentos.jsx';
 import Avaliacoes from './pages/Avaliacoes.jsx';
 import Exercicios from './pages/Exercicios.jsx';
 import Treinos from './pages/Treinos.jsx';
+import TreinoSessoes from './pages/TreinoSessoes.jsx';
+import TreinoSessaoDetalhe from './pages/TreinoSessaoDetalhe.jsx';
 import Endurance from './pages/Endurance.jsx';
 import Pacotes from './pages/Pacotes.jsx';
 import Mensagens from './pages/Mensagens.jsx';
@@ -90,6 +92,8 @@ export default function App() {
           <Route path="/avaliacoes/:alunoId" element={<Avaliacoes />} />
           <Route path="/exercicios" element={<Exercicios />} />
           <Route path="/treinos" element={<Treinos />} />
+          <Route path="/treinos/:treinoId" element={<TreinoSessoes />} />
+          <Route path="/treinos/:treinoId/sessoes/:letra" element={<TreinoSessaoDetalhe />} />
           <Route path="/endurance" element={<Endurance />} />
           <Route path="/pacotes" element={<Pacotes />} />
           <Route path="/dietas" element={<Dietas />} />
