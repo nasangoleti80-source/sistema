@@ -537,6 +537,201 @@ label {
   letter-spacing: 0.02em;
 }
 
+/* -------------------------------------------------------------- calendário/agenda */
+
+.legenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--texto-fraco);
+}
+
+.legenda-bola {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legenda-bola.aula { background: var(--positivo); }
+.legenda-bola.consulta { background: var(--azul-claro); }
+.legenda-bola.falta { background: var(--negativo); }
+
+.calendario {
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.calendario-cabecalho {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--sup);
+  border-bottom: 1px solid var(--linha);
+}
+
+.calendario-cabecalho span {
+  text-align: center;
+  padding: 8px 2px;
+  font-size: 11px;
+  color: var(--texto-fraco);
+  letter-spacing: 0.03em;
+}
+
+.calendario-grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.dia-celula {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 68px;
+  padding: 5px 4px;
+  border: none;
+  border-right: 1px solid var(--linha);
+  border-bottom: 1px solid var(--linha);
+  background: var(--sup-2);
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendario-grade .dia-celula:nth-child(7n) {
+  border-right: none;
+}
+
+.dia-celula:hover {
+  background: var(--sup);
+}
+
+.dia-celula.fora-mes {
+  opacity: 0.35;
+}
+
+.dia-celula.hoje .dia-numero {
+  background: var(--azul-claro);
+  color: #fff;
+  border-radius: 50%;
+}
+
+.dia-numero {
+  font-size: 11px;
+  color: var(--texto-fraco);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dia-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.dia-chip {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  color: #fff;
+}
+
+.dia-chip.aula { background: var(--positivo); }
+.dia-chip.consulta { background: var(--azul-claro); }
+.dia-chip.falta { background: var(--negativo); }
+
+.dia-chip-extra {
+  font-size: 10px;
+  color: var(--texto-tenue);
+}
+
+/* -------------------------------------------------------------------- sub-abas */
+
+.subabas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--linha);
+}
+
+.subabas button {
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--texto-fraco);
+  font-size: 13px;
+  border-radius: 0;
+}
+
+.subabas button.ativa {
+  color: var(--texto);
+  border-bottom-color: var(--azul-claro);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------- mensagens prontas */
+
+.categorias-mensagem {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.categorias-mensagem button {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--sup);
+  border-color: var(--linha);
+  color: var(--texto-fraco);
+  font-size: 12px;
+}
+
+.categorias-mensagem button.ativa {
+  background: var(--azul-claro);
+  border-color: var(--azul-claro);
+  color: #fff;
+}
+
+.lista-mensagens-prontas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.mensagem-pronta-item {
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.mensagem-pronta-item:hover {
+  color: var(--texto);
+  border-color: var(--azul-claro);
+}
+
 /* -------------------------------------------------------------------- flutuante */
 
 .fab {

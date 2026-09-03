@@ -1,14 +1,50 @@
-import { useEffect, useState } from 'react';
-import { api, mesAtual, formatarMesLabel as formatarMes, somarMes } from '../api.js';
+import { useEffect, useMemo, useState } from 'react';
+import { api, mesAtual, formatarMesLabel as formatarMes, somarMes, TIPOS_AULA } from '../api.js';
 
-function formatarData(dataStr) {
-  const [ano, mes, dia] = dataStr.split('-');
-  return `${dia}/${mes}`;
+const DIAS_CABECALHO = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+function paraISO(ano, mesIdx, dia) {
+  return `${ano}-${pad(mesIdx + 1)}-${pad(dia)}`;
+}
+
+function hojeISO() {
+  const h = new Date();
+  return paraISO(h.getFullYear(), h.getMonth(), h.getDate());
+}
+
+// Monta a grade do mês (linhas de 7 dias), incluindo os dias das pontas dos
+// meses vizinhos para fechar a semana, como numa agenda de verdade.
+function montarGrade(mesStr) {
+  const [ano, mesNum] = mesStr.split('-').map(Number);
+  const mesIdx = mesNum - 1;
+  const primeiroDiaSemana = new Date(ano, mesIdx, 1).getDay();
+  const totalDiasMes = new Date(ano, mesIdx + 1, 0).getDate();
+  const diasMesAnterior = new Date(ano, mesIdx, 0).getDate();
+
+  const celulas = [];
+  for (let i = 0; i < primeiroDiaSemana; i++) {
+    const dia = diasMesAnterior - primeiroDiaSemana + i + 1;
+    const dataRef = new Date(ano, mesIdx - 1, dia);
+    celulas.push({ dia, iso: paraISO(dataRef.getFullYear(), dataRef.getMonth(), dia), foraDoMes: true });
+  }
+  for (let dia = 1; dia <= totalDiasMes; dia++) {
+    celulas.push({ dia, iso: paraISO(ano, mesIdx, dia), foraDoMes: false });
+  }
+  while (celulas.length % 7 !== 0) {
+    const dia = celulas.length - (primeiroDiaSemana + totalDiasMes) + 1;
+    const dataRef = new Date(ano, mesIdx + 1, dia);
+    celulas.push({ dia, iso: paraISO(dataRef.getFullYear(), dataRef.getMonth(), dia), foraDoMes: true });
+  }
+  return celulas;
 }
 
 const FORM_VAZIO = {
   alunoId: '',
-  data: new Date().toISOString().slice(0, 10),
+  data: hojeISO(),
   tipo: 'presencial',
   realizada: true,
   observacao: '',
@@ -19,9 +55,10 @@ export default function Presenca() {
   const [alunos, setAlunos] = useState([]);
   const [aulas, setAulas] = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [form, setForm] = useState(FORM_VAZIO);
   const [erro, setErro] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [diaSelecionado, setDiaSelecionado] = useState(null); // { iso } — popover do dia
+  const [form, setForm] = useState(FORM_VAZIO);
 
   async function carregar() {
     setCarregando(true);
@@ -44,8 +81,27 @@ export default function Presenca() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mes]);
 
-  function abrirNovo(alunoId) {
-    setForm({ ...FORM_VAZIO, alunoId: alunoId || alunos[0]?.id || '' });
+  const grade = useMemo(() => montarGrade(mes), [mes]);
+
+  const aulasPorDia = useMemo(() => {
+    const mapa = new Map();
+    for (const a of aulas) {
+      if (!mapa.has(a.data)) mapa.set(a.data, []);
+      mapa.get(a.data).push(a);
+    }
+    return mapa;
+  }, [aulas]);
+
+  function nomeAluno(id) {
+    return alunos.find((a) => a.id === id)?.nome || '(aluno removido)';
+  }
+
+  function abrirDia(iso) {
+    setDiaSelecionado(iso);
+  }
+
+  function abrirNovoNoDia(iso) {
+    setForm({ ...FORM_VAZIO, alunoId: alunos[0]?.id || '', data: iso });
     setErro('');
     setModalAberto(true);
   }
@@ -68,21 +124,21 @@ export default function Presenca() {
   }
 
   async function excluir(aula) {
-    if (!confirm('Remover este registro de aula?')) return;
+    if (!confirm('Remover este registro da agenda?')) return;
     await api.removerAula(aula.id);
     await carregar();
   }
 
-  function nomeAluno(id) {
-    return alunos.find((a) => a.id === id)?.nome || '(aluno removido)';
-  }
+  const diaAberto = diaSelecionado ? aulasPorDia.get(diaSelecionado) || [] : [];
 
   return (
     <div>
       <h1>
-        Quem <em>treinou</em>
+        Sua <em>agenda</em>
       </h1>
-      <p className="subtitle">Registre a aula assim que ela acontece. No fim do mês a conta já está fechada.</p>
+      <p className="subtitle">
+        Toque num dia para ver ou marcar consultas, aulas e faltas — como numa agenda de verdade.
+      </p>
 
       <div className="month-nav">
         <button onClick={() => setMes(somarMes(mes, -1))}>‹</button>
@@ -91,61 +147,103 @@ export default function Presenca() {
       </div>
 
       {erro && <div className="error-msg">{erro}</div>}
-      {carregando && <p className="empty">Carregando...</p>}
 
       {!carregando && alunos.length === 0 && (
-        <p className="empty">Cadastre um aluno na aba Alunos para começar a registrar aula.</p>
+        <p className="empty">Cadastre um aluno na aba Alunos para começar a usar a agenda.</p>
       )}
 
-      {!carregando && alunos.length > 0 && (
-        <div className="card">
-          {alunos.map((aluno) => {
-            const doAluno = aulas.filter((a) => a.alunoId === aluno.id);
-            const realizadas = doAluno.filter((a) => a.realizada).length;
+      <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span className="legenda-item"><span className="legenda-bola aula" /> Aula</span>
+        <span className="legenda-item"><span className="legenda-bola consulta" /> Consulta</span>
+        <span className="legenda-item"><span className="legenda-bola falta" /> Falta</span>
+      </div>
+
+      <div className="calendario">
+        <div className="calendario-cabecalho">
+          {DIAS_CABECALHO.map((d) => (
+            <span key={d}>{d}</span>
+          ))}
+        </div>
+        <div className="calendario-grade">
+          {grade.map((c) => {
+            const doDia = aulasPorDia.get(c.iso) || [];
+            const ehHoje = c.iso === hojeISO();
             return (
-              <div className="list-item" key={aluno.id}>
-                <div>
-                  <div className="name">{aluno.nome}</div>
-                  <div className="meta">
-                    <span className="num">{realizadas}</span> aula(s) neste mês
-                  </div>
-                </div>
-                <button className="btn-primary btn-small" onClick={() => abrirNovo(aluno.id)}>+ Aula</button>
-              </div>
+              <button
+                type="button"
+                key={c.iso + (c.foraDoMes ? '-fora' : '')}
+                className={`dia-celula ${c.foraDoMes ? 'fora-mes' : ''} ${ehHoje ? 'hoje' : ''}`}
+                onClick={() => abrirDia(c.iso)}
+              >
+                <span className="dia-numero">{c.dia}</span>
+                <span className="dia-chips">
+                  {doDia.slice(0, 3).map((a) => (
+                    <span
+                      key={a.id}
+                      className={`dia-chip ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : 'aula'}`}
+                    >
+                      {nomeAluno(a.alunoId)}
+                    </span>
+                  ))}
+                  {doDia.length > 3 && <span className="dia-chip-extra">+{doDia.length - 3}</span>}
+                </span>
+              </button>
             );
           })}
         </div>
-      )}
+      </div>
 
-      {!carregando && aulas.length > 0 && (
-        <>
-          <h2>Histórico do mês</h2>
-          <div className="card">
-            {aulas.map((aula) => (
-              <div className="list-item" key={aula.id}>
-                <div onClick={() => alternarRealizada(aula)} style={{ cursor: 'pointer', flex: 1 }}>
-                  <div className="name">
-                    <span className="num">{formatarData(aula.data)}</span> · {nomeAluno(aula.alunoId)}
+      {diaSelecionado && (
+        <div className="modal-backdrop" onClick={() => setDiaSelecionado(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h1>{diaSelecionado.split('-').reverse().join('/')}</h1>
+
+            {diaAberto.length === 0 && <p className="empty">Nada marcado neste dia ainda.</p>}
+
+            {diaAberto.length > 0 && (
+              <div className="card">
+                {diaAberto.map((aula) => (
+                  <div className="list-item" key={aula.id}>
+                    <div onClick={() => alternarRealizada(aula)} style={{ cursor: 'pointer', flex: 1 }}>
+                      <div className="name">{nomeAluno(aula.alunoId)}</div>
+                      <div className="meta">
+                        {TIPOS_AULA[aula.tipo] || aula.tipo}
+                        {' · '}
+                        <span className={aula.realizada ? 'badge pago' : 'badge atrasado'}>
+                          {aula.realizada ? 'Realizada' : 'Faltou'}
+                        </span>
+                      </div>
+                      {aula.observacao && <div className="meta">{aula.observacao}</div>}
+                    </div>
+                    <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
                   </div>
-                  <div className="meta">
-                    {aula.tipo === 'presencial' ? 'Aula presencial' : 'Ajuste de consultoria'}
-                    {' · '}
-                    <span className={aula.realizada ? 'badge pago' : 'badge atrasado'}>
-                      {aula.realizada ? 'Realizada' : 'Faltou'}
-                    </span>
-                  </div>
-                </div>
-                <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
+                ))}
               </div>
-            ))}
+            )}
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={alunos.length === 0}
+                onClick={() => {
+                  const iso = diaSelecionado;
+                  setDiaSelecionado(null);
+                  abrirNovoNoDia(iso);
+                }}
+              >
+                + Marcar neste dia
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setDiaSelecionado(null)}>Fechar</button>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       {modalAberto && (
         <div className="modal-backdrop" onClick={() => setModalAberto(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h1>Registrar aula</h1>
+            <h1>Marcar na agenda</h1>
             {erro && <div className="error-msg">{erro}</div>}
             <form onSubmit={salvar}>
               <label>Aluno</label>
@@ -160,13 +258,14 @@ export default function Presenca() {
 
               <label>Tipo</label>
               <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                <option value="presencial">Aula presencial</option>
-                <option value="consultoria_ajuste">Ajuste de consultoria (vídeo/whats)</option>
+                {Object.entries(TIPOS_AULA).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
               </select>
 
               <label className="checkbox-row" style={{ marginTop: 14 }}>
                 <input type="checkbox" checked={form.realizada} onChange={(e) => setForm({ ...form, realizada: e.target.checked })} />
-                Aula foi realizada (desmarque se o aluno faltou)
+                Vai acontecer normalmente (desmarque para já registrar falta)
               </label>
 
               <label>Observação</label>

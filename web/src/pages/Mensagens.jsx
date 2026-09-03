@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, MENSAGENS_PRONTAS } from '../api.js';
+
+const CATEGORIAS = Object.keys(MENSAGENS_PRONTAS);
 
 export default function Mensagens() {
   const [searchParams] = useSearchParams();
@@ -8,6 +10,7 @@ export default function Mensagens() {
   const [alunoId, setAlunoId] = useState('');
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState('');
+  const [categoria, setCategoria] = useState(CATEGORIAS[0]);
   const fimRef = useRef(null);
 
   useEffect(() => {
@@ -32,6 +35,12 @@ export default function Mensagens() {
     await carregar(alunoId);
   }
 
+  const nomeAluno = alunos.find((a) => a.id === alunoId)?.nome || '';
+
+  function usarModelo(modelo) {
+    setTexto(modelo.replaceAll('{nome}', nomeAluno.split(' ')[0] || nomeAluno));
+  }
+
   return (
     <div>
       <h1>Mensagens</h1>
@@ -41,7 +50,7 @@ export default function Mensagens() {
         {alunos.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
       </select>
 
-      <div className="card" style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+      <div className="card" style={{ maxHeight: '48vh', overflowY: 'auto' }}>
         {mensagens.length === 0 && <p className="empty">Nenhuma mensagem ainda.</p>}
         {mensagens.map((m) => (
           <div key={m.id} style={{ textAlign: m.remetente === 'trainer' ? 'right' : 'left', marginBottom: 8 }}>
@@ -58,8 +67,24 @@ export default function Mensagens() {
         <div ref={fimRef} />
       </div>
 
+      <h2 style={{ marginTop: 16, marginBottom: 6 }}>Mensagens prontas</h2>
+      <div className="categorias-mensagem">
+        {CATEGORIAS.map((c) => (
+          <button type="button" key={c} className={c === categoria ? 'ativa' : ''} onClick={() => setCategoria(c)}>
+            {c}
+          </button>
+        ))}
+      </div>
+      <div className="lista-mensagens-prontas">
+        {MENSAGENS_PRONTAS[categoria].map((modelo, i) => (
+          <button type="button" key={i} className="mensagem-pronta-item" onClick={() => usarModelo(modelo)}>
+            {modelo.replaceAll('{nome}', nomeAluno.split(' ')[0] || nomeAluno)}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={enviar} className="row" style={{ marginTop: 10, gap: 8 }}>
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva uma mensagem..." />
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva ou escolha uma mensagem pronta acima..." />
         <button className="btn-primary" type="submit">Enviar</button>
       </form>
     </div>

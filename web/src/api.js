@@ -232,6 +232,42 @@ export const INTENSIDADES_TREINO = { leve: 'Leve', moderada: 'Moderada', intensa
 
 export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parcelado)', dinheiro: 'Dinheiro' };
 
+// tipo da aula/registro na agenda de presença
+export const TIPOS_AULA = {
+  presencial: 'Aula',
+  consulta: 'Consulta/avaliação',
+  consultoria_ajuste: 'Ajuste de consultoria',
+};
+
+export const MENSAGENS_PRONTAS = {
+  'Boas-vindas': [
+    'Oi {nome}! Seja muito bem-vinda(o) 🎉 Fico muito feliz em te acompanhar nessa jornada. Qualquer dúvida sobre o treino ou a dieta, me chama por aqui.',
+    'Oi {nome}, tudo certo por aí? Já deixei seu treino e sua dieta liberados no app. Dá uma olhada com calma e me avisa se ficar alguma dúvida!',
+  ],
+  Cobrança: [
+    'Oi {nome}, passando para lembrar que o pagamento do seu pacote vence em breve. Qualquer coisa me avisa 🙂',
+    'Oi {nome}, tudo bem? Notei que o pagamento deste mês ainda está pendente. Pode verificar para mim quando puder?',
+    'Oi {nome}! Seu pacote está perto de vencer, quer que eu já deixe o próximo period renovado?',
+  ],
+  Treino: [
+    'Oi {nome}, como foi o treino de hoje? Conseguiu fazer todas as séries?',
+    'Oi {nome}, notei que faz alguns dias que você não registra treino. Está tudo bem? Precisa ajustar algo na agenda?',
+    'Oi {nome}, seu treino foi atualizado! Já pode conferir no app 💪',
+  ],
+  Avaliação: [
+    'Oi {nome}, chegou a hora da sua reavaliação física! Vamos marcar um horário essa semana?',
+    'Oi {nome}, parabéns pela evolução na última avaliação! Vamos continuar firme para o próximo objetivo.',
+  ],
+  Motivação: [
+    'Oi {nome}, só passando para lembrar que cada treino é um passo mais perto do seu objetivo. Continue assim! 💪',
+    'Bom dia, {nome}! Semana nova, energia nova. Vamos com tudo nos treinos dessa semana!',
+  ],
+  Falta: [
+    'Oi {nome}, senti sua falta na aula de hoje! Está tudo bem? Quer remarcar?',
+    'Oi {nome}, vi que faltou hoje. Sem problemas, só me avisa quando quiser remarcar 🙂',
+  ],
+};
+
 export const TIPOS_REFEICAO = {
   cafe_manha: 'Café da manhã',
   pre_treino: 'Pré-treino',
