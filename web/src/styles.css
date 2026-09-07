@@ -719,6 +719,64 @@ label {
   margin-top: 2px;
 }
 
+/* -------------------------------------------------------------------- comparar fotos */
+
+.foto-selecionavel {
+  position: relative;
+  flex: 0 0 auto;
+  width: 72px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.foto-selecionavel img {
+  display: block;
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.foto-selecionavel-data {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  color: var(--texto-fraco);
+  text-align: center;
+}
+
+.foto-selecionavel.selecionada {
+  border-color: var(--azul-claro);
+}
+
+.foto-selecionavel.selecionada.pos-2 {
+  border-color: var(--positivo);
+}
+
+.foto-selecionavel-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--azul-claro);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.foto-selecionavel.pos-2 .foto-selecionavel-badge {
+  background: var(--positivo);
+}
+
 /* -------------------------------------------------------------------- lightbox de foto */
 
 .lightbox {
