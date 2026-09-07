@@ -4,19 +4,26 @@ import { Assinatura } from './componentes/Marca.jsx';
 import Inicio from './pages/Inicio.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Alunos from './pages/Alunos.jsx';
+import PerfilAluno from './pages/PerfilAluno.jsx';
 import Presenca from './pages/Presenca.jsx';
 import Pagamentos from './pages/Pagamentos.jsx';
 import Avaliacoes from './pages/Avaliacoes.jsx';
 import Exercicios from './pages/Exercicios.jsx';
 import Treinos from './pages/Treinos.jsx';
+import TreinoSessoes from './pages/TreinoSessoes.jsx';
+import TreinoSessaoDetalhe from './pages/TreinoSessaoDetalhe.jsx';
 import Endurance from './pages/Endurance.jsx';
 import Pacotes from './pages/Pacotes.jsx';
 import Mensagens from './pages/Mensagens.jsx';
 import Dietas from './pages/Dietas.jsx';
+import Alimentos from './pages/Alimentos.jsx';
+import BancosOpcoes from './pages/BancosOpcoes.jsx';
+import ModelosDieta from './pages/ModelosDieta.jsx';
 import Portal from './pages/Portal.jsx';
 
-/* Só o que ela abre todo dia. Os outros sete módulos entram pelo Início, que
-   é o índice do sistema — dez abas numa fila só não diziam o que era o quê. */
+/* Só o que ela abre todo dia. Os outros módulos entram pelo Início, que é o
+   índice do sistema — treze abas numa fila rolável não diziam o que era o quê,
+   nem o que era dela e o que chegava na aluna. */
 const links = [
   { to: '/', label: 'Início', end: true },
   { to: '/alunos', label: 'Alunos' },
@@ -76,14 +83,20 @@ export default function App() {
           <Route path="/" element={<Inicio />} />
           <Route path="/resumo" element={<Dashboard />} />
           <Route path="/alunos" element={<Alunos />} />
+          <Route path="/alunos/:alunoId" element={<PerfilAluno />} />
           <Route path="/presenca" element={<Presenca />} />
           <Route path="/pagamentos" element={<Pagamentos />} />
           <Route path="/avaliacoes/:alunoId" element={<Avaliacoes />} />
           <Route path="/exercicios" element={<Exercicios />} />
           <Route path="/treinos" element={<Treinos />} />
+          <Route path="/treinos/:treinoId" element={<TreinoSessoes />} />
+          <Route path="/treinos/:treinoId/sessoes/:letra" element={<TreinoSessaoDetalhe />} />
           <Route path="/endurance" element={<Endurance />} />
           <Route path="/pacotes" element={<Pacotes />} />
           <Route path="/dietas" element={<Dietas />} />
+          <Route path="/alimentos" element={<Alimentos />} />
+          <Route path="/bancos-opcoes" element={<BancosOpcoes />} />
+          <Route path="/modelos-dieta" element={<ModelosDieta />} />
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/portal/:alunoId" element={<Portal />} />
         </Routes>

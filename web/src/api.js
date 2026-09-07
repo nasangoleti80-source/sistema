@@ -108,13 +108,55 @@ export const api = {
   criarDieta: (dados) => request('/dietas', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarDieta: (id, dados) => request(`/dietas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' }),
+
+  // Alimentos (catálogo para montar as dietas)
+  listarAlimentos: () => request('/alimentos'),
+  criarAlimento: (dados) => request('/alimentos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
+
+  // Grupos de troca (blocos prontos de substituição reaproveitáveis num item)
+  listarGruposTroca: () => request('/grupos-troca'),
+  criarGrupoTroca: (dados) => request('/grupos-troca', { method: 'POST', body: JSON.stringify(dados) }),
+  removerGrupoTroca: (id) => request(`/grupos-troca/${id}`, { method: 'DELETE' }),
+
+  // Bancos de opções (grupos de refeições completas intercambiáveis)
+  listarBancosOpcoes: () => request('/bancos-opcoes'),
+  criarBancoOpcoes: (dados) => request('/bancos-opcoes', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarBancoOpcoes: (id, dados) => request(`/bancos-opcoes/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerBancoOpcoes: (id) => request(`/bancos-opcoes/${id}`, { method: 'DELETE' }),
+
+  // Modelos de dieta reutilizáveis
+  listarModelosDieta: () => request('/modelos-dieta'),
+  criarModeloDieta: (dados) => request('/modelos-dieta', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarModeloDieta: (id, dados) => request(`/modelos-dieta/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerModeloDieta: (id) => request(`/modelos-dieta/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
-  presencial_domicilio: 'Presencial (residência)',
-  presencial_academia: 'Presencial (academia)',
-  consultoria: 'Consultoria semi-presencial',
+  presencial: 'Presencial',
+  consultoria_online: 'Consultoria online',
+  consultoria_semipresencial: 'Consultoria semi-presencial',
+  consultoria_online_treino_dieta: 'Consultoria online (treino + dieta)',
+  dieta: 'Dieta',
 };
+
+export const PERIODICIDADES = {
+  mensal: 'Mensal',
+  trimestral: 'Trimestral',
+  semestral: 'Semestral',
+  anual: 'Anual',
+};
+
+const MESES_POR_PERIODICIDADE = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 };
+
+export function calcularVencimentoPlano(dataInicio, periodicidade) {
+  if (!dataInicio) return '';
+  const meses = MESES_POR_PERIODICIDADE[periodicidade] || 1;
+  const [ano, mes, dia] = dataInicio.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return data.toISOString().slice(0, 10);
+}
 
 export const CANAIS_CAPTACAO = {
   indicacao: 'Indicação',
@@ -151,9 +193,14 @@ export const NIVEIS_ATIVIDADE = {
 };
 
 export const GRUPOS_MUSCULARES = {
-  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', biceps: 'Bíceps', triceps: 'Tríceps',
-  antebraco: 'Antebraço', quadriceps: 'Quadríceps', posterior: 'Posterior de coxa',
-  gluteo: 'Glúteo', panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio', outro: 'Outro',
+  peitoral: 'Peitoral', dorsais: 'Dorsais', trapezio: 'Trapézio', lombar: 'Lombar',
+  deltoide_anterior: 'Deltoide Anterior', deltoide_medial: 'Deltoide Medial', deltoide_posterior: 'Deltoide Posterior',
+  biceps: 'Bíceps', triceps: 'Tríceps', antebraco: 'Antebraço',
+  quadriceps: 'Quadríceps', isquiotibiais: 'Isquiotibiais', gluteo: 'Glúteo', adutor: 'Adutor',
+  panturrilha: 'Panturrilha', abdomen: 'Abdômen', cardio: 'Cardio/Aeróbio',
+  // mantidos por compatibilidade com exercícios cadastrados antes desta lista ficar mais detalhada
+  peito: 'Peito', costas: 'Costas', ombro: 'Ombro', posterior: 'Posterior de coxa',
+  outro: 'Outro',
 };
 
 export const METODOS_TREINO = {
@@ -184,6 +231,65 @@ export const DIAS_SEMANA = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quart
 export const INTENSIDADES_TREINO = { leve: 'Leve', moderada: 'Moderada', intensa: 'Intensa', muito_intensa: 'Muito intensa' };
 
 export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parcelado)', dinheiro: 'Dinheiro' };
+
+// tipo da aula/registro na agenda de presença
+export const TIPOS_AULA = {
+  presencial: 'Aula',
+  consulta: 'Consulta/avaliação',
+  consultoria_ajuste: 'Ajuste de consultoria',
+};
+
+export const MENSAGENS_PRONTAS = {
+  'Boas-vindas': [
+    'Oi {nome}! Seja muito bem-vinda(o) 🎉 Fico muito feliz em te acompanhar nessa jornada. Qualquer dúvida sobre o treino ou a dieta, me chama por aqui.',
+    'Oi {nome}, tudo certo por aí? Já deixei seu treino e sua dieta liberados no app. Dá uma olhada com calma e me avisa se ficar alguma dúvida!',
+  ],
+  Cobrança: [
+    'Oi {nome}, passando para lembrar que o pagamento do seu pacote vence em breve. Qualquer coisa me avisa 🙂',
+    'Oi {nome}, tudo bem? Notei que o pagamento deste mês ainda está pendente. Pode verificar para mim quando puder?',
+    'Oi {nome}! Seu pacote está perto de vencer, quer que eu já deixe o próximo period renovado?',
+  ],
+  Treino: [
+    'Oi {nome}, como foi o treino de hoje? Conseguiu fazer todas as séries?',
+    'Oi {nome}, notei que faz alguns dias que você não registra treino. Está tudo bem? Precisa ajustar algo na agenda?',
+    'Oi {nome}, seu treino foi atualizado! Já pode conferir no app 💪',
+  ],
+  Avaliação: [
+    'Oi {nome}, chegou a hora da sua reavaliação física! Vamos marcar um horário essa semana?',
+    'Oi {nome}, parabéns pela evolução na última avaliação! Vamos continuar firme para o próximo objetivo.',
+  ],
+  Motivação: [
+    'Oi {nome}, só passando para lembrar que cada treino é um passo mais perto do seu objetivo. Continue assim! 💪',
+    'Bom dia, {nome}! Semana nova, energia nova. Vamos com tudo nos treinos dessa semana!',
+  ],
+  Falta: [
+    'Oi {nome}, senti sua falta na aula de hoje! Está tudo bem? Quer remarcar?',
+    'Oi {nome}, vi que faltou hoje. Sem problemas, só me avisa quando quiser remarcar 🙂',
+  ],
+};
+
+export const TIPOS_REFEICAO = {
+  cafe_manha: 'Café da manhã',
+  pre_treino: 'Pré-treino',
+  cafe_manha_2: 'Café da manhã 2',
+  cafe_tarde: 'Café da tarde',
+  cafe_tarde_2: 'Café da tarde 2',
+  almoco: 'Almoço',
+  janta: 'Janta',
+  ceia: 'Ceia',
+};
+
+export const UNIDADES_ALIMENTO = {
+  g: 'g', ml: 'ml', unidade: 'unidade(s)', fatia: 'fatia(s)', dose: 'dose(s)',
+  colher_sopa: 'colher(es) de sopa', colher_cha: 'colher(es) de chá',
+  xicara: 'xícara(s)', porcao: 'porção',
+};
+
+export const CATEGORIAS_ALIMENTO = {
+  proteina: 'Proteína', carboidrato: 'Carboidrato', gordura: 'Gordura',
+  fruta: 'Fruta', vegetal: 'Vegetal/legume', laticinio: 'Laticínio',
+  suplemento: 'Suplemento', outro: 'Outro',
+};
 
 export function formatarData(data) {
   if (!data) return '';
@@ -222,6 +328,31 @@ export function volumeDoDia(dia) {
 
 /** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
 export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
+
+/** Total de séries de um dia (soma de todos os exercícios). */
+export function seriesDoDia(dia) {
+  return (dia.exercicios || []).reduce((s, ex) => s + (Number(ex.series) || 0), 0);
+}
+
+/**
+ * Estimativa grosseira de duração da sessão: ~45s de execução por série,
+ * mais o descanso configurado de cada exercício.
+ */
+export function duracaoEstimadaDia(dia) {
+  const segundos = (dia.exercicios || []).reduce((s, ex) => {
+    const series = Number(ex.series) || 1;
+    const descanso = Number(ex.descansoSeg) || 60;
+    return s + series * (45 + descanso);
+  }, 0);
+  return Math.round(segundos / 60);
+}
+
+// Dias da semana no formato curto usado nos círculos "S T Q Q S S D".
+export const DIAS_SEMANA_SESSAO = [
+  { chave: 'seg', letra: 'S' }, { chave: 'ter', letra: 'T' }, { chave: 'qua', letra: 'Q' },
+  { chave: 'qui', letra: 'Q' }, { chave: 'sex', letra: 'S' }, { chave: 'sab', letra: 'S' },
+  { chave: 'dom', letra: 'D' },
+];
 
 /**
  * Liga o exercício do treino ao catálogo pelo nome, para puxar foto, vídeo e a

@@ -5,8 +5,6 @@ import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 const FORM_VAZIO = {
   nome: '',
   grupoMuscular: 'peito',
-  equipamento: '',
-  ondeFica: '',
   descricao: '',
   videoUrl: '',
 };
@@ -46,8 +44,6 @@ export default function Exercicios() {
     setForm({
       nome: ex.nome,
       grupoMuscular: ex.grupoMuscular,
-      equipamento: ex.equipamento || '',
-      ondeFica: ex.ondeFica || '',
       descricao: ex.descricao || '',
       videoUrl: ex.videoUrl || '',
     });
@@ -191,8 +187,6 @@ export default function Exercicios() {
                   <span className="name">{ex.nome}</span>
                   <span className="meta">
                     {GRUPOS_MUSCULARES[ex.grupoMuscular] || ex.grupoMuscular}
-                    {ex.equipamento && ` · ${ex.equipamento}`}
-                    {ex.ondeFica && ` · ${ex.ondeFica}`}
                   </span>
                 </span>
                 {temVideo && <span className="badge pago">vídeo</span>}
@@ -228,20 +222,6 @@ export default function Exercicios() {
                   </option>
                 ))}
               </select>
-
-              <label>Equipamento</label>
-              <input
-                value={form.equipamento}
-                onChange={(e) => setForm({ ...form, equipamento: e.target.value })}
-                placeholder="Máquina, barra, halter, polia…"
-              />
-
-              <label>Onde fica na academia</label>
-              <input
-                value={form.ondeFica}
-                onChange={(e) => setForm({ ...form, ondeFica: e.target.value })}
-                placeholder="No fundo, ao lado da leg press"
-              />
 
               <label>Como fazer</label>
               <textarea

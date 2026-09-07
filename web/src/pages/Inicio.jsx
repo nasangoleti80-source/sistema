@@ -34,6 +34,9 @@ const DESENHOS = {
   dieta: ['M3 11h18', 'M6 11V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4', 'M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8'],
   exercicios: ['M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z', 'M12 9.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7'],
   avaliacoes: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z', 'M14 2v6h6M9 13h6M9 17h4'],
+  alimentos: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20', 'M12 6v6l4 2'],
+  bancos: ['M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z'],
+  modelos: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z'],
   mensagens: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z'],
   portal: ['M6 2h12a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 18 22H6a2.5 2.5 0 0 1-2.5-2.5v-15A2.5 2.5 0 0 1 6 2Z', 'M11 18h2'],
 };
@@ -52,9 +55,11 @@ export default function Inicio() {
       api.listarMensagens(''),
       api.listarEndurance(),
       api.listarPacotes(),
+      api.listarAlimentos().catch(() => []),
+      api.listarModelosDieta().catch(() => []),
     ])
-      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes]) =>
-        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes })
+      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos]) =>
+        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos })
       )
       .catch((e) => setErro(e.message));
   }, []);
@@ -140,7 +145,10 @@ export default function Inicio() {
               alerta={semTreino > 0}
             />
             <Modulo para="/endurance" icone="endurance" nome="Endurance" oQueE="Corrida, bike e natação por prova" contagem={d.endurance.length || null} />
-            <Modulo para="/dietas" icone="dieta" nome="Dieta" oQueE="Plano alimentar por aluno" />
+            <Modulo para="/dietas" icone="dieta" nome="Dieta" oQueE="Plano alimentar de cada aluno" />
+            <Modulo para="/alimentos" icone="alimentos" nome="Alimentos" oQueE="Catálogo que alimenta as dietas" contagem={d.alimentos.length || null} />
+            <Modulo para="/bancos-opcoes" icone="bancos" nome="Bancos de opções" oQueE="Trocas prontas de café, lanche e jantar" />
+            <Modulo para="/modelos-dieta" icone="modelos" nome="Modelos de dieta" oQueE="Monte uma vez, aplique em qualquer aluno" contagem={d.modelos.length || null} />
             <Modulo
               para="/exercicios"
               icone="exercicios"
@@ -149,7 +157,7 @@ export default function Inicio() {
               contagem={d.exercicios.length}
               alerta={semMidia > 0}
             />
-            <Modulo para="/alunos" icone="avaliacoes" nome="Avaliações" oQueE="Dobras, medidas e fotos — abre na ficha do aluno" />
+            <Modulo para="/alunos" icone="avaliacoes" nome="Avaliações" oQueE="Dobras, medidas e anamnese — abre na ficha do aluno" />
           </div>
 
           {/* ------------------------------------- o que chega até a aluna */}

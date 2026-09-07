@@ -1,7 +1,66 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
-import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO } from '../api.js';
+import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
+import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
+
+function ItemDieta({ item }) {
+  const [escolhida, setEscolhida] = useState(0);
+  const opcoes = item.opcoes || [];
+  if (opcoes.length === 0) return null;
+
+  if (opcoes.length === 1) {
+    const op = opcoes[0];
+    return (
+      <div className="list-item">
+        <div>
+          <div className="name">{op.nome}</div>
+          <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <CarrosselOpcoes
+        opcoes={opcoes}
+        escolhida={escolhida}
+        onEscolher={setEscolhida}
+        render={(op) => (
+          <>
+            <div className="name" style={{ fontSize: 14 }}>{op.nome}</div>
+            <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
+          </>
+        )}
+      />
+    </div>
+  );
+}
+
+// Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
+// inteira (ex: "Opção 03"), não alimento por alimento. A opção escolhida
+// fica fixa à esquerda como principal; as outras deslizam ao lado.
+function RefeicaoBanco({ banco }) {
+  const [escolhida, setEscolhida] = useState(0);
+  if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
+  const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
+  return (
+    <div>
+      <CarrosselOpcoes
+        opcoes={banco.opcoes}
+        escolhida={escolhida}
+        onEscolher={setEscolhida}
+        render={(o, principal) => (
+          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
+        )}
+      />
+      <div style={{ marginTop: 10 }}>
+        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+      </div>
+    </div>
+  );
+}
 
 export default function Portal() {
   const { alunoId } = useParams();
@@ -11,6 +70,7 @@ export default function Portal() {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [pacotes, setPacotes] = useState([]);
   const [dietas, setDietas] = useState([]);
+  const [bancos, setBancos] = useState([]);
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
@@ -20,7 +80,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, bo] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -30,6 +90,7 @@ export default function Portal() {
         api.listarMensagens(alunoId),
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
+        api.listarBancosOpcoes(),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -39,6 +100,7 @@ export default function Portal() {
       setDietas(d.filter((dt) => dt.ativa));
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
+      setBancos(bo);
     } catch (e) {
       setErro(e.message);
     }
@@ -168,8 +230,12 @@ export default function Portal() {
             <div className="card" key={d.id}>
               <div className="name">{d.nome}</div>
               {(d.refeicoes || []).map((r, i) => (
-                <div key={i} className="list-item">
-                  <div><div className="name">{r.nome} {r.horario && `· ${r.horario}`}</div><div className="meta">{r.alimentos}</div></div>
+                <div key={i} className="card" style={{ background: 'var(--bg)' }}>
+                  <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+                  {r.bancoId
+                    ? <RefeicaoBanco banco={bancos.find((b) => b.id === r.bancoId)} />
+                    : (r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+                  {!r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}
             </div>

@@ -3,7 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { initDb } from './db.js';
+import { db, initDb } from './db.js';
+import { seedSubstitutosCafeManha } from './seeds/substitutosCafeManha.js';
 import alunosRouter from './routes/alunos.js';
 import aulasRouter from './routes/aulas.js';
 import pagamentosRouter from './routes/pagamentos.js';
@@ -16,6 +17,10 @@ import registrosTreinoRouter from './routes/registrosTreino.js';
 import pacotesRouter from './routes/pacotes.js';
 import mensagensRouter from './routes/mensagens.js';
 import dietasRouter from './routes/dietas.js';
+import alimentosRouter from './routes/alimentos.js';
+import bancosOpcoesRouter from './routes/bancosOpcoes.js';
+import modelosDietaRouter from './routes/modelosDieta.js';
+import gruposTrocaRouter from './routes/gruposTroca.js';
 import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +42,10 @@ app.use('/api/registros-treino', registrosTreinoRouter);
 app.use('/api/pacotes', pacotesRouter);
 app.use('/api/mensagens', mensagensRouter);
 app.use('/api/dietas', dietasRouter);
+app.use('/api/alimentos', alimentosRouter);
+app.use('/api/bancos-opcoes', bancosOpcoesRouter);
+app.use('/api/modelos-dieta', modelosDietaRouter);
+app.use('/api/grupos-troca', gruposTrocaRouter);
 
 // Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
 // reaproveitado, então o navegador pode guardar para sempre.
@@ -53,6 +62,7 @@ if (fs.existsSync(webDist)) {
 }
 
 await initDb();
+await seedSubstitutosCafeManha(db);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
