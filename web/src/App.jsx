@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { Assinatura } from './componentes/Marca.jsx';
+import Inicio from './pages/Inicio.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Alunos from './pages/Alunos.jsx';
 import Presenca from './pages/Presenca.jsx';
@@ -14,17 +15,14 @@ import Mensagens from './pages/Mensagens.jsx';
 import Dietas from './pages/Dietas.jsx';
 import Portal from './pages/Portal.jsx';
 
+/* Só o que ela abre todo dia. Os outros sete módulos entram pelo Início, que
+   é o índice do sistema — dez abas numa fila só não diziam o que era o quê. */
 const links = [
-  { to: '/', label: 'Resumo', end: true },
+  { to: '/', label: 'Início', end: true },
   { to: '/alunos', label: 'Alunos' },
   { to: '/presenca', label: 'Presença' },
   { to: '/treinos', label: 'Treinos' },
-  { to: '/endurance', label: 'Endurance' },
-  { to: '/exercicios', label: 'Exercícios' },
-  { to: '/pacotes', label: 'Pacotes' },
   { to: '/pagamentos', label: 'Cobranças' },
-  { to: '/dietas', label: 'Dieta' },
-  { to: '/mensagens', label: 'Mensagens' },
 ];
 
 /**
@@ -75,7 +73,8 @@ export default function App() {
 
       <main className="content">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Inicio />} />
+          <Route path="/resumo" element={<Dashboard />} />
           <Route path="/alunos" element={<Alunos />} />
           <Route path="/presenca" element={<Presenca />} />
           <Route path="/pagamentos" element={<Pagamentos />} />
