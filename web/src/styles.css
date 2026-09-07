@@ -97,7 +97,8 @@ body {
   backdrop-filter: blur(16px);
   border-top: 1px solid var(--linha);
   padding-bottom: env(safe-area-inset-bottom);
-  /* São dez abas: espremer todas daria 39px cada no celular. Rola na horizontal. */
+  /* Cinco abas cabem na largura do celular. A rolagem fica como rede de
+     segurança para tela estreita ou fonte aumentada. */
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -107,8 +108,8 @@ body {
 }
 
 .tabbar a {
-  flex: 0 0 auto;
-  min-width: 84px;
+  flex: 1 0 auto;
+  min-width: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1481,4 +1482,117 @@ label {
   letter-spacing: 0.08em;
   color: var(--texto-fraco);
   margin-top: 2px;
+}
+
+/* ------------------------------------------------------- índice do sistema */
+
+.lbl-sistema {
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+  margin-bottom: 6px;
+}
+
+.modulos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  margin-bottom: 4px;
+}
+
+@media (min-width: 620px) {
+  .modulos {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.modulo {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: 16px;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.modulo:hover {
+  border-color: var(--linha2, #243040);
+}
+
+.modulo-ic {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  color: var(--azul-claro);
+}
+
+.modulo-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.modulo-nome {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.modulo-oque {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--texto-fraco);
+}
+
+.modulo-num {
+  flex-shrink: 0;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--texto-fraco);
+}
+
+/* Número que pede ação — pendência, aluno sem treino, exercício sem foto. */
+.modulo-num.alerta {
+  color: var(--atencao);
+}
+
+.portais {
+  margin-top: 9px;
+}
+
+/* O endereço é longo e não pode empurrar os botões para fora da tela. */
+.portal-link {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Link que precisa parecer botão, ao lado de um <button> de verdade. */
+.link-botao {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* O ícone acompanha o título, não o meio do parágrafo. */
+.portais-topo {
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.portais-topo .modulo-ic {
+  flex-shrink: 0;
 }
