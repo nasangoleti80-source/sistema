@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, formatarData, NIVEIS_ATIVIDADE } from '../api.js';
+import { api, formatarData, NIVEIS_ATIVIDADE, MEDIDAS_CAMPOS } from '../api.js';
 
 const ANAMNESE_VAZIA = {
   queixasDor: '',
@@ -20,14 +20,6 @@ const ANAMNESE_VAZIA = {
 const DOBRAS_CAMPOS = [
   ['triceps', 'Tríceps'], ['subescapular', 'Subescapular'], ['axilarMedia', 'Axilar média'],
   ['suprailiaca', 'Suprailíaca'], ['abdominal', 'Abdominal'], ['coxa', 'Coxa'], ['peitoral', 'Peitoral'],
-];
-
-const MEDIDAS_CAMPOS = [
-  ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
-  ['quadril', 'Quadril'], ['bracoDireito', 'Braço direito'], ['bracoEsquerdo', 'Braço esquerdo'],
-  ['antebracoDireito', 'Antebraço direito'], ['antebracoEsquerdo', 'Antebraço esquerdo'],
-  ['coxaDireita', 'Coxa direita'], ['coxaEsquerda', 'Coxa esquerda'],
-  ['panturrilhaDireita', 'Panturrilha direita'], ['panturrilhaEsquerda', 'Panturrilha esquerda'],
 ];
 
 function formVazio() {

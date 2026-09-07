@@ -656,6 +656,88 @@ label {
   color: var(--texto-tenue);
 }
 
+/* Barra "antes" do comparativo de evolução: tom neutro, sem competir com a
+   barra "depois" que já usa a cor de destaque/baixo. */
+.barra-preenche.antes {
+  background: var(--texto-tenue);
+  opacity: 0.6;
+}
+
+/* -------------------------------------------------------------------- trocar opção */
+
+.btn-trocar-opcao {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--sup);
+  border: 1px dashed var(--linha);
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+  border-radius: var(--raio);
+}
+
+.btn-trocar-opcao:hover {
+  color: var(--texto);
+  border-color: var(--azul-claro);
+}
+
+/* -------------------------------------------------------------------- medidas */
+
+.medidas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.medida-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 4px;
+  background: var(--sup-2);
+  border-radius: var(--raio);
+  text-align: center;
+}
+
+.medida-valor {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.medida-unidade {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--texto-fraco);
+  margin-left: 2px;
+}
+
+.medida-label {
+  font-size: 10px;
+  color: var(--texto-fraco);
+  margin-top: 2px;
+}
+
+/* -------------------------------------------------------------------- lightbox de foto */
+
+.lightbox {
+  width: 100%;
+  max-width: 480px;
+  padding: 16px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  text-align: center;
+}
+
+.lightbox img {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--raio-p);
+  background: var(--noite);
+}
+
 /* -------------------------------------------------------------------- sub-abas */
 
 .subabas {

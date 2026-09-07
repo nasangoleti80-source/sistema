@@ -102,6 +102,18 @@ export const api = {
   // Mensagens
   listarMensagens: (alunoId) => request(`/mensagens?alunoId=${alunoId}`),
   enviarMensagem: (dados) => request('/mensagens', { method: 'POST', body: JSON.stringify(dados) }),
+  removerMensagem: (id) => request(`/mensagens/${id}`, { method: 'DELETE' }),
+
+  /** Foto ou vídeo dentro da conversa — mesmo envio em fluxo cru usado nos exercícios. */
+  enviarMidiaMensagem: (id, blob, { capaDe } = {}) => {
+    const qs = new URLSearchParams();
+    if (capaDe) qs.set('capaDe', 'true');
+    return request(`/mensagens/${id}/midia${qs.toString() ? `?${qs}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': blob.type },
+      body: blob,
+    });
+  },
 
   // Dietas
   listarDietas: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
@@ -290,6 +302,14 @@ export const CATEGORIAS_ALIMENTO = {
   fruta: 'Fruta', vegetal: 'Vegetal/legume', laticinio: 'Laticínio',
   suplemento: 'Suplemento', outro: 'Outro',
 };
+
+export const MEDIDAS_CAMPOS = [
+  ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
+  ['quadril', 'Quadril'], ['bracoDireito', 'Braço direito'], ['bracoEsquerdo', 'Braço esquerdo'],
+  ['antebracoDireito', 'Antebraço direito'], ['antebracoEsquerdo', 'Antebraço esquerdo'],
+  ['coxaDireita', 'Coxa direita'], ['coxaEsquerda', 'Coxa esquerda'],
+  ['panturrilhaDireita', 'Panturrilha direita'], ['panturrilhaEsquerda', 'Panturrilha esquerda'],
+];
 
 export function formatarData(data) {
   if (!data) return '';

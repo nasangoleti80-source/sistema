@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
-import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
+import {
+  indexarCatalogo, api, formatarData, formatarMoeda,
+  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS,
+} from '../api.js';
+import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
 
-function ItemDieta({ item }) {
-  const [escolhida, setEscolhida] = useState(0);
+function ItemDieta({ item, onEscolher }) {
   const opcoes = item.opcoes || [];
   if (opcoes.length === 0) return null;
+  const escolhida = item.escolhaAtual || 0;
 
   if (opcoes.length === 1) {
     const op = opcoes[0];
@@ -26,7 +30,7 @@ function ItemDieta({ item }) {
       <CarrosselOpcoes
         opcoes={opcoes}
         escolhida={escolhida}
-        onEscolher={setEscolhida}
+        onEscolher={onEscolher}
         render={(op) => (
           <>
             <div className="name" style={{ fontSize: 14 }}>{op.nome}</div>
@@ -34,30 +38,96 @@ function ItemDieta({ item }) {
           </>
         )}
       />
+      <button type="button" className="btn-trocar-opcao" onClick={() => onEscolher((escolhida + 1) % opcoes.length)}>
+        🔄 Trocar opção ({escolhida + 1}/{opcoes.length})
+      </button>
     </div>
   );
 }
 
 // Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
 // inteira (ex: "Opção 03"), não alimento por alimento. A opção escolhida
-// fica fixa à esquerda como principal; as outras deslizam ao lado.
-function RefeicaoBanco({ banco }) {
-  const [escolhida, setEscolhida] = useState(0);
+// fica fixa à esquerda como principal; as outras deslizam ao lado. O botão
+// "Trocar opção" faz a mesma troca do arrasto, para quem prefere tocar.
+function RefeicaoBanco({ banco, escolhaAtual, onEscolher }) {
   if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
+  const escolhida = escolhaAtual || 0;
   const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
   return (
     <div>
       <CarrosselOpcoes
         opcoes={banco.opcoes}
         escolhida={escolhida}
-        onEscolher={setEscolhida}
+        onEscolher={onEscolher}
         render={(o, principal) => (
           <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
         )}
       />
+      <button type="button" className="btn-trocar-opcao" onClick={() => onEscolher((escolhida + 1) % banco.opcoes.length)}>
+        🔄 Trocar opção ({escolhida + 1}/{banco.opcoes.length})
+      </button>
       <div style={{ marginTop: 10 }}>
-        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} onEscolher={() => {}} />)}
       </div>
+    </div>
+  );
+}
+
+function pegarCaminho(obj, caminho) {
+  return caminho.split('.').reduce((v, k) => v?.[k], obj);
+}
+
+// Comparação visual simples entre a primeira e a última avaliação — o
+// "antes e depois" em barras, sem precisar de biblioteca de gráfico.
+function ComparativoEvolucao({ primeira, ultima }) {
+  if (!primeira || !ultima || primeira.id === ultima.id) return null;
+
+  const metricas = [
+    { label: 'Peso', chave: 'pesoKg', unidade: 'kg', menorMelhor: null },
+    { label: 'Gordura corporal', chave: 'calculado.percentualGordura', unidade: '%', menorMelhor: true },
+    { label: 'Massa gorda', chave: 'calculado.massaGordaKg', unidade: 'kg', menorMelhor: true },
+    { label: 'Massa magra', chave: 'calculado.massaMagraKg', unidade: 'kg', menorMelhor: false },
+  ];
+
+  const linhas = metricas
+    .map((m) => ({ ...m, antes: pegarCaminho(primeira, m.chave), depois: pegarCaminho(ultima, m.chave) }))
+    .filter((m) => m.antes != null && m.depois != null);
+
+  if (linhas.length === 0) return null;
+
+  return (
+    <div className="card">
+      <div className="name" style={{ marginBottom: 2 }}>Antes e depois</div>
+      <div className="meta" style={{ marginBottom: 14 }}>
+        {formatarData(primeira.data)} → {formatarData(ultima.data)}
+      </div>
+      {linhas.map((m) => {
+        const diferenca = Number((m.depois - m.antes).toFixed(1));
+        const favoravel = m.menorMelhor === null ? null : m.menorMelhor ? diferenca < 0 : diferenca > 0;
+        const maior = Math.max(Math.abs(m.antes), Math.abs(m.depois)) || 1;
+        return (
+          <div key={m.label} style={{ marginBottom: 14 }}>
+            <div className="row" style={{ marginBottom: 6 }}>
+              <span className="meta">{m.label}</span>
+              <span className={`badge ${favoravel === null ? 'sem-cobranca' : favoravel ? 'pago' : 'atrasado'}`}>
+                {diferenca > 0 ? '+' : ''}{diferenca}{m.unidade}
+              </span>
+            </div>
+            <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+              <span className="meta" style={{ width: 48, flexShrink: 0 }}>{m.antes}{m.unidade}</span>
+              <span className="barra-trilho" style={{ flex: 1 }}>
+                <span className="barra-preenche antes" style={{ width: `${Math.round((Math.abs(m.antes) / maior) * 100)}%` }} />
+              </span>
+            </div>
+            <div className="row" style={{ gap: 8, alignItems: 'center', marginTop: 4 }}>
+              <span className="meta" style={{ width: 48, flexShrink: 0 }}>{m.depois}{m.unidade}</span>
+              <span className="barra-trilho" style={{ flex: 1 }}>
+                <span className={`barra-preenche ${favoravel === false ? 'baixo' : ''}`} style={{ width: `${Math.round((Math.abs(m.depois) / maior) * 100)}%` }} />
+              </span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -76,7 +146,10 @@ export default function Portal() {
   const [aba, setAba] = useState('treino');
   const [catalogo, setCatalogo] = useState(() => new Map());
   const [erro, setErro] = useState('');
+  const [enviandoMidia, setEnviandoMidia] = useState(false);
+  const [fotoAmpliada, setFotoAmpliada] = useState(null);
   const fimRef = useRef(null);
+  const entradaArquivo = useRef(null);
 
   async function carregarTudo() {
     try {
@@ -118,6 +191,27 @@ export default function Portal() {
     setMensagens(m);
   }
 
+  async function enviarArquivo(arquivo) {
+    setEnviandoMidia(true);
+    try {
+      const mensagem = await api.enviarMensagem({ alunoId, remetente: 'aluno', texto: '' });
+      if (ehVideo(arquivo)) {
+        await api.enviarMidiaMensagem(mensagem.id, arquivo);
+        const capa = await extrairCapa(arquivo);
+        if (capa) await api.enviarMidiaMensagem(mensagem.id, capa, { capaDe: true });
+      } else {
+        const foto = await prepararFoto(arquivo);
+        await api.enviarMidiaMensagem(mensagem.id, foto);
+      }
+      const m = await api.listarMensagens(alunoId);
+      setMensagens(m);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setEnviandoMidia(false);
+    }
+  }
+
   async function registrarRapido(treino, diaLetra) {
     const duracaoMin = prompt('Quanto tempo durou o treino (minutos)?', String(treino.configuracao?.duracaoSessaoMin || 60));
     if (!duracaoMin) return;
@@ -133,11 +227,32 @@ export default function Portal() {
     }
   }
 
+  async function mudarEscolhaRefeicao(dietaId, refeicaoIndex, novaEscolha) {
+    const dieta = dietas.find((d) => d.id === dietaId);
+    if (!dieta) return;
+    const refeicoes = dieta.refeicoes.map((r, i) => (i === refeicaoIndex ? { ...r, escolhaAtual: novaEscolha } : r));
+    const atualizado = await api.atualizarDieta(dietaId, { refeicoes });
+    setDietas((ds) => ds.map((d) => (d.id === dietaId ? atualizado : d)));
+  }
+
+  async function mudarEscolhaItem(dietaId, refeicaoIndex, itemIndex, novaEscolha) {
+    const dieta = dietas.find((d) => d.id === dietaId);
+    if (!dieta) return;
+    const refeicoes = dieta.refeicoes.map((r, i) => {
+      if (i !== refeicaoIndex) return r;
+      const itens = (r.itens || []).map((it, j) => (j === itemIndex ? { ...it, escolhaAtual: novaEscolha } : it));
+      return { ...r, itens };
+    });
+    const atualizado = await api.atualizarDieta(dietaId, { refeicoes });
+    setDietas((ds) => ds.map((d) => (d.id === dietaId ? atualizado : d)));
+  }
+
   if (erro) return <p className="empty">{erro}</p>;
   if (!aluno) return <p className="empty">Carregando...</p>;
 
   const proximoPacote = pacotes.sort((a, b) => (a.dataVencimento < b.dataVencimento ? -1 : 1))[0];
   const ultimaAvaliacao = avaliacoes[0];
+  const primeiraAvaliacao = avaliacoes[avaliacoes.length - 1];
 
   return (
     <div>
@@ -210,16 +325,46 @@ export default function Portal() {
               <div className="stat green"><div className="value">{ultimaAvaliacao.calculado?.massaMagraKg}kg</div><div className="label">Massa magra</div></div>
             </div>
           )}
-          {avaliacoes.map((a) => (
-            <div className="card" key={a.id}>
-              <div className="name">{formatarData(a.data)}</div>
-              {a.fotos?.length > 0 && (
-                <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  {a.fotos.map((f, i) => <img key={i} src={f.url} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />)}
-                </div>
-              )}
-            </div>
-          ))}
+
+          {avaliacoes.length >= 2 && (
+            <ComparativoEvolucao primeira={primeiraAvaliacao} ultima={ultimaAvaliacao} />
+          )}
+
+          {avaliacoes.map((a) => {
+            const medidasPreenchidas = MEDIDAS_CAMPOS.filter(([c]) => a.medidas?.[c] != null && a.medidas[c] !== '');
+            return (
+              <div className="card" key={a.id}>
+                <div className="name">{formatarData(a.data)}</div>
+
+                {medidasPreenchidas.length > 0 && (
+                  <div className="medidas-grid">
+                    {medidasPreenchidas.map(([c, label]) => (
+                      <div key={c} className="medida-item">
+                        <span className="medida-valor">{a.medidas[c]}<span className="medida-unidade">cm</span></span>
+                        <span className="medida-label">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {a.fotos?.length > 0 && (
+                  <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                    {a.fotos.map((f, i) => (
+                      <img
+                        key={i}
+                        src={f.url}
+                        alt=""
+                        style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in' }}
+                        onClick={() => setFotoAmpliada(f.url)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {a.observacoes && <p className="meta" style={{ marginTop: 8 }}>{a.observacoes}</p>}
+              </div>
+            );
+          })}
         </>
       )}
 
@@ -233,8 +378,16 @@ export default function Portal() {
                 <div key={i} className="card" style={{ background: 'var(--bg)' }}>
                   <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
                   {r.bancoId
-                    ? <RefeicaoBanco banco={bancos.find((b) => b.id === r.bancoId)} />
-                    : (r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+                    ? (
+                      <RefeicaoBanco
+                        banco={bancos.find((b) => b.id === r.bancoId)}
+                        escolhaAtual={r.escolhaAtual}
+                        onEscolher={(v) => mudarEscolhaRefeicao(d.id, i, v)}
+                      />
+                    )
+                    : (r.itens || []).map((item, j) => (
+                      <ItemDieta key={j} item={item} onEscolher={(v) => mudarEscolhaItem(d.id, i, j, v)} />
+                    ))}
                   {!r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}
@@ -248,20 +401,68 @@ export default function Portal() {
           <div className="card" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
             {mensagens.map((m) => (
               <div key={m.id} style={{ textAlign: m.remetente === 'aluno' ? 'right' : 'left', marginBottom: 8 }}>
-                <span style={{
-                  display: 'inline-block', padding: '8px 12px', borderRadius: 12, maxWidth: '80%',
+                <span className="bolha-mensagem" style={{
+                  display: 'inline-block', padding: m.midia ? 6 : '8px 12px', borderRadius: 12, maxWidth: '80%',
                   background: m.remetente === 'aluno' ? 'var(--green)' : '#eef2f0',
                   color: m.remetente === 'aluno' ? 'white' : 'var(--text)',
-                }}>{m.texto}</span>
+                }}>
+                  {m.midia && (
+                    m.midia.tipo === 'video' ? (
+                      <video
+                        src={`/midia/${m.midia.arquivo}`}
+                        poster={m.midia.capa ? `/midia/${m.midia.capa}` : undefined}
+                        controls
+                        playsInline
+                        preload="none"
+                        style={{ maxWidth: 220, borderRadius: 8, display: 'block' }}
+                      />
+                    ) : (
+                      <img src={`/midia/${m.midia.arquivo}`} alt="" style={{ maxWidth: 220, borderRadius: 8, display: 'block' }} />
+                    )
+                  )}
+                  {m.texto && <span style={{ display: 'block', padding: m.midia ? '6px 4px 2px' : 0 }}>{m.texto}</span>}
+                </span>
               </div>
             ))}
             <div ref={fimRef} />
           </div>
           <form onSubmit={enviar} className="row" style={{ marginTop: 10, gap: 8 }}>
-            <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva uma mensagem..." />
+            <input
+              ref={entradaArquivo}
+              type="file"
+              accept="image/*,video/*"
+              hidden
+              onChange={(e) => {
+                const arquivo = e.target.files[0];
+                e.target.value = '';
+                if (arquivo) enviarArquivo(arquivo);
+              }}
+            />
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={enviandoMidia}
+              onClick={() => entradaArquivo.current.click()}
+              title="Mandar foto ou vídeo"
+            >
+              {enviandoMidia ? '…' : '📎'}
+            </button>
+            <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva uma mensagem..." style={{ flex: 1 }} />
             <button className="btn-primary" type="submit">Enviar</button>
           </form>
         </>
+      )}
+
+      {fotoAmpliada && (
+        <div className="modal-backdrop" onClick={() => setFotoAmpliada(null)}>
+          <div className="lightbox" onClick={(e) => e.stopPropagation()}>
+            <img src={fotoAmpliada} alt="" />
+            <div className="row" style={{ marginTop: 10, gap: 8 }}>
+              <a className="btn-primary" href={fotoAmpliada} download="foto-evolucao.jpg">Baixar foto</a>
+              <button type="button" className="btn-secondary" onClick={() => setFotoAmpliada(null)}>Fechar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
