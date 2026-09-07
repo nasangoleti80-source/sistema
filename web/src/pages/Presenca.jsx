@@ -118,8 +118,9 @@ export default function Presenca() {
     }
   }
 
-  async function alternarRealizada(aula) {
-    await api.atualizarAula(aula.id, { realizada: !aula.realizada });
+  async function definirStatus(aula, realizada) {
+    if (aula.realizada === realizada) return;
+    await api.atualizarAula(aula.id, { realizada });
     await carregar();
   }
 
@@ -155,6 +156,7 @@ export default function Presenca() {
       <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
         <span className="legenda-item"><span className="legenda-bola aula" /> Aula</span>
         <span className="legenda-item"><span className="legenda-bola consulta" /> Consulta</span>
+        <span className="legenda-item"><span className="legenda-bola reposicao" /> Reposição</span>
         <span className="legenda-item"><span className="legenda-bola falta" /> Falta</span>
       </div>
 
@@ -180,7 +182,7 @@ export default function Presenca() {
                   {doDia.slice(0, 3).map((a) => (
                     <span
                       key={a.id}
-                      className={`dia-chip ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : 'aula'}`}
+                      className={`dia-chip ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : a.tipo === 'reposicao' ? 'reposicao' : 'aula'}`}
                     >
                       {nomeAluno(a.alunoId)}
                     </span>
@@ -203,19 +205,31 @@ export default function Presenca() {
             {diaAberto.length > 0 && (
               <div className="card">
                 {diaAberto.map((aula) => (
-                  <div className="list-item" key={aula.id}>
-                    <div onClick={() => alternarRealizada(aula)} style={{ cursor: 'pointer', flex: 1 }}>
-                      <div className="name">{nomeAluno(aula.alunoId)}</div>
-                      <div className="meta">
-                        {TIPOS_AULA[aula.tipo] || aula.tipo}
-                        {' · '}
-                        <span className={aula.realizada ? 'badge pago' : 'badge atrasado'}>
-                          {aula.realizada ? 'Realizada' : 'Faltou'}
-                        </span>
+                  <div className="item-agenda" key={aula.id}>
+                    <div className="row">
+                      <div>
+                        <div className="name">{nomeAluno(aula.alunoId)}</div>
+                        <div className="meta">{TIPOS_AULA[aula.tipo] || aula.tipo}</div>
                       </div>
-                      {aula.observacao && <div className="meta">{aula.observacao}</div>}
+                      <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
                     </div>
-                    <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
+                    {aula.observacao && <div className="meta" style={{ marginTop: 4 }}>{aula.observacao}</div>}
+                    <div className="row" style={{ gap: 6, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className={`btn-status-agenda ${aula.realizada ? 'ativo-ok' : ''}`}
+                        onClick={() => definirStatus(aula, true)}
+                      >
+                        ✅ Concluído
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-status-agenda ${!aula.realizada ? 'ativo-falta' : ''}`}
+                        onClick={() => definirStatus(aula, false)}
+                      >
+                        ❌ Faltou
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -263,10 +277,24 @@ export default function Presenca() {
                 ))}
               </select>
 
-              <label className="checkbox-row" style={{ marginTop: 14 }}>
-                <input type="checkbox" checked={form.realizada} onChange={(e) => setForm({ ...form, realizada: e.target.checked })} />
-                Vai acontecer normalmente (desmarque para já registrar falta)
-              </label>
+              <label>Status</label>
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  type="button"
+                  className={`btn-status-agenda ${form.realizada ? 'ativo-ok' : ''}`}
+                  onClick={() => setForm({ ...form, realizada: true })}
+                >
+                  ✅ Concluído
+                </button>
+                <button
+                  type="button"
+                  className={`btn-status-agenda ${!form.realizada ? 'ativo-falta' : ''}`}
+                  onClick={() => setForm({ ...form, realizada: false })}
+                >
+                  ❌ Faltou
+                </button>
+              </div>
+              <p className="dica">Marcando um dia futuro, deixe em "Concluído" — é só o que aparece agendado.</p>
 
               <label>Observação</label>
               <textarea rows={2} value={form.observacao} onChange={(e) => setForm({ ...form, observacao: e.target.value })} placeholder="Correções feitas, evolução, etc." />

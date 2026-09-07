@@ -557,6 +557,7 @@ label {
 
 .legenda-bola.aula { background: var(--positivo); }
 .legenda-bola.consulta { background: var(--azul-claro); }
+.legenda-bola.reposicao { background: var(--atencao); }
 .legenda-bola.falta { background: var(--negativo); }
 
 .calendario {
@@ -650,6 +651,7 @@ label {
 
 .dia-chip.aula { background: var(--positivo); }
 .dia-chip.consulta { background: var(--azul-claro); }
+.dia-chip.reposicao { background: var(--atencao); color: var(--noite); }
 .dia-chip.falta { background: var(--negativo); }
 
 .dia-chip-extra {
@@ -795,6 +797,39 @@ label {
   object-fit: contain;
   border-radius: var(--raio-p);
   background: var(--noite);
+}
+
+/* -------------------------------------------------------------------- item da agenda */
+
+.item-agenda {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linha);
+}
+
+.item-agenda:last-child {
+  border-bottom: none;
+}
+
+.btn-status-agenda {
+  flex: 1;
+  padding: 8px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+  border-radius: var(--raio);
+}
+
+.btn-status-agenda.ativo-ok {
+  border-color: var(--positivo);
+  color: var(--positivo);
+  background: rgba(126, 200, 169, 0.1);
+}
+
+.btn-status-agenda.ativo-falta {
+  border-color: var(--negativo);
+  color: var(--negativo);
+  background: rgba(217, 138, 123, 0.1);
 }
 
 /* -------------------------------------------------------------------- sub-abas */

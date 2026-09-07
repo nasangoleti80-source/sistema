@@ -248,6 +248,7 @@ export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parc
 export const TIPOS_AULA = {
   presencial: 'Aula',
   consulta: 'Consulta/avaliação',
+  reposicao: 'Reposição de aula',
   consultoria_ajuste: 'Ajuste de consultoria',
 };
 
