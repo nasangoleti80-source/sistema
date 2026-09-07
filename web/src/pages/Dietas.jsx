@@ -7,6 +7,18 @@ function formVazio() {
   return { nome: '', observacoes: '', refeicoesPorTipo: {}, bancoPorTipo: {} };
 }
 
+// Desmonta uma dieta já salva de volta no formato do formulário, para editar
+// o que já está pronto em vez de precisar recriar do zero.
+function formDeDieta(dieta) {
+  const refeicoesPorTipo = {};
+  const bancoPorTipo = {};
+  for (const r of dieta.refeicoes || []) {
+    if (r.bancoId) bancoPorTipo[r.tipo] = r.bancoId;
+    else refeicoesPorTipo[r.tipo] = r.itens || [];
+  }
+  return { nome: dieta.nome, observacoes: dieta.observacoes || '', refeicoesPorTipo, bancoPorTipo };
+}
+
 export default function Dietas() {
   const [searchParams] = useSearchParams();
   const [alunos, setAlunos] = useState([]);
@@ -16,6 +28,7 @@ export default function Dietas() {
   const [bancos, setBancos] = useState([]);
   const [modelos, setModelos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState(null); // id da dieta em edição, ou null para nova
   const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
 
@@ -36,7 +49,15 @@ export default function Dietas() {
   useEffect(() => { if (alunoId) carregar(alunoId); }, [alunoId]);
 
   function abrirNovo() {
+    setEditando(null);
     setForm(formVazio());
+    setErro('');
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(dieta) {
+    setEditando(dieta.id);
+    setForm(formDeDieta(dieta));
     setErro('');
     setModalAberto(true);
   }
@@ -102,7 +123,11 @@ export default function Dietas() {
         })
         .filter((r) => r.bancoId || (r.itens && r.itens.length > 0));
 
-      await api.criarDieta({ alunoId, nome: form.nome, observacoes: form.observacoes, refeicoes });
+      if (editando) {
+        await api.atualizarDieta(editando, { nome: form.nome, observacoes: form.observacoes, refeicoes });
+      } else {
+        await api.criarDieta({ alunoId, nome: form.nome, observacoes: form.observacoes, refeicoes });
+      }
       setModalAberto(false);
       await carregar(alunoId);
     } catch (e) {
@@ -144,7 +169,10 @@ export default function Dietas() {
         <div className="card" key={d.id}>
           <div className="row">
             <div className="name">{d.nome} {!d.ativa && <span className="badge sem-cobranca">inativa</span>}</div>
-            <button className="btn-danger btn-small" onClick={() => excluir(d)}>Excluir</button>
+            <div className="row" style={{ width: 'auto', gap: 6 }}>
+              <button className="btn-secondary btn-small" onClick={() => abrirEdicao(d)}>✎ Editar</button>
+              <button className="btn-danger btn-small" onClick={() => excluir(d)}>Excluir</button>
+            </div>
           </div>
           {(d.refeicoes || []).map((r, i) => {
             const banco = r.bancoId ? bancos.find((b) => b.id === r.bancoId) : null;
@@ -178,10 +206,10 @@ export default function Dietas() {
       {modalAberto && (
         <div className="modal-backdrop" onClick={() => setModalAberto(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h1>Nova dieta</h1>
+            <h1>{editando ? 'Editar dieta' : 'Nova dieta'}</h1>
             {erro && <div className="error-msg">{erro}</div>}
             <form onSubmit={salvar}>
-              {modelos.length > 0 && (
+              {!editando && modelos.length > 0 && (
                 <>
                   <label>Começar a partir de um modelo</label>
                   <select defaultValue="" onChange={usarModelo}>
