@@ -1383,6 +1383,21 @@ label {
   color: var(--atencao);
 }
 
+.obs-personal {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--atencao);
+  border-radius: 0 var(--raio) var(--raio) 0;
+  background: rgba(201, 168, 134, 0.1);
+  color: var(--atencao);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.tabela-piramide {
+  margin-top: 8px;
+}
+
 .ex-detalhe {
   display: flex;
   flex-direction: column;

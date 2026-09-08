@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { acharNoCatalogo, capaDoExercicio, METODOS_TREINO } from '../api.js';
+import { acharNoCatalogo, capaDoExercicio, METODOS_TREINO, resumoMetodo } from '../api.js';
 
 /**
  * Um exercício dentro de um treino, enriquecido com o catálogo.
@@ -32,18 +32,14 @@ export default function ExercicioDoTreino({ ex, indice, ordem }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* O catálogo manda no nome: no treino ele pode vir em caixa alta ou
               com o espaçamento torto, da IA ou da digitação. */}
-          <div className="name">{doCatalogo?.nome || ex.nome}</div>
+          <div className="name">
+            {ex.metodo && ex.metodo !== 'convencional' && (
+              <span className="badge pendente" style={{ marginRight: 6 }}>{METODOS_TREINO[ex.metodo] || ex.metodo}</span>
+            )}
+            {doCatalogo?.nome || ex.nome}
+          </div>
           <div className="meta">
-            <span className="num">
-              {ex.series}×{ex.repeticoes}
-            </span>
-            {ex.descansoSeg ? (
-              <>
-                {' · descanso '}
-                <span className="num">{ex.descansoSeg}s</span>
-              </>
-            ) : null}
-            {ex.metodo && ex.metodo !== 'convencional' && ` · ${METODOS_TREINO[ex.metodo] || ex.metodo}`}
+            <span className="num">{resumoMetodo(ex)}</span>
             {ex.cargaAlvoKg ? (
               <>
                 {' · alvo '}
@@ -55,7 +51,7 @@ export default function ExercicioDoTreino({ ex, indice, ordem }) {
           {/* A informação que mais importa para quem está começando. */}
           {doCatalogo?.ondeFica && <div className="onde-fica">Onde fica: {doCatalogo.ondeFica}</div>}
 
-          {ex.observacao && <div className="meta">{ex.observacao}</div>}
+          {ex.observacao && <div className="obs-personal">Obs. do personal: {ex.observacao}</div>}
         </div>
 
         {temDetalhe && (

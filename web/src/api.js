@@ -225,11 +225,55 @@ export const GRUPOS_MUSCULARES = {
 };
 
 export const METODOS_TREINO = {
-  convencional: 'Convencional', cluster_set: 'Cluster-set', rest_pause: 'Rest-pause',
-  drop_set: 'Drop-set', tri_set: 'Tri-set', bi_set: 'Bi-set (super-série)',
-  piramide: 'Pirâmide', german_volume: 'German Volume Training', isometria: 'Isometria',
-  excentrica: 'Ênfase excêntrica',
+  convencional: 'Tradicional',
+  drop_set: 'Drop-Set',
+  cluster: 'Cluster',
+  rest_pause: 'Rest-Pause',
+  myo_reps: 'Myo-Reps',
+  super_slow: 'Super Slow',
+  negativo: 'Negativo',
+  piramide_crescente: 'Pirâmide Crescente',
+  piramide_decrescente: 'Pirâmide Decrescente',
 };
+
+export const METODOS_TREINO_DESC = {
+  convencional: 'Séries e repetições padrão',
+  drop_set: 'Reduções progressivas de carga',
+  cluster: 'Micro-séries com pausas curtas',
+  rest_pause: 'Pausas curtas até atingir o alvo',
+  myo_reps: 'Série de ativação + mini-séries',
+  super_slow: 'Cadência ultra lenta para máxima tensão',
+  negativo: 'Ênfase na fase excêntrica (descida controlada)',
+  piramide_crescente: 'Peso aumenta, repetições diminuem',
+  piramide_decrescente: 'Peso diminui, repetições aumentam',
+};
+
+/** Config padrão de cada método — o que preenche os campos ao trocar de método. */
+export function configPadraoMetodo(metodo) {
+  switch (metodo) {
+    case 'drop_set':
+      return { series: 3, repsAlvo: 12, numDrops: 3, reducaoPercentual: 20, descansoSeriesSeg: 90, pesoInicialKg: '' };
+    case 'cluster':
+      return { series: 3, clusters: 5, repsPorCluster: 3, pausaIntraClusterSeg: 15, descansoSeriesSeg: 90, pesoKg: '' };
+    case 'rest_pause':
+      return { repsAlvo: 30, pausaSeg: 15 };
+    case 'myo_reps':
+      return { repsAtivacao: 15, pausaSeg: 5, repsMiniSerie: 5, maxMiniSeries: 5 };
+    case 'super_slow':
+      return { series: 3, repsAlvo: 8, faseConcentricaSeg: 4, faseExcentricaSeg: 4, descansoSeg: 60 };
+    case 'negativo':
+      return { series: 3, repsAlvo: 6, tempoFaseNegativaSeg: 4, descansoSeg: 90 };
+    case 'piramide_crescente':
+    case 'piramide_decrescente':
+      return {
+        seriesPiramide: metodo === 'piramide_decrescente'
+          ? [{ reps: 6, cargaKg: 80 }, { reps: 8, cargaKg: 70 }, { reps: 10, cargaKg: 60 }, { reps: 12, cargaKg: 50 }]
+          : [{ reps: 12, cargaKg: 40 }, { reps: 10, cargaKg: 50 }, { reps: 8, cargaKg: 60 }, { reps: 6, cargaKg: 70 }],
+      };
+    default:
+      return {};
+  }
+}
 
 export const OBJETIVOS_TREINO = { hipertrofia: 'Hipertrofia', emagrecimento: 'Emagrecimento', saude: 'Saúde/condicionamento' };
 export const TIPOS_PERIODIZACAO = { linear: 'Linear', ondulatoria: 'Ondulatória', linear_inversa: 'Linear inversa', blocos: 'Blocos' };
@@ -358,6 +402,31 @@ export function volumeDoDia(dia) {
 
 /** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
 export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
+
+/** Resumo de uma linha do que fazer, no vocabulário de cada método — o que a
+ * aluna lê no treino em vez de só "3×8-12" para todo método. */
+export function resumoMetodo(ex) {
+  const c = ex.config || {};
+  switch (ex.metodo) {
+    case 'drop_set':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · ${c.numDrops ?? 0} drops de ${c.reducaoPercentual ?? 0}%`;
+    case 'cluster':
+      return `${c.series ?? ex.series} séries · ${c.clusters ?? 0}x${c.repsPorCluster ?? 0} reps (pausa ${c.pausaIntraClusterSeg ?? 0}s)`;
+    case 'rest_pause':
+      return `Até a falha, pausa ${c.pausaSeg ?? 0}s, repita até ${c.repsAlvo ?? 0} reps`;
+    case 'myo_reps':
+      return `Ativação ${c.repsAtivacao ?? 0} reps + até ${c.maxMiniSeries ?? 0} mini-séries de ${c.repsMiniSerie ?? 0}`;
+    case 'super_slow':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · cadência ${c.faseConcentricaSeg ?? 0}/${c.faseExcentricaSeg ?? 0}s`;
+    case 'negativo':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · descida em ${c.tempoFaseNegativaSeg ?? 0}s, subida com ajuda`;
+    case 'piramide_crescente':
+    case 'piramide_decrescente':
+      return (c.seriesPiramide || []).map((s) => `${s.reps}x${s.cargaKg}kg`).join(' → ');
+    default:
+      return `${ex.series}×${ex.repeticoes}`;
+  }
+}
 
 /** Total de séries de um dia (soma de todos os exercícios). */
 export function seriesDoDia(dia) {
