@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { alunoId, nome, configuracao, dias } = req.body;
+  const { alunoId, nome, configuracao, dias, dataInicio, dataFim } = req.body;
   if (!alunoId) return res.status(400).json({ error: 'alunoId é obrigatório' });
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === alunoId);
@@ -32,6 +32,8 @@ router.post('/', async (req, res) => {
     nome: nome?.trim() || 'Treino',
     configuracao: configuracao || {},
     dias: Array.isArray(dias) ? dias : [],
+    dataInicio: dataInicio || null,
+    dataFim: dataFim || null,
     geradoPorIA: false,
     ativo: true,
     criadoEm: new Date().toISOString(),
@@ -46,13 +48,15 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.treinos.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Treino não encontrado' });
   const atual = db.data.treinos[idx];
-  const { nome, configuracao, dias, ativo } = req.body;
+  const { nome, configuracao, dias, ativo, dataInicio, dataFim } = req.body;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
     configuracao: configuracao !== undefined ? { ...atual.configuracao, ...configuracao } : atual.configuracao,
     dias: dias !== undefined ? dias : atual.dias,
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,
+    dataInicio: dataInicio !== undefined ? dataInicio : atual.dataInicio,
+    dataFim: dataFim !== undefined ? dataFim : atual.dataFim,
   };
   db.data.treinos[idx] = atualizado;
   await db.write();
@@ -72,7 +76,7 @@ router.delete('/:id', async (req, res) => {
 // configuracao: { objetivo, tipoPeriodizacao, nivel, diasPorSemana, divisao,
 //   duracaoSessaoMin, semanasMesociclo, modalidade, aerobio, enfaseMuscular: [] }
 router.post('/gerar-ia', async (req, res) => {
-  const { alunoId, configuracao } = req.body;
+  const { alunoId, configuracao, dataInicio, dataFim } = req.body;
   if (!alunoId || !configuracao) return res.status(400).json({ error: 'alunoId e configuracao são obrigatórios' });
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === alunoId);
@@ -135,6 +139,8 @@ Retorne apenas o JSON.`;
       configuracao,
       dias: gerado.dias || [],
       orientacoesGerais: gerado.orientacoesGerais || '',
+      dataInicio: dataInicio || null,
+      dataFim: dataFim || null,
       geradoPorIA: true,
       ativo: true,
       criadoEm: new Date().toISOString(),

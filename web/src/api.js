@@ -200,6 +200,15 @@ export function somarMes(mes, delta) {
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** Soma meses a uma data completa (YYYY-MM-DD) — usado para sugerir o fim de
+ * um treino a partir do início (padrão: 1 mês de duração). */
+export function somarMeses(dataISO, meses) {
+  if (!dataISO) return '';
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return data.toISOString().slice(0, 10);
+}
+
 export const NIVEIS_ATIVIDADE = {
   sedentario: 'Sedentário', leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso',
 };

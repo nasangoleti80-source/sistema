@@ -3,7 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   api, OBJETIVOS_TREINO, TIPOS_PERIODIZACAO, NIVEIS_ALUNO, DIVISOES_TREINO,
   DURACOES_SESSAO, SEMANAS_MESOCICLO, MODALIDADES_TREINO, OPCOES_AEROBIO, GRUPOS_MUSCULARES,
+  formatarData, somarMeses,
 } from '../api.js';
+
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const CONFIG_VAZIA = {
   objetivo: 'hipertrofia',
@@ -57,6 +62,12 @@ export default function Treinos() {
     await carregar(alunoId);
   }
 
+  async function alternarArquivado(e, treino) {
+    e.stopPropagation();
+    await api.atualizarTreino(treino.id, { ativo: !treino.ativo });
+    await carregar(alunoId);
+  }
+
   function ultimoTreinoData(treinoId) {
     const doTreino = registros.filter((r) => r.treinoId === treinoId).sort((a, b) => (a.data < b.data ? 1 : -1));
     return doTreino[0]?.data || null;
@@ -91,8 +102,18 @@ export default function Treinos() {
                 <div className="name">{t.nome}</div>
                 <div className="meta">🏋️ {totalExercicios(t)} exercícios</div>
                 <div className="meta">🕐 Último treino: {ultima ? new Date(ultima).toLocaleDateString('pt-BR') : '—'}</div>
+                {(t.dataInicio || t.dataFim) && (
+                  <div className="meta">
+                    📅 {t.dataInicio ? formatarData(t.dataInicio) : '—'} até {t.dataFim ? formatarData(t.dataFim) : '—'}
+                  </div>
+                )}
               </div>
-              <span className={`badge ${t.ativo ? 'pago' : 'sem-cobranca'}`}>{t.ativo ? 'Ativo' : 'Inativo'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                <span className={`badge ${t.ativo ? 'pago' : 'sem-cobranca'}`}>{t.ativo ? 'Ativo' : 'Arquivado'}</span>
+                <button type="button" className="btn-secondary btn-small" onClick={(e) => alternarArquivado(e, t)}>
+                  {t.ativo ? 'Arquivar' : 'Reativar'}
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -120,8 +141,17 @@ function ModalNovoTreino({ alunoId, onClose, onCriado, onIrEndurance }) {
   const [modo, setModo] = useState(null); // 'personalizado' | 'ia'
   const [nome, setNome] = useState('');
   const [config, setConfig] = useState(CONFIG_VAZIA);
+  const [dataInicio, setDataInicio] = useState(hojeISO());
+  const [dataFim, setDataFim] = useState(somarMeses(hojeISO(), 1));
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+
+  // Ao mudar o início, sugere 1 mês de duração — mas o treinador pode
+  // ajustar o término livremente depois.
+  function mudarDataInicio(valor) {
+    setDataInicio(valor);
+    setDataFim(somarMeses(valor, 1));
+  }
 
   function alternarEnfase(grupo) {
     setConfig((c) => {
@@ -138,7 +168,7 @@ function ModalNovoTreino({ alunoId, onClose, onCriado, onIrEndurance }) {
     setSalvando(true);
     setErro('');
     try {
-      const treino = await api.criarTreino({ alunoId, nome, configuracao: {}, dias: [] });
+      const treino = await api.criarTreino({ alunoId, nome, configuracao: {}, dias: [], dataInicio, dataFim });
       onCriado(treino);
     } catch (e) {
       setErro(e.message);
@@ -152,7 +182,7 @@ function ModalNovoTreino({ alunoId, onClose, onCriado, onIrEndurance }) {
     setErro('');
     setSalvando(true);
     try {
-      const treino = await api.gerarTreinoIA({ alunoId, configuracao: config });
+      const treino = await api.gerarTreinoIA({ alunoId, configuracao: config, dataInicio, dataFim });
       onCriado(treino);
     } catch (e) {
       setErro(e.message);
@@ -191,6 +221,19 @@ function ModalNovoTreino({ alunoId, onClose, onCriado, onIrEndurance }) {
           <form onSubmit={criarPersonalizado}>
             <label>Nome do treino</label>
             <input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Treino Setembro 2026" autoFocus />
+
+            <div className="row" style={{ gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label>Data de início</label>
+                <input type="date" value={dataInicio} onChange={(e) => mudarDataInicio(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label>Data de término</label>
+                <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+              </div>
+            </div>
+            <p className="dica">Sugestão automática de 1 mês — ajuste se o programa durar mais ou menos tempo.</p>
+
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Criando...' : 'Criar e adicionar sessões'}</button>
               <button type="button" className="btn-secondary" onClick={() => setModo(null)}>Voltar</button>
@@ -263,6 +306,18 @@ function ModalNovoTreino({ alunoId, onClose, onCriado, onIrEndurance }) {
                 </button>
               ))}
             </div>
+
+            <div className="row" style={{ gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label>Data de início</label>
+                <input type="date" value={dataInicio} onChange={(e) => mudarDataInicio(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label>Data de término</label>
+                <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+              </div>
+            </div>
+            <p className="dica">Sugestão automática de 1 mês — ajuste se o programa durar mais ou menos tempo.</p>
 
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Gerando...' : 'Gerar treino'}</button>
