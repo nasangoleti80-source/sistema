@@ -45,30 +45,38 @@ function ItemDieta({ item, onEscolher }) {
   );
 }
 
-// Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
-// inteira (ex: "Opção 03"), não alimento por alimento. A opção escolhida
-// fica fixa à esquerda como principal; as outras deslizam ao lado. O botão
-// "Trocar opção" faz a mesma troca do arrasto, para quem prefere tocar.
-function RefeicaoBanco({ banco, escolhaAtual, onEscolher }) {
-  if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
+// Um alimento dentro de uma opção, em texto corrido: "1 fatia de pão de
+// forma" — usa a alternativa já escolhida quando o item tiver mais de uma.
+function textoItem(item) {
+  const op = item.opcoes?.[item.escolhaAtual || 0] || item.opcoes?.[0];
+  if (!op?.nome) return '';
+  return `${op.quantidade} ${UNIDADES_ALIMENTO[op.unidade] || op.unidade} de ${op.nome}`;
+}
+
+function resumoOpcao(opcao) {
+  return (opcao.itens || []).map(textoItem).filter(Boolean).join(' + ');
+}
+
+// Refeição com opções completas (vieram de um banco de opções, copiadas
+// para dentro desta dieta): o aluno arrasta para o lado e troca a refeição
+// inteira — ex: "1 fatia de pão + 15g de doce de leite" vira "café com uma
+// dose de whey". A opção escolhida fica fixa à esquerda como principal.
+function RefeicaoOpcoes({ opcoes, escolhaAtual, onEscolher }) {
+  if (!opcoes?.length) return <p className="meta">Nenhuma opção cadastrada nesta refeição ainda.</p>;
   const escolhida = escolhaAtual || 0;
-  const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
   return (
     <div>
       <CarrosselOpcoes
-        opcoes={banco.opcoes}
+        opcoes={opcoes}
         escolhida={escolhida}
         onEscolher={onEscolher}
         render={(o, principal) => (
-          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
+          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{resumoOpcao(o)}</div>
         )}
       />
-      <button type="button" className="btn-trocar-opcao" onClick={() => onEscolher((escolhida + 1) % banco.opcoes.length)}>
-        🔄 Trocar opção ({escolhida + 1}/{banco.opcoes.length})
+      <button type="button" className="btn-trocar-opcao" onClick={() => onEscolher((escolhida + 1) % opcoes.length)}>
+        🔄 Trocar opção ({escolhida + 1}/{opcoes.length})
       </button>
-      <div style={{ marginTop: 10 }}>
-        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} onEscolher={() => {}} />)}
-      </div>
     </div>
   );
 }
@@ -140,7 +148,6 @@ export default function Portal() {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [pacotes, setPacotes] = useState([]);
   const [dietas, setDietas] = useState([]);
-  const [bancos, setBancos] = useState([]);
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
@@ -153,7 +160,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex, bo] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -163,7 +170,6 @@ export default function Portal() {
         api.listarMensagens(alunoId),
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
-        api.listarBancosOpcoes(),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -173,7 +179,6 @@ export default function Portal() {
       setDietas(d.filter((dt) => dt.ativa));
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
-      setBancos(bo);
     } catch (e) {
       setErro(e.message);
     }
@@ -377,10 +382,10 @@ export default function Portal() {
               {(d.refeicoes || []).map((r, i) => (
                 <div key={i} className="card" style={{ background: 'var(--bg)' }}>
                   <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
-                  {r.bancoId
+                  {r.opcoes
                     ? (
-                      <RefeicaoBanco
-                        banco={bancos.find((b) => b.id === r.bancoId)}
+                      <RefeicaoOpcoes
+                        opcoes={r.opcoes}
                         escolhaAtual={r.escolhaAtual}
                         onEscolher={(v) => mudarEscolhaRefeicao(d.id, i, v)}
                       />
@@ -388,7 +393,7 @@ export default function Portal() {
                     : (r.itens || []).map((item, j) => (
                       <ItemDieta key={j} item={item} onEscolher={(v) => mudarEscolhaItem(d.id, i, j, v)} />
                     ))}
-                  {!r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
+                  {!r.itens && !r.opcoes && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}
             </div>

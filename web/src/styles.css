@@ -721,6 +721,11 @@ label {
   margin-top: 2px;
 }
 
+.opcao-refeicao {
+  margin-top: 10px;
+  background: var(--noite);
+}
+
 /* -------------------------------------------------------------------- comparar avaliações */
 
 .chip-avaliacao {

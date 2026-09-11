@@ -3,7 +3,7 @@ import { api, TIPOS_REFEICAO } from '../api.js';
 import ConstrutorDieta from '../components/ConstrutorDieta.jsx';
 
 function formVazio() {
-  return { nome: '', observacoes: '', refeicoesPorTipo: {}, bancoPorTipo: {} };
+  return { nome: '', observacoes: '', refeicoesPorTipo: {}, opcoesPorTipo: {}, bancoOrigemPorTipo: {} };
 }
 
 export default function ModelosDieta() {
@@ -42,24 +42,34 @@ export default function ModelosDieta() {
 
   function abrirEdicao(modelo) {
     const refeicoesPorTipo = {};
-    const bancoPorTipo = {};
+    const opcoesPorTipo = {};
+    const bancoOrigemPorTipo = {};
     for (const r of modelo.refeicoes || []) {
-      if (r.bancoId) bancoPorTipo[r.tipo] = r.bancoId;
-      else refeicoesPorTipo[r.tipo] = r.itens || [];
+      if (r.opcoes) {
+        opcoesPorTipo[r.tipo] = r.opcoes;
+        if (r.bancoOrigemId) bancoOrigemPorTipo[r.tipo] = r.bancoOrigemId;
+      } else if (r.bancoId) {
+        const banco = bancos.find((b) => b.id === r.bancoId);
+        opcoesPorTipo[r.tipo] = banco ? JSON.parse(JSON.stringify(banco.opcoes)) : [];
+        bancoOrigemPorTipo[r.tipo] = r.bancoId;
+      } else {
+        refeicoesPorTipo[r.tipo] = r.itens || [];
+      }
     }
     setEditando(modelo);
-    setForm({ nome: modelo.nome, observacoes: modelo.observacoes || '', refeicoesPorTipo, bancoPorTipo });
+    setForm({ nome: modelo.nome, observacoes: modelo.observacoes || '', refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo });
     setErro('');
     setModalAberto(true);
   }
 
   function toggleTipo(tipo) {
     setForm((f) => {
-      const ativo = f.refeicoesPorTipo[tipo] !== undefined || f.bancoPorTipo[tipo] !== undefined;
+      const ativo = f.refeicoesPorTipo[tipo] !== undefined || f.opcoesPorTipo[tipo] !== undefined;
       if (ativo) {
         const { [tipo]: _r, ...refeicoesPorTipo } = f.refeicoesPorTipo;
-        const { [tipo]: _b, ...bancoPorTipo } = f.bancoPorTipo;
-        return { ...f, refeicoesPorTipo, bancoPorTipo };
+        const { [tipo]: _o, ...opcoesPorTipo } = f.opcoesPorTipo;
+        const { [tipo]: _b, ...bancoOrigemPorTipo } = f.bancoOrigemPorTipo;
+        return { ...f, refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo };
       }
       return { ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [] } };
     });
@@ -69,18 +79,26 @@ export default function ModelosDieta() {
     setForm((f) => ({ ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: itens } }));
   }
 
-  function setBanco(tipo, bancoId) {
+  function setOpcoes(tipo, opcoes) {
+    setForm((f) => ({ ...f, opcoesPorTipo: { ...f.opcoesPorTipo, [tipo]: opcoes } }));
+  }
+
+  function escolherBanco(tipo, bancoId) {
     setForm((f) => {
-      const bancoPorTipo = { ...f.bancoPorTipo };
+      const opcoesPorTipo = { ...f.opcoesPorTipo };
+      const bancoOrigemPorTipo = { ...f.bancoOrigemPorTipo };
       const refeicoesPorTipo = { ...f.refeicoesPorTipo };
       if (bancoId) {
-        bancoPorTipo[tipo] = bancoId;
+        const banco = bancos.find((b) => b.id === bancoId);
+        opcoesPorTipo[tipo] = banco ? JSON.parse(JSON.stringify(banco.opcoes)) : [];
+        bancoOrigemPorTipo[tipo] = bancoId;
         delete refeicoesPorTipo[tipo];
       } else {
-        delete bancoPorTipo[tipo];
+        delete opcoesPorTipo[tipo];
+        delete bancoOrigemPorTipo[tipo];
         refeicoesPorTipo[tipo] = [];
       }
-      return { ...f, bancoPorTipo, refeicoesPorTipo };
+      return { ...f, opcoesPorTipo, bancoOrigemPorTipo, refeicoesPorTipo };
     });
   }
 
@@ -88,16 +106,26 @@ export default function ModelosDieta() {
     e.preventDefault();
     setErro('');
     try {
-      const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
+      const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.opcoesPorTipo)])];
       const refeicoes = tiposAtivos
         .map((tipo) => {
-          if (form.bancoPorTipo[tipo]) return { tipo, nome: TIPOS_REFEICAO[tipo], bancoId: form.bancoPorTipo[tipo] };
+          if (form.opcoesPorTipo[tipo]) {
+            const opcoes = form.opcoesPorTipo[tipo]
+              .map((op) => ({
+                ...op,
+                itens: op.itens
+                  .map((it) => ({ ...it, opcoes: it.opcoes.filter((o) => o.nome?.trim()) }))
+                  .filter((it) => it.opcoes.length > 0),
+              }))
+              .filter((op) => op.itens.length > 0);
+            return { tipo, nome: TIPOS_REFEICAO[tipo], bancoOrigemId: form.bancoOrigemPorTipo[tipo] || null, opcoes };
+          }
           const itens = (form.refeicoesPorTipo[tipo] || [])
             .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.nome?.trim()) }))
             .filter((it) => it.opcoes.length > 0);
           return { tipo, nome: TIPOS_REFEICAO[tipo], itens };
         })
-        .filter((r) => r.bancoId || (r.itens && r.itens.length > 0));
+        .filter((r) => (r.opcoes && r.opcoes.length > 0) || (r.itens && r.itens.length > 0));
 
       if (editando) await api.atualizarModeloDieta(editando.id, { nome: form.nome, observacoes: form.observacoes, refeicoes });
       else await api.criarModeloDieta({ nome: form.nome, observacoes: form.observacoes, refeicoes });
@@ -114,7 +142,7 @@ export default function ModelosDieta() {
     await carregar();
   }
 
-  const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
+  const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.opcoesPorTipo)])];
 
   return (
     <div>
@@ -152,8 +180,10 @@ export default function ModelosDieta() {
                 onToggleTipo={toggleTipo}
                 refeicoesPorTipo={form.refeicoesPorTipo}
                 onSetItens={setItens}
-                bancoPorTipo={form.bancoPorTipo}
-                onSetBanco={setBanco}
+                opcoesPorTipo={form.opcoesPorTipo}
+                bancoOrigemPorTipo={form.bancoOrigemPorTipo}
+                onEscolherBanco={escolherBanco}
+                onSetOpcoes={setOpcoes}
                 bancos={bancos}
                 catalogo={catalogo}
               />

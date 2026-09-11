@@ -4,19 +4,20 @@ import { api, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
 import ConstrutorDieta from '../components/ConstrutorDieta.jsx';
 
 function formVazio() {
-  return { nome: '', observacoes: '', refeicoesPorTipo: {}, bancoPorTipo: {} };
+  return { nome: '', observacoes: '', refeicoesPorTipo: {}, opcoesPorTipo: {}, bancoOrigemPorTipo: {} };
 }
 
-// Desmonta uma dieta já salva de volta no formato do formulário, para editar
-// o que já está pronto em vez de precisar recriar do zero.
-function formDeDieta(dieta) {
-  const refeicoesPorTipo = {};
-  const bancoPorTipo = {};
-  for (const r of dieta.refeicoes || []) {
-    if (r.bancoId) bancoPorTipo[r.tipo] = r.bancoId;
-    else refeicoesPorTipo[r.tipo] = r.itens || [];
-  }
-  return { nome: dieta.nome, observacoes: dieta.observacoes || '', refeicoesPorTipo, bancoPorTipo };
+// Um alimento dentro de uma opção, no texto corrido "1 fatia de pão + 15g de
+// doce de leite" — usa a alternativa já escolhida quando o item tiver mais
+// de uma (ou a primeira, por padrão).
+function textoItem(item) {
+  const op = item.opcoes?.[item.escolhaAtual || 0] || item.opcoes?.[0];
+  if (!op?.nome) return '';
+  return `${op.quantidade} ${UNIDADES_ALIMENTO[op.unidade] || op.unidade} de ${op.nome}`;
+}
+
+function resumoOpcao(opcao) {
+  return (opcao.itens || []).map(textoItem).filter(Boolean).join(' + ');
 }
 
 export default function Dietas() {
@@ -55,9 +56,32 @@ export default function Dietas() {
     setModalAberto(true);
   }
 
+  // Desmonta uma dieta (ou modelo) já salvo de volta no formato do
+  // formulário. Uma refeição vinculada por bancoId antigo (formato anterior,
+  // sem cópia própria) é clonada aqui na hora — a partir daí passa a ter
+  // vida própria, como qualquer refeição criada no formato novo.
+  function formDe(origem) {
+    const refeicoesPorTipo = {};
+    const opcoesPorTipo = {};
+    const bancoOrigemPorTipo = {};
+    for (const r of origem.refeicoes || []) {
+      if (r.opcoes) {
+        opcoesPorTipo[r.tipo] = r.opcoes;
+        if (r.bancoOrigemId) bancoOrigemPorTipo[r.tipo] = r.bancoOrigemId;
+      } else if (r.bancoId) {
+        const banco = bancos.find((b) => b.id === r.bancoId);
+        opcoesPorTipo[r.tipo] = banco ? JSON.parse(JSON.stringify(banco.opcoes)) : [];
+        bancoOrigemPorTipo[r.tipo] = r.bancoId;
+      } else {
+        refeicoesPorTipo[r.tipo] = r.itens || [];
+      }
+    }
+    return { nome: origem.nome, observacoes: origem.observacoes || '', refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo };
+  }
+
   function abrirEdicao(dieta) {
     setEditando(dieta.id);
-    setForm(formDeDieta(dieta));
+    setForm(formDe(dieta));
     setErro('');
     setModalAberto(true);
   }
@@ -67,23 +91,19 @@ export default function Dietas() {
     if (!modeloId) return;
     const modelo = modelos.find((m) => m.id === modeloId);
     if (!modelo) return;
-    const refeicoesPorTipo = {};
-    const bancoPorTipo = {};
-    for (const r of modelo.refeicoes || []) {
-      if (r.bancoId) bancoPorTipo[r.tipo] = r.bancoId;
-      else refeicoesPorTipo[r.tipo] = r.itens || [];
-    }
-    setForm((f) => ({ ...f, nome: f.nome || modelo.nome, refeicoesPorTipo, bancoPorTipo }));
+    const { refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo } = formDe(modelo);
+    setForm((f) => ({ ...f, nome: f.nome || modelo.nome, refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo }));
     e.target.value = '';
   }
 
   function toggleTipo(tipo) {
     setForm((f) => {
-      const ativo = f.refeicoesPorTipo[tipo] !== undefined || f.bancoPorTipo[tipo] !== undefined;
+      const ativo = f.refeicoesPorTipo[tipo] !== undefined || f.opcoesPorTipo[tipo] !== undefined;
       if (ativo) {
         const { [tipo]: _r, ...refeicoesPorTipo } = f.refeicoesPorTipo;
-        const { [tipo]: _b, ...bancoPorTipo } = f.bancoPorTipo;
-        return { ...f, refeicoesPorTipo, bancoPorTipo };
+        const { [tipo]: _o, ...opcoesPorTipo } = f.opcoesPorTipo;
+        const { [tipo]: _b, ...bancoOrigemPorTipo } = f.bancoOrigemPorTipo;
+        return { ...f, refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo };
       }
       return { ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [] } };
     });
@@ -93,18 +113,29 @@ export default function Dietas() {
     setForm((f) => ({ ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: itens } }));
   }
 
-  function setBanco(tipo, bancoId) {
+  function setOpcoes(tipo, opcoes) {
+    setForm((f) => ({ ...f, opcoesPorTipo: { ...f.opcoesPorTipo, [tipo]: opcoes } }));
+  }
+
+  // Escolher um banco aqui copia todas as opções dele para dentro da dieta
+  // de uma vez só — não precisa escolher opção por opção, e dá para ajustar
+  // quantidade depois sem alterar o banco original nem outros alunos.
+  function escolherBanco(tipo, bancoId) {
     setForm((f) => {
-      const bancoPorTipo = { ...f.bancoPorTipo };
+      const opcoesPorTipo = { ...f.opcoesPorTipo };
+      const bancoOrigemPorTipo = { ...f.bancoOrigemPorTipo };
       const refeicoesPorTipo = { ...f.refeicoesPorTipo };
       if (bancoId) {
-        bancoPorTipo[tipo] = bancoId;
+        const banco = bancos.find((b) => b.id === bancoId);
+        opcoesPorTipo[tipo] = banco ? JSON.parse(JSON.stringify(banco.opcoes)) : [];
+        bancoOrigemPorTipo[tipo] = bancoId;
         delete refeicoesPorTipo[tipo];
       } else {
-        delete bancoPorTipo[tipo];
+        delete opcoesPorTipo[tipo];
+        delete bancoOrigemPorTipo[tipo];
         refeicoesPorTipo[tipo] = [];
       }
-      return { ...f, bancoPorTipo, refeicoesPorTipo };
+      return { ...f, opcoesPorTipo, bancoOrigemPorTipo, refeicoesPorTipo };
     });
   }
 
@@ -112,16 +143,26 @@ export default function Dietas() {
     e.preventDefault();
     setErro('');
     try {
-      const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
+      const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.opcoesPorTipo)])];
       const refeicoes = tiposAtivos
         .map((tipo) => {
-          if (form.bancoPorTipo[tipo]) return { tipo, nome: TIPOS_REFEICAO[tipo], bancoId: form.bancoPorTipo[tipo] };
+          if (form.opcoesPorTipo[tipo]) {
+            const opcoes = form.opcoesPorTipo[tipo]
+              .map((op) => ({
+                ...op,
+                itens: op.itens
+                  .map((it) => ({ ...it, opcoes: it.opcoes.filter((o) => o.nome?.trim()) }))
+                  .filter((it) => it.opcoes.length > 0),
+              }))
+              .filter((op) => op.itens.length > 0);
+            return { tipo, nome: TIPOS_REFEICAO[tipo], bancoOrigemId: form.bancoOrigemPorTipo[tipo] || null, opcoes };
+          }
           const itens = (form.refeicoesPorTipo[tipo] || [])
             .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.nome?.trim()) }))
             .filter((it) => it.opcoes.length > 0);
           return { tipo, nome: TIPOS_REFEICAO[tipo], itens };
         })
-        .filter((r) => r.bancoId || (r.itens && r.itens.length > 0));
+        .filter((r) => (r.opcoes && r.opcoes.length > 0) || (r.itens && r.itens.length > 0));
 
       if (editando) {
         await api.atualizarDieta(editando, { nome: form.nome, observacoes: form.observacoes, refeicoes });
@@ -141,7 +182,7 @@ export default function Dietas() {
     await carregar(alunoId);
   }
 
-  const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.bancoPorTipo)])];
+  const tiposAtivos = [...new Set([...Object.keys(form.refeicoesPorTipo), ...Object.keys(form.opcoesPorTipo)])];
 
   return (
     <div>
@@ -174,31 +215,31 @@ export default function Dietas() {
               <button className="btn-danger btn-small" onClick={() => excluir(d)}>Excluir</button>
             </div>
           </div>
-          {(d.refeicoes || []).map((r, i) => {
-            const banco = r.bancoId ? bancos.find((b) => b.id === r.bancoId) : null;
-            return (
-              <div key={i} className="card" style={{ background: 'var(--bg)' }}>
-                <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
-                {banco && (
-                  <div className="meta">
-                    📚 Banco "{banco.nome}" — {banco.opcoes?.length || 0} opção(ões): {banco.opcoes?.map((o) => o.nome).join(', ')}
-                  </div>
-                )}
-                {!banco && (r.itens || []).map((item, j) => (
-                  <div key={j} className="meta" style={{ marginTop: 4 }}>
-                    {item.opcoes.map((op, k) => (
-                      <span key={k}>
-                        {k > 0 && ' ou '}
-                        {op.nome} ({op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade})
-                      </span>
-                    ))}
-                  </div>
-                ))}
-                {/* Compatibilidade com dietas antigas em texto livre */}
-                {!r.itens && !banco && r.alimentos && <div className="meta">{r.alimentos}</div>}
-              </div>
-            );
-          })}
+          {(d.refeicoes || []).map((r, i) => (
+            <div key={i} className="card" style={{ background: 'var(--bg)' }}>
+              <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+              {r.opcoes && r.opcoes.map((op, j) => (
+                <div key={j} className="meta" style={{ marginTop: 4 }}>
+                  <strong>{op.nome}:</strong> {resumoOpcao(op) || '(sem alimentos ainda)'}
+                </div>
+              ))}
+              {!r.opcoes && (r.itens || []).map((item, j) => (
+                <div key={j} className="meta" style={{ marginTop: 4 }}>
+                  {item.opcoes.map((op, k) => (
+                    <span key={k}>
+                      {k > 0 && ' ou '}
+                      {op.nome} ({op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade})
+                    </span>
+                  ))}
+                </div>
+              ))}
+              {/* Compatibilidade com dietas antigas: banco linkado por id, sem cópia própria (não abertas para edição ainda) */}
+              {!r.opcoes && !r.itens && r.bancoId && (
+                <div className="meta">📚 Banco vinculado — abra em "Editar" para trazer as opções para esta dieta.</div>
+              )}
+              {!r.opcoes && !r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
+            </div>
+          ))}
           {d.observacoes && <p className="meta">{d.observacoes}</p>}
         </div>
       ))}
@@ -227,8 +268,10 @@ export default function Dietas() {
                 onToggleTipo={toggleTipo}
                 refeicoesPorTipo={form.refeicoesPorTipo}
                 onSetItens={setItens}
-                bancoPorTipo={form.bancoPorTipo}
-                onSetBanco={setBanco}
+                opcoesPorTipo={form.opcoesPorTipo}
+                bancoOrigemPorTipo={form.bancoOrigemPorTipo}
+                onEscolherBanco={escolherBanco}
+                onSetOpcoes={setOpcoes}
                 bancos={bancos}
                 catalogo={catalogo}
               />
