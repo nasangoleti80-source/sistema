@@ -29,6 +29,8 @@ export const api = {
   registrarAula: (dados) => request('/aulas', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarAula: (id, dados) => request(`/aulas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAula: (id) => request(`/aulas/${id}`, { method: 'DELETE' }),
+  /** Gera várias aulas de uma vez, num padrão de dias da semana dentro de um período. */
+  programarAulas: (dados) => request('/aulas/programar', { method: 'POST', body: JSON.stringify(dados) }),
 
   // Pagamentos
   listarPagamentos: (params = {}) => {
