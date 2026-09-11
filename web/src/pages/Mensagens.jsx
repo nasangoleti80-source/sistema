@@ -77,11 +77,7 @@ export default function Mensagens() {
         {mensagens.length === 0 && <p className="empty">Nenhuma mensagem ainda.</p>}
         {mensagens.map((m) => (
           <div key={m.id} style={{ textAlign: m.remetente === 'trainer' ? 'right' : 'left', marginBottom: 8 }}>
-            <span style={{
-              display: 'inline-block', padding: m.midia ? 6 : '8px 12px', borderRadius: 12, maxWidth: '80%',
-              background: m.remetente === 'trainer' ? 'var(--green)' : '#eef2f0',
-              color: m.remetente === 'trainer' ? 'white' : 'var(--text)',
-            }}>
+            <span className={`bolha-mensagem remetente-${m.remetente} ${m.midia ? 'com-midia' : ''}`}>
               {m.midia && (
                 m.midia.tipo === 'video' ? (
                   <video

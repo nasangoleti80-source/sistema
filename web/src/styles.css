@@ -721,6 +721,96 @@ label {
   margin-top: 2px;
 }
 
+/* -------------------------------------------------------------------- comparar avaliações */
+
+.chip-avaliacao {
+  position: relative;
+  padding: 8px 14px 8px 26px;
+  border-radius: 999px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+}
+
+.chip-avaliacao.selecionada {
+  border-color: var(--azul-claro);
+  color: var(--texto);
+}
+
+.chip-avaliacao-badge {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--azul-claro);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.tabela-comparativo-wrap {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+.tabela-comparativo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.tabela-comparativo th,
+.tabela-comparativo td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--linha);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.tabela-comparativo th:first-child,
+.tabela-comparativo td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--sup);
+  color: var(--texto-fraco);
+}
+
+.tabela-comparativo thead th {
+  color: var(--texto-fraco);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.tabela-comparativo tr.secao td {
+  background: var(--sup-2);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+  text-align: left;
+}
+
+.tabela-comparativo tr.destaque td {
+  color: var(--positivo);
+  font-weight: 600;
+}
+
+.tabela-comparativo tr.destaque td:first-child {
+  color: var(--texto-fraco);
+  font-weight: 400;
+}
+
 /* -------------------------------------------------------------------- comparar fotos */
 
 .foto-selecionavel {
@@ -1381,6 +1471,31 @@ label {
 /* Exercício que a IA inventou e não existe no catálogo: sem foto para a aluna. */
 .fora-catalogo {
   color: var(--atencao);
+}
+
+/* Bolhas de conversa: mesmo texto (var(--texto)) e mesmo fundo dos dois
+   lados — só a borda lateral e o alinhamento (direita/esquerda) diferenciam
+   quem mandou, em vez de uma bolha ficar branca sobre verde e a outra cinza. */
+.bolha-mensagem {
+  display: inline-block;
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--sup-2);
+  color: var(--texto);
+  border-left: 3px solid transparent;
+}
+
+.bolha-mensagem.com-midia {
+  padding: 6px;
+}
+
+.bolha-mensagem.remetente-trainer {
+  border-left-color: var(--azul-claro);
+}
+
+.bolha-mensagem.remetente-aluno {
+  border-left-color: var(--positivo);
 }
 
 .obs-personal {

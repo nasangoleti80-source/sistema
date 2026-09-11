@@ -401,11 +401,7 @@ export default function Portal() {
           <div className="card" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
             {mensagens.map((m) => (
               <div key={m.id} style={{ textAlign: m.remetente === 'aluno' ? 'right' : 'left', marginBottom: 8 }}>
-                <span className="bolha-mensagem" style={{
-                  display: 'inline-block', padding: m.midia ? 6 : '8px 12px', borderRadius: 12, maxWidth: '80%',
-                  background: m.remetente === 'aluno' ? 'var(--green)' : '#eef2f0',
-                  color: m.remetente === 'aluno' ? 'white' : 'var(--text)',
-                }}>
+                <span className={`bolha-mensagem remetente-${m.remetente} ${m.midia ? 'com-midia' : ''}`}>
                   {m.midia && (
                     m.midia.tipo === 'video' ? (
                       <video
