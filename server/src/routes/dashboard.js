@@ -113,7 +113,8 @@ router.get('/historico', async (req, res) => {
     const mes = p.mesReferencia;
     porMes[mes] ||= { mes, recebido: 0, pendente: 0, atrasado: 0 };
     const status = statusAtual(p, hoje);
-    porMes[mes][status] = (porMes[mes][status] || 0) + p.valor;
+    const chave = status === 'pago' ? 'recebido' : status;
+    porMes[mes][chave] = (porMes[mes][chave] || 0) + p.valor;
   }
   const historico = Object.values(porMes).sort((a, b) => (a.mes < b.mes ? -1 : 1));
   res.json(historico);
