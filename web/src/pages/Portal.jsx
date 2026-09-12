@@ -265,7 +265,7 @@ export default function Portal() {
   const [registros, setRegistros] = useState([]);
   const [todosTreinos, setTodosTreinos] = useState([]);
   const [texto, setTexto] = useState('');
-  const [aba, setAba] = useState('treino');
+  const [aba, setAba] = useState('inicio');
   const [catalogo, setCatalogo] = useState(() => new Map());
   const [erro, setErro] = useState('');
   const [enviandoMidia, setEnviandoMidia] = useState(false);
@@ -419,14 +419,14 @@ export default function Portal() {
       )}
 
       <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {['treino', 'endurance', 'evolucao', 'dieta', 'videos', 'mensagens'].map((a) => (
+        {['inicio', 'treino', 'endurance', 'evolucao', 'dieta', 'videos', 'mensagens'].map((a) => (
           <button key={a} className={aba === a ? 'btn-primary btn-small' : 'btn-secondary btn-small'} onClick={() => setAba(a)}>
-            {{ treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'PlayFlix', mensagens: 'Mensagens' }[a]}
+            {{ inicio: 'Início', treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'PlayFlix', mensagens: 'Mensagens' }[a]}
           </button>
         ))}
       </div>
 
-      {aba === 'treino' && (
+      {aba === 'inicio' && (
         <>
           <div className="card resumo-semana">
             <div className="name" style={{ marginBottom: 10 }}>Resumo da semana</div>
@@ -446,6 +446,14 @@ export default function Portal() {
             </div>
           </div>
 
+          <button className="btn-primary" style={{ width: '100%' }} onClick={() => setAba('treino')}>
+            Ir para o treino de hoje
+          </button>
+        </>
+      )}
+
+      {aba === 'treino' && (
+        <>
           {treinos.length === 0 && <p className="empty">Nenhum treino ativo no momento.</p>}
           {treinos.map((t) => (
             <div className="card" key={t.id}>
