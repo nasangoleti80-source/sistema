@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { titulo, categoria, videoUrl, capaUrl, restrito } = req.body;
+  const { titulo, categoria, videoUrl, capaUrl } = req.body;
   if (!titulo?.trim()) return res.status(400).json({ error: 'Título é obrigatório' });
   if (!categoria?.trim()) return res.status(400).json({ error: 'Categoria é obrigatória' });
   if (!videoUrl?.trim()) return res.status(400).json({ error: 'Link do vídeo é obrigatório' });
@@ -30,9 +30,6 @@ router.post('/', async (req, res) => {
     categoria: categoria.trim(),
     videoUrl: videoUrl.trim(),
     capaUrl: capaUrl?.trim() || (idYoutube ? `https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg` : ''),
-    // Vídeo exclusivo para aluno com pacote ativo (não vencido) — trava tipo
-    // "assinatura", mas o controle de quem pagou continua manual, no Pacotes.
-    restrito: !!restrito,
     ordem: maiorOrdem + 1,
     createdAt: new Date().toISOString(),
   };
@@ -46,7 +43,7 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.conteudos.findIndex((c) => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Conteúdo não encontrado' });
   const atual = db.data.conteudos[idx];
-  const { titulo, categoria, videoUrl, capaUrl, ordem, restrito } = req.body;
+  const { titulo, categoria, videoUrl, capaUrl, ordem } = req.body;
   const novoVideoUrl = videoUrl !== undefined ? videoUrl.trim() : atual.videoUrl;
   const idYoutube = idDoYoutube(novoVideoUrl);
   const atualizado = {
@@ -58,7 +55,6 @@ router.put('/:id', async (req, res) => {
       ? (capaUrl.trim() || (idYoutube ? `https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg` : ''))
       : atual.capaUrl,
     ordem: ordem !== undefined ? Number(ordem) : atual.ordem,
-    restrito: restrito !== undefined ? !!restrito : atual.restrito,
   };
   db.data.conteudos[idx] = atualizado;
   await db.write();

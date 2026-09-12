@@ -176,8 +176,8 @@ export default function Inicio() {
             <Modulo
               para="/conteudos"
               icone="conteudos"
-              nome="Conteúdos"
-              oQueE="Vídeos por categoria, estilo Netflix, no portal do aluno"
+              nome="PlayFlix"
+              oQueE="Vídeos exclusivos para quem tem pacote ativo"
               contagem={d.conteudos.length || null}
             />
           </div>

@@ -1898,15 +1898,8 @@ label {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.82), transparent);
 }
 
-.video-card-travado img {
-  filter: brightness(0.45);
-}
-
-.video-cadeado {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 16px;
+.playflix-promo {
+  text-align: left;
 }
 
 .modal-video {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
-const FORM_VAZIO = { titulo: '', categoria: '', videoUrl: '', capaUrl: '', restrito: false };
+const FORM_VAZIO = { titulo: '', categoria: '', videoUrl: '', capaUrl: '' };
 
 export default function Conteudos() {
   const [conteudos, setConteudos] = useState([]);
@@ -33,7 +33,7 @@ export default function Conteudos() {
 
   function abrirEdicao(c) {
     setEditando(c);
-    setForm({ titulo: c.titulo, categoria: c.categoria, videoUrl: c.videoUrl, capaUrl: c.capaUrl || '', restrito: !!c.restrito });
+    setForm({ titulo: c.titulo, categoria: c.categoria, videoUrl: c.videoUrl, capaUrl: c.capaUrl || '' });
     setErro('');
     setModalAberto(true);
   }
@@ -61,8 +61,11 @@ export default function Conteudos() {
 
   return (
     <div>
-      <h1>Conteúdos</h1>
-      <p className="subtitle">Vídeos que os alunos veem no portal deles, organizados por categoria — estilo Netflix</p>
+      <h1>PlayFlix</h1>
+      <p className="subtitle">
+        Vídeos que ficam liberados no portal para quem tem pacote ativo, organizados por categoria — estilo Netflix.
+        Quem não tem pacote ativo vê uma chamada explicando a área, sem acesso aos vídeos.
+      </p>
 
       <div className="row" style={{ marginBottom: 12, gap: 8 }}>
         <button className="btn-primary" onClick={() => abrirNovo()}>+ Vídeo</button>
@@ -84,7 +87,6 @@ export default function Conteudos() {
               {c.capaUrl && <img src={c.capaUrl} alt="" style={{ width: 64, height: 36, objectFit: 'cover', borderRadius: 6, marginRight: 10 }} />}
               <div onClick={() => abrirEdicao(c)} style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}>
                 <div className="name">{c.titulo}</div>
-                <div className="meta">{c.restrito ? 'Exclusivo para aluno com pacote ativo' : 'Livre para todos os alunos'}</div>
               </div>
               <button className="btn-danger btn-small" onClick={() => excluir(c)}>Excluir</button>
             </div>
@@ -112,11 +114,6 @@ export default function Conteudos() {
 
               <label>Capa (opcional — se vazio, usa a capa do YouTube)</label>
               <input value={form.capaUrl} onChange={(e) => setForm({ ...form, capaUrl: e.target.value })} placeholder="https://..." />
-
-              <label className="row" style={{ gap: 8, alignItems: 'center', marginTop: 8 }}>
-                <input type="checkbox" checked={form.restrito} onChange={(e) => setForm({ ...form, restrito: e.target.checked })} style={{ width: 'auto' }} />
-                Exclusivo para aluno com pacote ativo (bloqueado para os demais)
-              </label>
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary">Salvar</button>

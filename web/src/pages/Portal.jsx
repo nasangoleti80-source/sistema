@@ -33,10 +33,9 @@ function ModalVideo({ url, onFechar }) {
   );
 }
 
-/** Fileiras horizontais por categoria, estilo Netflix. Vídeo restrito aparece
- * com cadeado para quem não tem pacote ativo — o desbloqueio é a treinadora
- * registrando o pagamento em Pacotes, nunca uma cobrança automática aqui. */
-function FileirasVideos({ conteudos, liberado, onAbrir }) {
+/** Fileiras horizontais por categoria, estilo Netflix — só é chamado depois
+ * que o aluno já tem pacote ativo, então nenhum vídeo aqui fica travado. */
+function FileirasVideos({ conteudos, onAbrir }) {
   if (conteudos.length === 0) return <p className="empty">Nenhum vídeo disponível ainda.</p>;
   const categorias = [...new Set(conteudos.map((c) => c.categoria))];
 
@@ -46,27 +45,43 @@ function FileirasVideos({ conteudos, liberado, onAbrir }) {
         <div key={cat} className="fileira-videos">
           <div className="name">{cat}</div>
           <div className="fileira-scroll">
-            {conteudos.filter((c) => c.categoria === cat).map((c) => {
-              const travado = c.restrito && !liberado;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={`video-card ${travado ? 'video-card-travado' : ''}`}
-                  onClick={() => {
-                    if (travado) alert('Esse conteúdo é exclusivo para aluno com pacote ativo. Fale com a treinadora para liberar.');
-                    else onAbrir(c.videoUrl);
-                  }}
-                >
-                  {c.capaUrl && <img src={c.capaUrl} alt="" />}
-                  {travado && <span className="video-cadeado">🔒</span>}
-                  <span className="video-titulo">{c.titulo}</span>
-                </button>
-              );
-            })}
+            {conteudos.filter((c) => c.categoria === cat).map((c) => (
+              <button key={c.id} type="button" className="video-card" onClick={() => onAbrir(c.videoUrl)}>
+                {c.capaUrl && <img src={c.capaUrl} alt="" />}
+                <span className="video-titulo">{c.titulo}</span>
+              </button>
+            ))}
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Vitrine para quem ainda não tem pacote ativo: mostra as categorias que
+ * existem (sem tocar nada) e explica que o PlayFlix inteiro libera junto com
+ * o pacote — nunca vídeo a vídeo. A liberação em si continua manual, pela
+ * treinadora, em Pacotes. */
+function PlayFlixPromo({ categorias }) {
+  return (
+    <div className="card playflix-promo">
+      <div className="name" style={{ fontSize: 20 }}>🎬 PlayFlix</div>
+      <p className="meta" style={{ marginTop: 6 }}>
+        Uma área com vídeo-aulas exclusivas — treinos extras, bem-estar e muito mais — igual uma
+        Netflix só sua. Todo o catálogo libera de uma vez para quem tem pacote ativo.
+      </p>
+
+      {categorias.length > 0 && (
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+          {categorias.map((cat) => (
+            <span key={cat} className="chip-avaliacao">{cat}</span>
+          ))}
+        </div>
+      )}
+
+      <p className="meta" style={{ marginTop: 14 }}>
+        Fale com sua treinadora para saber como contratar um pacote e liberar o PlayFlix.
+      </p>
     </div>
   );
 }
@@ -350,7 +365,7 @@ export default function Portal() {
       <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {['treino', 'endurance', 'evolucao', 'dieta', 'videos', 'mensagens'].map((a) => (
           <button key={a} className={aba === a ? 'btn-primary btn-small' : 'btn-secondary btn-small'} onClick={() => setAba(a)}>
-            {{ treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'Vídeos', mensagens: 'Mensagens' }[a]}
+            {{ treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'PlayFlix', mensagens: 'Mensagens' }[a]}
           </button>
         ))}
       </div>
@@ -478,7 +493,9 @@ export default function Portal() {
       )}
 
       {aba === 'videos' && (
-        <FileirasVideos conteudos={conteudos} liberado={temPacoteAtivo(pacotes)} onAbrir={setVideoAberto} />
+        temPacoteAtivo(pacotes)
+          ? <FileirasVideos conteudos={conteudos} onAbrir={setVideoAberto} />
+          : <PlayFlixPromo categorias={[...new Set(conteudos.map((c) => c.categoria))]} />
       )}
 
       {videoAberto && <ModalVideo url={videoAberto} onFechar={() => setVideoAberto(null)} />}
