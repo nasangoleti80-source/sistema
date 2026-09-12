@@ -2014,3 +2014,65 @@ label {
   height: 100%;
   border: 0;
 }
+
+/* ------------------------------------------------------- resumo da semana */
+
+.dia-semana-circulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--linha);
+  background: var(--sup-2);
+  color: var(--texto-fraco);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dia-semana-circulo.feito {
+  background: var(--positivo);
+  border-color: var(--positivo);
+  color: var(--noite);
+}
+
+.dia-semana-circulo.hoje:not(.feito) {
+  border-color: var(--azul-claro);
+  color: var(--azul-claro);
+}
+
+.bonequinho-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.bonequinho-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--texto-fraco);
+}
+
+.bonequinho-item span:nth-child(2) {
+  color: var(--texto);
+  min-width: 78px;
+}
+
+.bonequinho-ponto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--linha);
+  flex-shrink: 0;
+}
+
+.bonequinho-serie {
+  margin-left: auto;
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+}

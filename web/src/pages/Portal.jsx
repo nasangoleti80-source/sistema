@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import {
-  indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo,
-  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES,
+  indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo, volumeSemanalPorZona, semanaAtualIntervalo,
+  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES, DIAS_SEMANA_SESSAO,
 } from '../api.js';
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
+import Bonequinho, { LegendaBonequinho } from '../components/Bonequinho.jsx';
 
 // Vira embed do YouTube (watch?v=, youtu.be/, shorts/) para tocar dentro do
 // próprio portal, sem sair para o app do YouTube.
@@ -261,6 +262,8 @@ export default function Portal() {
   const [mensagens, setMensagens] = useState([]);
   const [conteudos, setConteudos] = useState([]);
   const [planos, setPlanos] = useState([]);
+  const [registros, setRegistros] = useState([]);
+  const [todosTreinos, setTodosTreinos] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
   const [catalogo, setCatalogo] = useState(() => new Map());
@@ -273,7 +276,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex, c, pl] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, c, pl, reg] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -285,9 +288,11 @@ export default function Portal() {
         api.listarExercicios(),
         api.listarConteudos().catch(() => []),
         api.listarPlanos().catch(() => []),
+        api.listarRegistrosTreino({ alunoId }).catch(() => []),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
+      setTodosTreinos(t);
       setEndurance(e.filter((pl) => pl.ativo));
       setAvaliacoes(av);
       setPacotes(p);
@@ -296,6 +301,7 @@ export default function Portal() {
       setCatalogo(indexarCatalogo(ex));
       setConteudos(c);
       setPlanos(pl);
+      setRegistros(reg);
     } catch (e) {
       setErro(e.message);
     }
@@ -387,6 +393,16 @@ export default function Portal() {
   const ultimaAvaliacao = avaliacoes[0];
   const primeiraAvaliacao = avaliacoes[avaliacoes.length - 1];
 
+  const volumesSemana = volumeSemanalPorZona(registros, todosTreinos);
+  const { inicio: inicioSemana } = semanaAtualIntervalo();
+  const hojeStr = new Date().toISOString().slice(0, 10);
+  const diasComData = DIAS_SEMANA_SESSAO.map((d, i) => {
+    const dt = new Date(inicioSemana + 'T00:00:00');
+    dt.setDate(dt.getDate() + i);
+    return { ...d, data: dt.toISOString().slice(0, 10) };
+  });
+  const diasComRegistro = new Set(registros.map((r) => r.data));
+
   return (
     <div>
       <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
@@ -412,6 +428,24 @@ export default function Portal() {
 
       {aba === 'treino' && (
         <>
+          <div className="card resumo-semana">
+            <div className="name" style={{ marginBottom: 10 }}>Resumo da semana</div>
+            <div className="row" style={{ gap: 8, marginBottom: 16 }}>
+              {diasComData.map((d) => (
+                <span
+                  key={d.chave}
+                  className={`dia-semana-circulo ${diasComRegistro.has(d.data) ? 'feito' : ''} ${d.data === hojeStr ? 'hoje' : ''}`}
+                >
+                  {diasComRegistro.has(d.data) ? '✓' : d.letra}
+                </span>
+              ))}
+            </div>
+            <div className="row" style={{ gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Bonequinho sexo={aluno.sexo} volumes={volumesSemana.frente} />
+              <LegendaBonequinho volumes={volumesSemana.frente} costas={volumesSemana.costas} />
+            </div>
+          </div>
+
           {treinos.length === 0 && <p className="empty">Nenhum treino ativo no momento.</p>}
           {treinos.map((t) => (
             <div className="card" key={t.id}>

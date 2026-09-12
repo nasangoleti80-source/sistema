@@ -417,6 +417,54 @@ export function volumeDoDia(dia) {
 /** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
 export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
 
+/* --------------------------------------------------------- bonequinho muscular */
+
+/** Segunda a domingo da semana atual, no formato YYYY-MM-DD usado nos registros. */
+export function semanaAtualIntervalo() {
+  const hoje = new Date();
+  const seg = new Date(hoje);
+  seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
+  const dom = new Date(seg);
+  dom.setDate(seg.getDate() + 6);
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  return { inicio: fmt(seg), fim: fmt(dom) };
+}
+
+// Grupos musculares detalhados agrupados nas zonas visíveis de frente no
+// bonequinho. O que não aparece de frente (costas, glúteo, posterior de
+// coxa, tríceps) entra só no total de "costas", mostrado à parte.
+const ZONAS_FRENTE = {
+  ombros: ['deltoide_anterior', 'deltoide_medial', 'ombro'],
+  peito: ['peitoral', 'peito'],
+  biceps: ['biceps', 'antebraco'],
+  abdomen: ['abdomen'],
+  quadriceps: ['quadriceps', 'adutor'],
+  panturrilha: ['panturrilha'],
+};
+const GRUPOS_COSTAS = ['dorsais', 'trapezio', 'lombar', 'deltoide_posterior', 'triceps', 'gluteo', 'isquiotibiais', 'posterior', 'costas'];
+
+/** Quantas séries cada zona do corpo já treinou nesta semana, a partir dos
+ * treinos que o aluno já marcou como feitos (registrosTreino). */
+export function volumeSemanalPorZona(registros, treinos) {
+  const { inicio, fim } = semanaAtualIntervalo();
+  const porGrupo = {};
+  for (const r of registros) {
+    if (r.data < inicio || r.data > fim) continue;
+    const treino = treinos.find((t) => t.id === r.treinoId);
+    const dia = treino?.dias?.find((d) => d.letra === r.diaLetra);
+    if (!dia) continue;
+    for (const [grupo, series] of volumeDoDia(dia)) {
+      porGrupo[grupo] = (porGrupo[grupo] || 0) + series;
+    }
+  }
+  const frente = {};
+  for (const [zona, grupos] of Object.entries(ZONAS_FRENTE)) {
+    frente[zona] = grupos.reduce((s, g) => s + (porGrupo[g] || 0), 0);
+  }
+  const costas = GRUPOS_COSTAS.reduce((s, g) => s + (porGrupo[g] || 0), 0);
+  return { frente, costas };
+}
+
 /** Resumo de uma linha do que fazer, no vocabulário de cada método — o que a
  * aluna lê no treino em vez de só "3×8-12" para todo método. */
 export function resumoMetodo(ex) {
