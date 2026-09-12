@@ -3,7 +3,7 @@ import { api, TIPOS_REFEICAO } from '../api.js';
 import ConstrutorDieta from '../components/ConstrutorDieta.jsx';
 
 function formVazio() {
-  return { nome: '', observacoes: '', refeicoesPorTipo: {}, opcoesPorTipo: {}, bancoOrigemPorTipo: {} };
+  return { nome: '', observacoes: '', refeicoesPorTipo: {}, opcoesPorTipo: {}, bancoOrigemPorTipo: {}, horarioPorTipo: {} };
 }
 
 export default function ModelosDieta() {
@@ -44,7 +44,9 @@ export default function ModelosDieta() {
     const refeicoesPorTipo = {};
     const opcoesPorTipo = {};
     const bancoOrigemPorTipo = {};
+    const horarioPorTipo = {};
     for (const r of modelo.refeicoes || []) {
+      if (r.horario) horarioPorTipo[r.tipo] = r.horario;
       if (r.opcoes) {
         opcoesPorTipo[r.tipo] = r.opcoes;
         if (r.bancoOrigemId) bancoOrigemPorTipo[r.tipo] = r.bancoOrigemId;
@@ -57,7 +59,7 @@ export default function ModelosDieta() {
       }
     }
     setEditando(modelo);
-    setForm({ nome: modelo.nome, observacoes: modelo.observacoes || '', refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo });
+    setForm({ nome: modelo.nome, observacoes: modelo.observacoes || '', refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo, horarioPorTipo });
     setErro('');
     setModalAberto(true);
   }
@@ -69,7 +71,8 @@ export default function ModelosDieta() {
         const { [tipo]: _r, ...refeicoesPorTipo } = f.refeicoesPorTipo;
         const { [tipo]: _o, ...opcoesPorTipo } = f.opcoesPorTipo;
         const { [tipo]: _b, ...bancoOrigemPorTipo } = f.bancoOrigemPorTipo;
-        return { ...f, refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo };
+        const { [tipo]: _h, ...horarioPorTipo } = f.horarioPorTipo;
+        return { ...f, refeicoesPorTipo, opcoesPorTipo, bancoOrigemPorTipo, horarioPorTipo };
       }
       return { ...f, refeicoesPorTipo: { ...f.refeicoesPorTipo, [tipo]: [] } };
     });
@@ -81,6 +84,10 @@ export default function ModelosDieta() {
 
   function setOpcoes(tipo, opcoes) {
     setForm((f) => ({ ...f, opcoesPorTipo: { ...f.opcoesPorTipo, [tipo]: opcoes } }));
+  }
+
+  function setHorario(tipo, horario) {
+    setForm((f) => ({ ...f, horarioPorTipo: { ...f.horarioPorTipo, [tipo]: horario } }));
   }
 
   function escolherBanco(tipo, bancoId) {
@@ -118,12 +125,12 @@ export default function ModelosDieta() {
                   .filter((it) => it.opcoes.length > 0),
               }))
               .filter((op) => op.itens.length > 0);
-            return { tipo, nome: TIPOS_REFEICAO[tipo], bancoOrigemId: form.bancoOrigemPorTipo[tipo] || null, opcoes };
+            return { tipo, nome: TIPOS_REFEICAO[tipo], horario: form.horarioPorTipo[tipo] || '', bancoOrigemId: form.bancoOrigemPorTipo[tipo] || null, opcoes };
           }
           const itens = (form.refeicoesPorTipo[tipo] || [])
             .map((it) => ({ ...it, opcoes: it.opcoes.filter((op) => op.nome?.trim()) }))
             .filter((it) => it.opcoes.length > 0);
-          return { tipo, nome: TIPOS_REFEICAO[tipo], itens };
+          return { tipo, nome: TIPOS_REFEICAO[tipo], horario: form.horarioPorTipo[tipo] || '', itens };
         })
         .filter((r) => (r.opcoes && r.opcoes.length > 0) || (r.itens && r.itens.length > 0));
 
@@ -184,6 +191,8 @@ export default function ModelosDieta() {
                 bancoOrigemPorTipo={form.bancoOrigemPorTipo}
                 onEscolherBanco={escolherBanco}
                 onSetOpcoes={setOpcoes}
+                horarioPorTipo={form.horarioPorTipo}
+                onSetHorario={setHorario}
                 bancos={bancos}
                 catalogo={catalogo}
               />

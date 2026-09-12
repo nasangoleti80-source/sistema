@@ -71,7 +71,13 @@ function RefeicaoOpcoes({ opcoes, escolhaAtual, onEscolher }) {
         escolhida={escolhida}
         onEscolher={onEscolher}
         render={(o, principal) => (
-          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{resumoOpcao(o)}</div>
+          <>
+            {o.fotoUrl && <img className="opcao-foto" src={o.fotoUrl} alt="" loading="lazy" />}
+            <div className="opcao-conteudo">
+              <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
+              <div className="meta">{resumoOpcao(o)}</div>
+            </div>
+          </>
         )}
       />
       <button type="button" className="btn-trocar-opcao" onClick={() => onEscolher((escolhida + 1) % opcoes.length)}>
@@ -379,9 +385,12 @@ export default function Portal() {
           {dietas.map((d) => (
             <div className="card" key={d.id}>
               <div className="name">{d.nome}</div>
-              {(d.refeicoes || []).map((r, i) => (
+              {(d.refeicoes || [])
+                .map((r, i) => ({ r, i }))
+                .sort((a, b) => (a.r.horario || '99:99').localeCompare(b.r.horario || '99:99'))
+                .map(({ r, i }) => (
                 <div key={i} className="card" style={{ background: 'var(--bg)' }}>
-                  <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
+                  <div className="name">{r.horario ? `${r.horario} - ` : ''}{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
                   {r.opcoes
                     ? (
                       <RefeicaoOpcoes

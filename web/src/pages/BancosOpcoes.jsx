@@ -65,6 +65,17 @@ export default function BancosOpcoes() {
     setForm((f) => ({ ...f, opcoes: f.opcoes.map((o) => (o.id === id ? { ...o, itens } : o)) }));
   }
 
+  function setFotoOpcao(id, fotoUrl) {
+    setForm((f) => ({ ...f, opcoes: f.opcoes.map((o) => (o.id === id ? { ...o, fotoUrl } : o)) }));
+  }
+
+  function escolherFoto(id, arquivo) {
+    if (!arquivo) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoOpcao(id, reader.result);
+    reader.readAsDataURL(arquivo);
+  }
+
   async function salvar(e) {
     e.preventDefault();
     setErro('');
@@ -133,6 +144,15 @@ export default function BancosOpcoes() {
                     <input value={op.nome} onChange={(e) => renomearOpcao(op.id, e.target.value)} style={{ flex: 1 }} />
                     <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(op.id)}>Excluir opção</button>
                   </div>
+
+                  <div className="row" style={{ gap: 8, marginTop: 8, alignItems: 'center' }}>
+                    {op.fotoUrl && <img src={op.fotoUrl} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+                    <input type="file" accept="image/*" onChange={(e) => escolherFoto(op.id, e.target.files[0])} style={{ flex: 1 }} />
+                    {op.fotoUrl && (
+                      <button type="button" className="btn-secondary btn-small" onClick={() => setFotoOpcao(op.id, '')}>Remover foto</button>
+                    )}
+                  </div>
+
                   <EditorItens
                     itens={op.itens}
                     catalogo={catalogo}

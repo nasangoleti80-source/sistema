@@ -22,6 +22,17 @@ function EditorOpcoesRefeicao({ opcoes, catalogo, onChange }) {
     onChange(opcoes.map((o) => (o.id === id ? { ...o, itens } : o)));
   }
 
+  function setFotoOpcao(id, fotoUrl) {
+    onChange(opcoes.map((o) => (o.id === id ? { ...o, fotoUrl } : o)));
+  }
+
+  function escolherFoto(id, arquivo) {
+    if (!arquivo) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoOpcao(id, reader.result);
+    reader.readAsDataURL(arquivo);
+  }
+
   return (
     <>
       {opcoes.map((op) => (
@@ -32,6 +43,15 @@ function EditorOpcoesRefeicao({ opcoes, catalogo, onChange }) {
               <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(op.id)}>Remover opção</button>
             )}
           </div>
+
+          <div className="row" style={{ gap: 8, marginTop: 8, alignItems: 'center' }}>
+            {op.fotoUrl && <img src={op.fotoUrl} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+            <input type="file" accept="image/*" onChange={(e) => escolherFoto(op.id, e.target.files[0])} style={{ flex: 1 }} />
+            {op.fotoUrl && (
+              <button type="button" className="btn-secondary btn-small" onClick={() => setFotoOpcao(op.id, '')}>Remover foto</button>
+            )}
+          </div>
+
           <EditorItens
             itens={op.itens}
             catalogo={catalogo}
@@ -57,6 +77,7 @@ export default function ConstrutorDieta({
   tiposAtivos, onToggleTipo,
   refeicoesPorTipo, onSetItens,
   opcoesPorTipo, bancoOrigemPorTipo, onEscolherBanco, onSetOpcoes,
+  horarioPorTipo, onSetHorario,
   bancos, catalogo,
 }) {
   return (
@@ -76,8 +97,14 @@ export default function ConstrutorDieta({
         const opcoes = opcoesPorTipo[tipo];
         return (
           <div key={tipo} className="card" style={{ background: 'var(--bg)', marginTop: 12 }}>
-            <div className="row" style={{ alignItems: 'flex-start' }}>
-              <div className="name">{TIPOS_REFEICAO[tipo]}</div>
+            <div className="row" style={{ alignItems: 'flex-start', gap: 8 }}>
+              <input
+                type="time"
+                value={horarioPorTipo[tipo] || ''}
+                onChange={(e) => onSetHorario(tipo, e.target.value)}
+                style={{ width: 100, flex: '0 0 auto' }}
+              />
+              <div className="name" style={{ flex: 1 }}>{TIPOS_REFEICAO[tipo]}</div>
               <select
                 style={{ width: 'auto', flex: '0 0 auto' }}
                 value={bancoOrigemPorTipo[tipo] || ''}
