@@ -2,11 +2,74 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import {
-  indexarCatalogo, api, formatarData, formatarMoeda,
+  indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo,
   INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS,
 } from '../api.js';
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
+
+// Vira embed do YouTube (watch?v=, youtu.be/, shorts/) para tocar dentro do
+// próprio portal, sem sair para o app do YouTube.
+function urlEmbed(url) {
+  const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}?autoplay=1` : url;
+}
+
+function ModalVideo({ url, onFechar }) {
+  return (
+    <div className="modal-backdrop" onClick={onFechar}>
+      <div className="modal modal-video" onClick={(e) => e.stopPropagation()}>
+        <div className="video-embed">
+          <iframe
+            src={urlEmbed(url)}
+            title="Vídeo"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <button className="btn-secondary" onClick={onFechar} style={{ marginTop: 10 }}>Fechar</button>
+      </div>
+    </div>
+  );
+}
+
+/** Fileiras horizontais por categoria, estilo Netflix. Vídeo restrito aparece
+ * com cadeado para quem não tem pacote ativo — o desbloqueio é a treinadora
+ * registrando o pagamento em Pacotes, nunca uma cobrança automática aqui. */
+function FileirasVideos({ conteudos, liberado, onAbrir }) {
+  if (conteudos.length === 0) return <p className="empty">Nenhum vídeo disponível ainda.</p>;
+  const categorias = [...new Set(conteudos.map((c) => c.categoria))];
+
+  return (
+    <div className="videoteca">
+      {categorias.map((cat) => (
+        <div key={cat} className="fileira-videos">
+          <div className="name">{cat}</div>
+          <div className="fileira-scroll">
+            {conteudos.filter((c) => c.categoria === cat).map((c) => {
+              const travado = c.restrito && !liberado;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`video-card ${travado ? 'video-card-travado' : ''}`}
+                  onClick={() => {
+                    if (travado) alert('Esse conteúdo é exclusivo para aluno com pacote ativo. Fale com a treinadora para liberar.');
+                    else onAbrir(c.videoUrl);
+                  }}
+                >
+                  {c.capaUrl && <img src={c.capaUrl} alt="" />}
+                  {travado && <span className="video-cadeado">🔒</span>}
+                  <span className="video-titulo">{c.titulo}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ItemDieta({ item, onEscolher }) {
   const opcoes = item.opcoes || [];
@@ -155,18 +218,20 @@ export default function Portal() {
   const [pacotes, setPacotes] = useState([]);
   const [dietas, setDietas] = useState([]);
   const [mensagens, setMensagens] = useState([]);
+  const [conteudos, setConteudos] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
   const [catalogo, setCatalogo] = useState(() => new Map());
   const [erro, setErro] = useState('');
   const [enviandoMidia, setEnviandoMidia] = useState(false);
   const [fotoAmpliada, setFotoAmpliada] = useState(null);
+  const [videoAberto, setVideoAberto] = useState(null);
   const fimRef = useRef(null);
   const entradaArquivo = useRef(null);
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, c] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -176,6 +241,7 @@ export default function Portal() {
         api.listarMensagens(alunoId),
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
+        api.listarConteudos().catch(() => []),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -185,6 +251,7 @@ export default function Portal() {
       setDietas(d.filter((dt) => dt.ativa));
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
+      setConteudos(c);
     } catch (e) {
       setErro(e.message);
     }
@@ -281,9 +348,9 @@ export default function Portal() {
       )}
 
       <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {['treino', 'endurance', 'evolucao', 'dieta', 'mensagens'].map((a) => (
+        {['treino', 'endurance', 'evolucao', 'dieta', 'videos', 'mensagens'].map((a) => (
           <button key={a} className={aba === a ? 'btn-primary btn-small' : 'btn-secondary btn-small'} onClick={() => setAba(a)}>
-            {{ treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', mensagens: 'Mensagens' }[a]}
+            {{ treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'Vídeos', mensagens: 'Mensagens' }[a]}
           </button>
         ))}
       </div>
@@ -409,6 +476,12 @@ export default function Portal() {
           ))}
         </>
       )}
+
+      {aba === 'videos' && (
+        <FileirasVideos conteudos={conteudos} liberado={temPacoteAtivo(pacotes)} onAbrir={setVideoAberto} />
+      )}
+
+      {videoAberto && <ModalVideo url={videoAberto} onFechar={() => setVideoAberto(null)} />}
 
       {aba === 'mensagens' && (
         <>

@@ -145,6 +145,12 @@ export const api = {
   criarModeloDieta: (dados) => request('/modelos-dieta', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarModeloDieta: (id, dados) => request(`/modelos-dieta/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerModeloDieta: (id) => request(`/modelos-dieta/${id}`, { method: 'DELETE' }),
+
+  // Conteúdos (vídeos estilo "Netflix" para os alunos)
+  listarConteudos: () => request('/conteudos'),
+  criarConteudo: (dados) => request('/conteudos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarConteudo: (id, dados) => request(`/conteudos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerConteudo: (id) => request(`/conteudos/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -482,6 +488,14 @@ export function capaDoExercicio(exercicio) {
   const foto = exercicio.midia.find((m) => m.tipo === 'foto');
   const item = foto || exercicio.midia[0];
   return `/midia/${item.capa || item.arquivo}`;
+}
+
+/** O aluno "tem assinatura ativa" quando tem algum pacote ainda não vencido —
+ * usado para travar conteúdo exclusivo sem criar um sistema de cobrança novo,
+ * já que o pagamento em si continua sendo registrado à mão em Pacotes. */
+export function temPacoteAtivo(pacotes) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return (pacotes || []).some((p) => p.dataFim >= hoje);
 }
 
 export function formatarTamanho(bytes) {

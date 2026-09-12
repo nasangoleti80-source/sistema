@@ -38,6 +38,7 @@ const DESENHOS = {
   bancos: ['M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z'],
   modelos: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z'],
   mensagens: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z'],
+  conteudos: ['M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z', 'm10 9 5 3-5 3Z'],
   portal: ['M6 2h12a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 18 22H6a2.5 2.5 0 0 1-2.5-2.5v-15A2.5 2.5 0 0 1 6 2Z', 'M11 18h2'],
 };
 
@@ -57,9 +58,10 @@ export default function Inicio() {
       api.listarPacotes(),
       api.listarAlimentos().catch(() => []),
       api.listarModelosDieta().catch(() => []),
+      api.listarConteudos().catch(() => []),
     ])
-      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos]) =>
-        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos })
+      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos]) =>
+        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos })
       )
       .catch((e) => setErro(e.message));
   }, []);
@@ -170,6 +172,13 @@ export default function Inicio() {
               oQueE={naoLidas ? `${plural(naoLidas, 'mensagem', 'mensagens')} sem resposta` : 'Conversa direta com o aluno'}
               contagem={naoLidas || null}
               alerta={naoLidas > 0}
+            />
+            <Modulo
+              para="/conteudos"
+              icone="conteudos"
+              nome="Conteúdos"
+              oQueE="Vídeos por categoria, estilo Netflix, no portal do aluno"
+              contagem={d.conteudos.length || null}
             />
           </div>
 
