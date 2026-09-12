@@ -27,6 +27,8 @@ import gruposTrocaRouter from './routes/gruposTroca.js';
 import conteudosRouter from './routes/conteudos.js';
 import planosRouter from './routes/planos.js';
 import tabelasRouter from './routes/tabelas.js';
+import desafiosRouter from './routes/desafios.js';
+import notasRouter from './routes/notas.js';
 import { PASTA_MIDIA } from './midia.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,6 +57,8 @@ app.use('/api/grupos-troca', gruposTrocaRouter);
 app.use('/api/conteudos', conteudosRouter);
 app.use('/api/planos', planosRouter);
 app.use('/api/tabelas', tabelasRouter);
+app.use('/api/desafios', desafiosRouter);
+app.use('/api/notas', notasRouter);
 
 // Fotos e vídeos dos exercícios. Imutáveis: o nome do arquivo é sorteado e nunca
 // reaproveitado, então o navegador pode guardar para sempre.

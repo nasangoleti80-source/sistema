@@ -1,10 +1,13 @@
 import { nanoid } from 'nanoid';
 import { PAPEIS } from '../../../compartilhado/nutricao.js';
 
-// Banco de opções "Substitutos" — café da manhã, lanche da tarde e jantar,
-// todos com ~450kcal, seguindo o material de referência da Nayara. Roda uma
-// vez só: se o banco já existe (mesmo nome), não faz nada de novo.
-const NOME_BANCO = 'Café da manhã / Lanche da tarde / Jantar — 450kcal';
+// Substitutos de ~450kcal que servem tanto pro café da manhã quanto pro
+// lanche da tarde e pro jantar — por isso o mesmo conjunto de opções é
+// clonado em três bancos separados (um por refeição), em vez de um banco
+// só com nome composto. Assim, na montagem da dieta, a treinadora escolhe
+// o banco certo pra cada refeição individualmente.
+const NOME_BANCO_ANTIGO = 'Café da manhã / Lanche da tarde / Jantar — 450kcal';
+const NOMES_BANCOS = ['Café da manhã', 'Lanche da tarde', 'Jantar'];
 const BASE_KCAL = 450;
 
 /**
@@ -63,11 +66,10 @@ function item(db, ...defs) {
   };
 }
 
-export async function seedSubstitutosCafeManha(db) {
-  db.data.bancosOpcoes ||= [];
-  db.data.alimentos ||= [];
-
-  const opcoesCanonicas = [
+// Gera uma cópia nova (ids próprios) da lista de opções canônicas — cada
+// banco precisa da sua própria cópia, pra editar uma não mexer nas outras.
+function opcoesCanonicas(db) {
+  return [
     {
       id: nanoid(10),
       nome: 'Opção 02 — Crepioca com patê',
@@ -250,23 +252,47 @@ export async function seedSubstitutosCafeManha(db) {
       ],
     },
   ];
+}
 
-  let banco = db.data.bancosOpcoes.find((b) => b.nome === NOME_BANCO);
-  if (!banco) {
-    banco = { id: nanoid(10), nome: NOME_BANCO, baseKcal: BASE_KCAL, opcoes: [], createdAt: new Date().toISOString() };
-    db.data.bancosOpcoes.push(banco);
-  }
-  // A base estava só escrita no nome. Um banco que já existe em produção
-  // ganha o campo aqui, senão o motor não tem alvo para fechar as opções.
-  if (banco.baseKcal == null) banco.baseKcal = BASE_KCAL;
+export async function seedSubstitutosCafeManha(db) {
+  db.data.bancosOpcoes ||= [];
+  db.data.alimentos ||= [];
 
-  // Idempotente por opção: um redeploy não duplica quem já está lá, mas
-  // preenche quem ainda falta — é assim que as opções novas (14, 16, 17, 18)
-  // chegam num banco que já existia em produção com só as opções 02-13.
-  const nomesExistentes = new Set(banco.opcoes.map((o) => o.nome));
-  for (const opcao of opcoesCanonicas) {
-    if (!nomesExistentes.has(opcao.nome)) banco.opcoes.push(opcao);
+  // Migração: o banco antigo com nome composto vira três bancos separados —
+  // um por refeição — mantendo os alimentos já cadastrados. Dietas que já
+  // usavam o banco antigo continuam funcionando normalmente, porque a opção
+  // escolhida foi copiada pra dentro delas na hora (não fica ligada ao banco).
+  const bancoAntigo = db.data.bancosOpcoes.find((b) => b.nome === NOME_BANCO_ANTIGO);
+  if (bancoAntigo) {
+    db.data.bancosOpcoes = db.data.bancosOpcoes.filter((b) => b.id !== bancoAntigo.id);
   }
 
-  await db.write();
+  let mudou = !!bancoAntigo;
+
+  for (const nomeBanco of NOMES_BANCOS) {
+    let banco = db.data.bancosOpcoes.find((b) => b.nome === nomeBanco);
+    if (!banco) {
+      banco = { id: nanoid(10), nome: nomeBanco, baseKcal: BASE_KCAL, opcoes: [], createdAt: new Date().toISOString() };
+      db.data.bancosOpcoes.push(banco);
+      mudou = true;
+    }
+    // A base estava só escrita no nome. Um banco que já existe em produção
+    // ganha o campo aqui, senão o motor não tem alvo para fechar as opções.
+    if (banco.baseKcal == null) {
+      banco.baseKcal = BASE_KCAL;
+      mudou = true;
+    }
+
+    // Idempotente por opção: um redeploy não duplica quem já está lá, mas
+    // preenche quem ainda falta.
+    const nomesExistentes = new Set(banco.opcoes.map((o) => o.nome));
+    for (const opcao of opcoesCanonicas(db)) {
+      if (!nomesExistentes.has(opcao.nome)) {
+        banco.opcoes.push(opcao);
+        mudou = true;
+      }
+    }
+  }
+
+  if (mudou) await db.write();
 }

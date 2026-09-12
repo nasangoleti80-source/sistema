@@ -28,7 +28,15 @@ import { PAPEIS, calcular, escalarParaBase, indexar, ehContagem } from '../../..
  */
 
 const BASE_DE_ORIGEM = 450;
-const NOME_ORIGEM = 'Café da manhã / Lanche da tarde / Jantar — 450kcal';
+
+/**
+ * As refeições que usam as bases baixas. O jantar fica de fora: 200 kcal de
+ * jantar não é uma refeição, e ele só citou café da manhã e lanche da tarde.
+ *
+ * O banco de origem de cada uma é o de 450 com o mesmo nome — é o conjunto
+ * que ele já usa, e é dele que sai a gramatura de todas as outras bases.
+ */
+const REFEICOES = ['Café da manhã', 'Lanche da tarde'];
 
 /** Quanto a opção pode ficar longe da base e ainda servir de substituto. */
 const TOLERANCIA = 0.12;
@@ -139,11 +147,13 @@ function montarSimples(molde, catalogo) {
 const chaveNome = (s) =>
   String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
-const BASES = [
-  { kcal: 200, nome: 'Café da manhã / Lanche da tarde — 200kcal' },
-  { kcal: 270, nome: 'Café da manhã / Lanche da tarde — 270kcal' },
-  { kcal: 370, nome: 'Café da manhã / Lanche da tarde — 370kcal' },
-];
+/** As bases que faltavam. A de 450 já existe e é dele. */
+const BASES = [200, 270, 370];
+
+/* O banco de 450 se chama só "Café da manhã", com a base num campo. Como aqui
+   existe mais de um por refeição, o nome carrega a base para dar para
+   distinguir os quatro na lista. */
+const nomeDoBanco = (refeicao, base) => `${refeicao} — ${base} kcal`;
 
 /** Arredonda na unidade em uso — não na do catálogo, que pode ser outra. */
 function arredondar(quantidade, alimento, unidade) {
@@ -218,7 +228,7 @@ function derivarOpcao(opcao, base, catalogo) {
     id: nanoid(10),
     nome: opcao.nome,
     itens,
-    derivadaDe: `${NOME_ORIGEM} (${BASE_DE_ORIGEM} kcal)`,
+    derivadaDe: `banco de ${BASE_DE_ORIGEM} kcal`,
     kcalCalculada: Math.round(total.kcal),
     ancoraReduzida,
     revisada: false,
@@ -227,50 +237,56 @@ function derivarOpcao(opcao, base, catalogo) {
 
 export async function seedBasesDerivadas(db) {
   db.data.bancosOpcoes ||= [];
-  const origem = db.data.bancosOpcoes.find((b) => b.nome === NOME_ORIGEM);
-  if (!origem?.opcoes?.length) return;
-
   const catalogo = indexar(db.data.alimentos || []);
+
   /* Sem valor nutricional não há o que derivar — o seed dos valores roda antes. */
   if (![...catalogo.values()].some((a) => a.porcao100?.kcal)) return;
 
   let criados = 0;
-  for (const base of BASES) {
-    if (db.data.bancosOpcoes.some((b) => b.nome === base.nome)) continue;
+  for (const refeicao of REFEICOES) {
+    const origem = db.data.bancosOpcoes.find(
+      (b) => b.nome === refeicao && b.baseKcal === BASE_DE_ORIGEM
+    );
+    if (!origem?.opcoes?.length) continue;
 
-    const daOrigem = origem.opcoes
-      .map((o) => derivarOpcao(o, base.kcal, catalogo))
-      .filter(Boolean);
+    for (const base of BASES) {
+      const nome = nomeDoBanco(refeicao, base);
+      if (db.data.bancosOpcoes.some((b) => b.nome === nome)) continue;
 
-    const simples = SIMPLES
-      .map((molde) => montarSimples(molde, catalogo))
-      .filter(Boolean)
-      .map((o) => derivarOpcao(o, base.kcal, catalogo))
-      .filter(Boolean);
+      const daOrigem = origem.opcoes
+        .map((o) => derivarOpcao(o, base, catalogo))
+        .filter(Boolean);
 
-    /* As simples primeiro: nas bases baixas são elas que fazem sentido, e a
-       primeira opção do banco é a que a aluna vê antes de arrastar. */
-    const opcoes = [...simples, ...daOrigem];
-    if (!opcoes.length) continue;
+      const simples = SIMPLES
+        .map((molde) => montarSimples(molde, catalogo))
+        .filter(Boolean)
+        .map((o) => derivarOpcao(o, base, catalogo))
+        .filter(Boolean);
 
-    const foraDaBase = origem.opcoes.length - daOrigem.length;
-    db.data.bancosOpcoes.push({
-      id: nanoid(10),
-      nome: base.nome,
-      baseKcal: base.kcal,
-      observacao:
-        `Gerado pelo sistema: ${simples.length} opções simples montadas para as bases baixas ` +
-        `e ${daOrigem.length} vindas do banco de ${BASE_DE_ORIGEM} kcal, com a gramatura recalculada. ` +
-        (foraDaBase
-          ? `Outras ${foraDaBase} das ${origem.opcoes.length} de ${BASE_DE_ORIGEM} kcal não cabem ` +
-            'nesta base sem virar outra receita e ficaram de fora. '
-          : '') +
-        'Confira as gramaturas antes de usar com aluna.',
-      opcoes,
-      createdAt: new Date().toISOString(),
-    });
-    criados++;
-    console.log(`[dieta] banco de ${base.kcal} kcal: ${opcoes.length} opções (${foraDaBase} fora da base)`);
+      /* As simples primeiro: nas bases baixas são elas que fazem sentido, e a
+         primeira opção do banco é a que a aluna vê antes de arrastar. */
+      const opcoes = [...simples, ...daOrigem];
+      if (!opcoes.length) continue;
+
+      const foraDaBase = origem.opcoes.length - daOrigem.length;
+      db.data.bancosOpcoes.push({
+        id: nanoid(10),
+        nome,
+        baseKcal: base,
+        observacao:
+          `Gerado pelo sistema: ${simples.length} opções simples montadas para as bases baixas ` +
+          `e ${daOrigem.length} vindas do banco de ${BASE_DE_ORIGEM} kcal, com a gramatura recalculada. ` +
+          (foraDaBase
+            ? `Outras ${foraDaBase} das ${origem.opcoes.length} de ${BASE_DE_ORIGEM} kcal não cabem ` +
+              'nesta base sem virar outra receita e ficaram de fora. '
+            : '') +
+          'Confira as gramaturas antes de usar com aluna.',
+        opcoes,
+        createdAt: new Date().toISOString(),
+      });
+      criados++;
+      console.log(`[dieta] ${nome}: ${opcoes.length} opções (${foraDaBase} fora da base)`);
+    }
   }
 
   if (criados) await db.write();

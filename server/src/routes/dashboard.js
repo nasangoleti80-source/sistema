@@ -103,4 +103,21 @@ router.get('/', async (req, res) => {
   });
 });
 
+// GET /api/dashboard/historico — quanto entrou por mês, em todos os meses que
+// já tiveram cobrança gerada. Pra treinadora ver a evolução, não só o mês atual.
+router.get('/historico', async (req, res) => {
+  await db.read();
+  const hoje = new Date().toISOString().slice(0, 10);
+  const porMes = {};
+  for (const p of db.data.pagamentos) {
+    const mes = p.mesReferencia;
+    porMes[mes] ||= { mes, recebido: 0, pendente: 0, atrasado: 0 };
+    const status = statusAtual(p, hoje);
+    const chave = status === 'pago' ? 'recebido' : status;
+    porMes[mes][chave] = (porMes[mes][chave] || 0) + p.valor;
+  }
+  const historico = Object.values(porMes).sort((a, b) => (a.mes < b.mes ? -1 : 1));
+  res.json(historico);
+});
+
 export default router;

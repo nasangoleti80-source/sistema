@@ -118,15 +118,19 @@ sozinho já são 143 kcal, e não existe meio pão.
 
 `server/src/seeds/basesDerivadas.js` monta 200, 270 e 370 a partir do de 450.
 
-| Base | Opções | Média | Pior desvio |
-|------|--------|-------|-------------|
-| 200 | 9 | 203 kcal | 6% |
-| 270 | 15 | 271 kcal | 8% |
-| 370 | 21 | 372 kcal | 11% |
-| 450 | 15 | 482 kcal | 25% |
+Como os bancos de 450 são um por refeição (café da manhã, lanche da tarde e
+jantar), os derivados seguem o mesmo corte. O jantar fica de fora das bases
+baixas: 200 kcal de jantar não é uma refeição.
 
-O banco de 450 é o dele, com as quantidades que ele prescreveu — não foi
-mexido. Pelos valores das tabelas ele dá 482 kcal de média, 7% acima do nome.
+| Banco | Opções | Média | Pior desvio |
+|-------|--------|-------|-------------|
+| Café da manhã / Lanche da tarde — 200 kcal | 9 | 204 kcal | 9% |
+| Café da manhã / Lanche da tarde — 270 kcal | 14 | 276 kcal | 11% |
+| Café da manhã / Lanche da tarde — 370 kcal | 21 | 373 kcal | 11% |
+| Café da manhã, Lanche da tarde, Jantar (450) | 15 | 482 kcal | 25% |
+
+Os bancos de 450 são dele, com as quantidades que ele prescreveu — não foram
+mexidos. Pelos valores das tabelas ele dá 482 kcal de média, 7% acima do nome.
 Fechar cada opção nos 450 é um clique por opção, se ele quiser.
 
 Duas coisas que o gerador faz:

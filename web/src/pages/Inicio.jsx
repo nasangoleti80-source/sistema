@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, formatarMoeda, mesAtual } from '../api.js';
+import { api, formatarMoeda, mesAtual, aniversariantesDoMes, CANAIS_CAPTACAO } from '../api.js';
 
 /**
  * Índice do sistema.
  *
- * A barra de abas misturava tudo numa fila só. Aqui os módulos aparecem
- * separados por quem usa: o que é da treinadora, o que ela monta, e o que
- * chega no celular da aluna. Cada cartão mostra um número vivo, para a tela
- * servir de painel e não só de menu.
+ * Reorganizado por prioridade de uso: no topo, o que ela precisa olhar assim
+ * que abre o app (alunos, mensagens, aniversariantes). Depois, os outros
+ * grupos de função — Aluno, Financeiro, Desafios, de onde vêm os alunos — e
+ * por fim o que ela monta e o que chega no celular da aluna.
  */
 
 /** "1 aluno" / "3 alunos" — evita o "aluno(s)" que aparecia na tela. */
@@ -40,18 +40,24 @@ const DESENHOS = {
   mensagens: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z'],
   conteudos: ['M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z', 'm10 9 5 3-5 3Z'],
   portal: ['M6 2h12a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 18 22H6a2.5 2.5 0 0 1-2.5-2.5v-15A2.5 2.5 0 0 1 6 2Z', 'M11 18h2'],
+  desafios: ['M8 21h8', 'M12 17v4', 'M7 4h10v4a5 5 0 0 1-10 0Z', 'M7 6H4a3 3 0 0 0 3 3', 'M17 6h3a3 3 0 0 1-3 3'],
+  bolo: ['M4 21v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8', 'M4 21h16', 'M9 11V7a3 3 0 0 1 6 0v4', 'M12 4v.01'],
 };
 
 export default function Inicio() {
   const [dados, setDados] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [historico, setHistorico] = useState([]);
+  const [desafios, setDesafios] = useState([]);
   const [erro, setErro] = useState('');
   const [copiado, setCopiado] = useState('');
 
   useEffect(() => {
+    const mes = mesAtual();
     Promise.all([
       api.listarAlunos(),
       api.listarTreinos(),
-      api.listarPagamentos({ mes: mesAtual() }),
+      api.listarPagamentos({ mes }),
       api.listarExercicios(),
       api.listarMensagens(''),
       api.listarEndurance(),
@@ -59,10 +65,16 @@ export default function Inicio() {
       api.listarAlimentos().catch(() => []),
       api.listarModelosDieta().catch(() => []),
       api.listarConteudos().catch(() => []),
+      api.obterDashboard(mes).catch(() => null),
+      api.obterHistoricoFinanceiro().catch(() => []),
+      api.listarDesafios().catch(() => []),
     ])
-      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos]) =>
-        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos })
-      )
+      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos, dash, hist, des]) => {
+        setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos });
+        setDashboard(dash);
+        setHistorico(hist);
+        setDesafios(des);
+      })
       .catch((e) => setErro(e.message));
   }, []);
 
@@ -84,6 +96,18 @@ export default function Inicio() {
   const naoLidas = d ? d.mensagens.filter((m) => m.remetente === 'aluno' && !m.lida).length : 0;
   const semTreino = d ? ativos.filter((a) => !d.treinos.some((t) => t.alunoId === a.id && t.ativo)).length : 0;
   const semMidia = d ? d.exercicios.filter((e) => !e.midia?.length).length : 0;
+  const aniversariantes = d ? aniversariantesDoMes(d.alunos) : [];
+  const treinosConcluidosNoMes = dashboard ? dashboard.treinoStatusPorAluno.reduce((s, t) => s + t.treinosNoMes, 0) : 0;
+  const desafiosAtivos = desafios.filter((ds) => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return hoje >= ds.dataInicio && hoje <= ds.dataFim;
+  });
+  const historicoRecente = historico.slice(-6);
+  const maiorRecebido = Math.max(1, ...historicoRecente.map((h) => h.recebido || 0));
+  const canaisComContagem = dashboard
+    ? Object.entries(dashboard.porCanal).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
+    : [];
+  const maiorCanal = Math.max(1, ...canaisComContagem.map(([, n]) => n));
 
   /** Um módulo: para onde vai, o que faz e o número que importa nele. */
   const Modulo = ({ para, icone, nome, oQueE, contagem, alerta }) => (
@@ -114,26 +138,112 @@ export default function Inicio() {
 
       {d && (
         <>
-          <div className="grid-stats">
-            <div className="stat">
-              <div className="value">{ativos.length}</div>
-              <div className="label">Alunos ativos</div>
+          {/* ------------------------------------------------- prioridade do dia */}
+          <div className="modulos">
+            <Modulo para="/alunos" icone="alunos" nome="Alunos" oQueE="Revisão de quem você acompanha" contagem={ativos.length} />
+            <Modulo
+              para="/mensagens"
+              icone="mensagens"
+              nome="Mensagens"
+              oQueE={naoLidas ? `${plural(naoLidas, 'mensagem', 'mensagens')} sem resposta` : 'Conversa direta com o aluno'}
+              contagem={naoLidas || null}
+              alerta={naoLidas > 0}
+            />
+          </div>
+
+          <div className="card aniversariantes-card">
+            <div className="row" style={{ marginBottom: aniversariantes.length ? 10 : 0 }}>
+              <span className="modulo-ic"><Icone d={DESENHOS.bolo} /></span>
+              <div className="name" style={{ flex: 1 }}>Aniversariantes do mês</div>
             </div>
+            {aniversariantes.length === 0 && <p className="empty">Nenhum aniversário este mês.</p>}
+            {aniversariantes.map((a) => (
+              <div className="list-item" key={a.aluno.id}>
+                <div>
+                  <div className="name">{a.aluno.nome}</div>
+                  <div className="meta">Dia {String(a.dia).padStart(2, '0')}</div>
+                </div>
+                <span className={`badge ${a.diasRestantes === 0 ? 'pago' : 'sem-cobranca'}`}>
+                  {a.diasRestantes === 0 ? 'É hoje! 🎉' : `Faltam ${a.diasRestantes} dia${a.diasRestantes === 1 ? '' : 's'}`}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* --------------------------------------------------------- aluno */}
+          <h2>Aluno</h2>
+          <div className="modulos">
+            <Modulo para="/presenca" icone="presenca" nome="Presença" oQueE="Quem treinou e quem faltou" />
+            <Modulo para="/alunos" icone="avaliacoes" nome="Avaliações" oQueE="Dobras, medidas, anamnese e fotos — abre na ficha do aluno" />
+            <Modulo
+              para="/resumo"
+              icone="resumo"
+              nome="Resumo do mês"
+              oQueE="Treinos concluídos, feedback de cada aluno"
+              contagem={dashboard ? treinosConcluidosNoMes : null}
+            />
+          </div>
+
+          {/* ----------------------------------------------------- financeiro */}
+          <h2>Financeiro</h2>
+          <div className="modulos">
+            <Modulo para="/pagamentos" icone="cobranca" nome="Cobrança" oQueE="Mensalidade de cada aluno" contagem={d.pagamentos.filter((p) => p.status !== 'pago').length || null} alerta />
+            <Modulo para="/pacotes" icone="pacotes" nome="Pacotes" oQueE="Venda fechada, com parcelas e vencimento" contagem={d.pacotes.length || null} />
+          </div>
+          <div className={`grid-stats ${historicoRecente.length ? '' : ''}`} style={{ marginBottom: 12 }}>
             <div className={`stat ${aReceber > 0 ? 'amber' : 'green'}`}>
               <div className="value">{formatarMoeda(aReceber)}</div>
               <div className="label">A receber no mês</div>
             </div>
           </div>
+          {historicoRecente.length > 0 && (
+            <div className="card">
+              <div className="name" style={{ marginBottom: 10 }}>Quanto entrou por mês</div>
+              <div className="grafico-barras">
+                {historicoRecente.map((h) => (
+                  <div key={h.mes} className="grafico-barra-item">
+                    <div className="grafico-barra-trilha">
+                      <div className="grafico-barra-fill" style={{ height: `${Math.max(6, (h.recebido / maiorRecebido) * 100)}%` }} />
+                    </div>
+                    <div className="grafico-barra-valor num">{formatarMoeda(h.recebido || 0)}</div>
+                    <div className="grafico-barra-label">{h.mes.slice(5)}/{h.mes.slice(2, 4)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* ------------------------------------------------ o que é meu */}
-          <h2>Meu dia a dia</h2>
+          {/* ------------------------------------------------------ desafios */}
+          <h2>Desafios</h2>
           <div className="modulos">
-            <Modulo para="/alunos" icone="alunos" nome="Alunos" oQueE="Cadastro, anamnese e link do portal" contagem={ativos.length} />
-            <Modulo para="/presenca" icone="presenca" nome="Presença" oQueE="Quem treinou e quem faltou" />
-            <Modulo para="/pagamentos" icone="cobranca" nome="Cobrança" oQueE="Mensalidade de cada aluno" contagem={d.pagamentos.filter((p) => p.status !== 'pago').length || null} alerta />
-            <Modulo para="/pacotes" icone="pacotes" nome="Pacotes" oQueE="Venda fechada, com parcelas" contagem={d.pacotes.length || null} />
-            <Modulo para="/resumo" icone="resumo" nome="Resumo do mês" oQueE="Quanto entrou, quanto falta, quantas aulas" />
+            <Modulo
+              para="/desafios"
+              icone="desafios"
+              nome="Desafios"
+              oQueE="Desafios de treino ou dieta, com prazo"
+              contagem={desafiosAtivos.length || null}
+            />
           </div>
+
+          {/* --------------------------------------------- de onde vêm os alunos */}
+          {canaisComContagem.length > 0 && (
+            <>
+              <h2>De onde vêm os alunos</h2>
+              <div className="card">
+                <div className="grafico-canais">
+                  {canaisComContagem.map(([canal, n]) => (
+                    <div key={canal} className="grafico-canal-linha">
+                      <div className="grafico-canal-label">{CANAIS_CAPTACAO[canal] || canal}</div>
+                      <div className="grafico-canal-trilha">
+                        <div className="grafico-canal-fill" style={{ width: `${Math.max(6, (n / maiorCanal) * 100)}%` }} />
+                      </div>
+                      <div className="grafico-canal-valor num">{n}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* --------------------------------------------- o que eu monto */}
           <h2>O que eu monto</h2>
@@ -159,20 +269,11 @@ export default function Inicio() {
               contagem={d.exercicios.length}
               alerta={semMidia > 0}
             />
-            <Modulo para="/alunos" icone="avaliacoes" nome="Avaliações" oQueE="Dobras, medidas e anamnese — abre na ficha do aluno" />
           </div>
 
           {/* ------------------------------------- o que chega até a aluna */}
           <h2>O que a aluna vê no celular dela</h2>
           <div className="modulos">
-            <Modulo
-              para="/mensagens"
-              icone="mensagens"
-              nome="Mensagens"
-              oQueE={naoLidas ? `${plural(naoLidas, 'mensagem', 'mensagens')} sem resposta` : 'Conversa direta com o aluno'}
-              contagem={naoLidas || null}
-              alerta={naoLidas > 0}
-            />
             <Modulo
               para="/conteudos"
               icone="conteudos"

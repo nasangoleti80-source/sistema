@@ -2359,3 +2359,106 @@ label {
   line-height: 1.45;
   color: var(--texto-fraco);
 }
+
+/* ------------------------------------------------------------- Início: home */
+
+.aniversariantes-card {
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 15px;
+  margin-bottom: 16px;
+}
+
+/* Barras verticais — quanto entrou por mês. Uma cor só (azul de ação), a
+   altura é que carrega a magnitude; não é identidade, é grandeza. */
+.grafico-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 140px;
+}
+
+.grafico-barra-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.grafico-barra-trilha {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: var(--sup-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.grafico-barra-fill {
+  width: 100%;
+  background: var(--azul-claro);
+  border-radius: 4px 4px 0 0;
+  min-height: 6px;
+}
+
+.grafico-barra-valor {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+}
+
+.grafico-barra-label {
+  margin-top: 2px;
+  font-family: var(--fonte-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+/* Barras horizontais — de onde vêm os alunos. Mesma lógica: uma cor,
+   ordenado por grandeza, rótulo em texto (nunca só a cor como identidade). */
+.grafico-canais {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grafico-canal-linha {
+  display: grid;
+  grid-template-columns: 108px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+}
+
+.grafico-canal-label {
+  font-size: 12.5px;
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grafico-canal-trilha {
+  height: 10px;
+  background: var(--sup-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.grafico-canal-fill {
+  height: 100%;
+  background: var(--azul-claro);
+  border-radius: 999px;
+  min-width: 6px;
+}
+
+.grafico-canal-valor {
+  font-size: 12px;
+  color: var(--texto-fraco);
+  text-align: right;
+}
