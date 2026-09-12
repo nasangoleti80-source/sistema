@@ -1898,8 +1898,100 @@ label {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.82), transparent);
 }
 
-.playflix-promo {
+.playflix-vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.playflix-hero {
+  position: relative;
+  padding: 28px 18px;
+  border-radius: var(--raio);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(8, 13, 20, 0.15) 0%, var(--noite) 92%),
+    linear-gradient(135deg, var(--azul) 0%, var(--noite-clara) 70%);
+  border: 1px solid var(--linha);
+}
+
+.playflix-hero-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  color: var(--noite);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.playflix-hero-titulo {
+  font-family: var(--fonte-serif);
+  font-size: 26px;
+  line-height: 1.25;
+  color: var(--texto);
+}
+
+.playflix-hero-titulo strong {
+  font-family: var(--fonte-black);
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.playflix-hero-sub {
+  margin-top: 12px;
+  color: var(--texto-fraco);
+  font-size: 13px;
+  max-width: 320px;
+}
+
+.video-card-mostruario {
+  cursor: default;
+}
+
+.playflix-planos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plano-card {
+  position: relative;
   text-align: left;
+}
+
+.plano-card-destaque {
+  border-color: var(--azul-claro);
+}
+
+.plano-selo {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--atencao);
+  color: var(--noite);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plano-preco {
+  margin-top: 6px;
+  font-family: var(--fonte-black);
+  font-size: 24px;
+  color: var(--texto);
+}
+
+.plano-preco-periodo {
+  font-family: var(--fonte-ui);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--texto-fraco);
 }
 
 .modal-video {

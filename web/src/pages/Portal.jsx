@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import {
   indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo,
-  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS,
+  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES,
 } from '../api.js';
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
@@ -58,30 +58,56 @@ function FileirasVideos({ conteudos, onAbrir }) {
   );
 }
 
-/** Vitrine para quem ainda não tem pacote ativo: mostra as categorias que
- * existem (sem tocar nada) e explica que o PlayFlix inteiro libera junto com
- * o pacote — nunca vídeo a vídeo. A liberação em si continua manual, pela
- * treinadora, em Pacotes. */
-function PlayFlixPromo({ categorias }) {
+/** Vitrine para quem ainda não tem pacote ativo — banner de chamada,
+ * categorias em destaque (sem abrir vídeo nenhum) e os planos cadastrados.
+ * O botão "Quero esse plano" manda uma mensagem pra treinadora: o
+ * fechamento e o pagamento continuam manuais, como em Pacotes, até existir
+ * um checkout de verdade integrado aqui. */
+function PlayFlixPromo({ categorias, conteudos, planos, onQuero }) {
+  const capaPorCategoria = (cat) => conteudos.find((c) => c.categoria === cat && c.capaUrl)?.capaUrl;
+
   return (
-    <div className="card playflix-promo">
-      <div className="name" style={{ fontSize: 20 }}>🎬 PlayFlix</div>
-      <p className="meta" style={{ marginTop: 6 }}>
-        Uma área com vídeo-aulas exclusivas — treinos extras, bem-estar e muito mais — igual uma
-        Netflix só sua. Todo o catálogo libera de uma vez para quem tem pacote ativo.
-      </p>
+    <div className="playflix-vitrine">
+      <div className="playflix-hero">
+        <span className="playflix-hero-tag">Novo</span>
+        <div className="playflix-hero-titulo">
+          a solução da sua<br /><strong>SAÚDE FÍSICA<br />E MENTAL</strong>
+        </div>
+        <p className="playflix-hero-sub">Vídeo-aulas exclusivas — treinos extras, bem-estar e muito mais</p>
+      </div>
 
       {categorias.length > 0 && (
-        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {categorias.map((cat) => (
-            <span key={cat} className="chip-avaliacao">{cat}</span>
-          ))}
+        <div className="fileira-videos">
+          <div className="name">O que tem no PlayFlix</div>
+          <div className="fileira-scroll">
+            {categorias.map((cat) => (
+              <div key={cat} className="video-card video-card-mostruario">
+                {capaPorCategoria(cat) && <img src={capaPorCategoria(cat)} alt="" />}
+                <span className="video-titulo">{cat}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <p className="meta" style={{ marginTop: 14 }}>
-        Fale com sua treinadora para saber como contratar um pacote e liberar o PlayFlix.
-      </p>
+      <div className="playflix-planos">
+        <div className="name" style={{ marginBottom: 8 }}>Escolha um plano e libere tudo</div>
+        {planos.length === 0 && (
+          <p className="empty">Fale com sua treinadora para saber como contratar e liberar o PlayFlix.</p>
+        )}
+        {planos.map((p) => (
+          <div key={p.id} className={`card plano-card ${p.destaque ? 'plano-card-destaque' : ''}`}>
+            {p.destaque && <span className="plano-selo">Mais vendido 🔥</span>}
+            <div className="name">{p.nome}</div>
+            <div className="plano-preco">
+              {formatarMoeda(p.preco)}<span className="plano-preco-periodo">/{PERIODICIDADES[p.periodicidade]?.toLowerCase() || p.periodicidade}</span>
+            </div>
+            <button className="btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => onQuero(p)}>
+              Quero esse plano
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -234,6 +260,7 @@ export default function Portal() {
   const [dietas, setDietas] = useState([]);
   const [mensagens, setMensagens] = useState([]);
   const [conteudos, setConteudos] = useState([]);
+  const [planos, setPlanos] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
   const [catalogo, setCatalogo] = useState(() => new Map());
@@ -246,7 +273,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex, c] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, c, pl] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -257,6 +284,7 @@ export default function Portal() {
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
         api.listarConteudos().catch(() => []),
+        api.listarPlanos().catch(() => []),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -267,6 +295,7 @@ export default function Portal() {
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
       setConteudos(c);
+      setPlanos(pl);
     } catch (e) {
       setErro(e.message);
     }
@@ -315,6 +344,17 @@ export default function Portal() {
         intensidadePercebida: intensidade, cansaco: 3, cargas: [],
       });
       alert(`Treino registrado! Calorias estimadas: ${registro.caloriasGastas ?? '—'}`);
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function enviarQueroPlano(plano) {
+    try {
+      await api.enviarMensagem({ alunoId, remetente: 'aluno', texto: `Quero o ${plano.nome} do PlayFlix (${formatarMoeda(plano.preco)})` });
+      alert('Prontinho! Sua treinadora recebeu seu interesse e vai combinar o pagamento com você por aqui mesmo.');
+      const m = await api.listarMensagens(alunoId);
+      setMensagens(m);
     } catch (e) {
       alert(e.message);
     }
@@ -495,7 +535,14 @@ export default function Portal() {
       {aba === 'videos' && (
         temPacoteAtivo(pacotes)
           ? <FileirasVideos conteudos={conteudos} onAbrir={setVideoAberto} />
-          : <PlayFlixPromo categorias={[...new Set(conteudos.map((c) => c.categoria))]} />
+          : (
+            <PlayFlixPromo
+              categorias={[...new Set(conteudos.map((c) => c.categoria))]}
+              conteudos={conteudos}
+              planos={planos}
+              onQuero={enviarQueroPlano}
+            />
+          )
       )}
 
       {videoAberto && <ModalVideo url={videoAberto} onFechar={() => setVideoAberto(null)} />}
