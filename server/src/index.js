@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { db, initDb } from './db.js';
 import { seedSubstitutosCafeManha } from './seeds/substitutosCafeManha.js';
+import { seedCatalogoExercicios } from './seeds/catalogoExercicios.js';
 import alunosRouter from './routes/alunos.js';
 import aulasRouter from './routes/aulas.js';
 import pagamentosRouter from './routes/pagamentos.js';
@@ -69,6 +70,7 @@ if (fs.existsSync(webDist)) {
 
 await initDb();
 await seedSubstitutosCafeManha(db);
+await seedCatalogoExercicios(db);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);

@@ -200,6 +200,13 @@ export default function BancosOpcoes() {
             </div>
             <button className="btn-danger btn-small" onClick={() => excluir(b)}>Excluir</button>
           </div>
+          {b.opcoes?.length > 0 && (
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10, cursor: 'pointer' }} onClick={() => abrirEdicao(b)}>
+              {b.opcoes.map((op) => (
+                <span key={op.id} className="chip-avaliacao">{op.nome}</span>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
