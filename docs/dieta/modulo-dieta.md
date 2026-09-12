@@ -49,13 +49,48 @@ Daí os três papéis que cada alimento pode ter dentro de uma opção:
   manda o motor fechar a gramatura.
 - `web/src/pages/Portal.jsx` — o carrossel que o aluno arrasta.
 
+## As tabelas
+
+As duas publicações estão no repositório como JSON, em `server/src/dados/`,
+geradas por `scripts/importar-tabelas.mjs` a partir dos arquivos originais:
+
+| Tabela | Alimentos | Publicação |
+|--------|-----------|------------|
+| TACO   | 591 | NEPA/UNICAMP, 4ª edição revisada e ampliada, 2011 |
+| USDA   | 1274 | Nutritive Value of Foods, HG-72, USDA/ARS, 2002 |
+
+Duas coisas que a conversão resolve e que vale saber:
+
+- A **USDA publica por medida caseira** ("1 slice, 26 g"), não por 100 g. Os
+  valores passam por regra de três, e linha sem peso fica de fora — sem o peso
+  não há conversão, só chute.
+- **"Tr" vira zero e "NA" vira nulo.** Traço é quantidade pequena demais para
+  medir; NA é ausência de análise. Gravar zero nos dois lugares afirmaria que o
+  alimento não tem aquele nutriente, o que é outra coisa.
+
+Da USDA a hierarquia de títulos não sobrevive à conversão do PDF (os títulos
+quebram em várias linhas e se repetem no alto de cada página). O nome montado
+serve para achar o alimento na busca; quem identifica de verdade é o código,
+que fica gravado no alimento.
+
+Para reimportar:
+
+```
+node scripts/importar-tabelas.mjs <taco.md> <usda.md>
+```
+
 ## O que ainda falta
 
-1. **A tabela TACO.** Sem ela o catálogo fica sem valor nutricional e o motor
-   não tem o que somar. A USDA cobre o que a TACO não tem (produto importado,
-   suplemento).
-2. **As opções das quatro bases novas** (200, 270, 370, 450), montadas a partir
-   das que ele já usa em 540 e 600.
+**As opções das quatro bases novas** (200, 270, 370, 450), montadas a partir
+das que ele já usa em 540 e 600. O caminho é:
+
+1. preencher os valores dos alimentos do banco de 450 que já está semeado
+   (a busca na tabela faz isso em poucos cliques por alimento);
+2. marcar o papel de cada um — âncora, escala ou fixo;
+3. duplicar o banco para cada base e usar "fechar na base".
+
+O passo 1 é o único que não dá para automatizar sem risco: casar "Frango" com
+uma linha da TACO é escolha dele, não de um algoritmo de nome parecido.
 
 ## Uma regra que não se negocia
 
