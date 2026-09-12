@@ -192,6 +192,22 @@ function RefeicaoOpcoes({ opcoes, escolhaAtual, onEscolher }) {
   );
 }
 
+// A próxima refeição do dia entre todas as dietas ativas, pelo horário
+// cadastrado — se já passou de todas, volta pra primeira (a do dia seguinte).
+function proximaRefeicao(dietas) {
+  const agora = new Date();
+  const horaAtual = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+  const todas = [];
+  for (const d of dietas) {
+    for (const r of d.refeicoes || []) {
+      if (r.horario) todas.push(r);
+    }
+  }
+  if (todas.length === 0) return null;
+  todas.sort((a, b) => a.horario.localeCompare(b.horario));
+  return todas.find((r) => r.horario >= horaAtual) || todas[0];
+}
+
 function pegarCaminho(obj, caminho) {
   return caminho.split('.').reduce((v, k) => v?.[k], obj);
 }
@@ -402,6 +418,7 @@ export default function Portal() {
     return { ...d, data: dt.toISOString().slice(0, 10) };
   });
   const diasComRegistro = new Set(registros.map((r) => r.data));
+  const refeicaoSeguinte = proximaRefeicao(dietas);
 
   return (
     <div>
@@ -428,6 +445,40 @@ export default function Portal() {
 
       {aba === 'inicio' && (
         <>
+          <div className="row" style={{ gap: 10, marginBottom: 16 }}>
+            <button type="button" className="atalho-rapido" onClick={() => setAba('treino')}>
+              <span className="atalho-ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6.5 6.5h11M6.5 17.5h11" /><path d="M4 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" /><path d="M16 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" />
+                </svg>
+              </span>
+              <span className="atalho-rotulo">Treino</span>
+              <span className="atalho-valor">{treinos[0]?.nome || 'Sem treino ativo'}</span>
+            </button>
+
+            <button type="button" className="atalho-rapido" onClick={() => alert('Lembrete: procure beber água ao longo do dia — a meta sugerida é cerca de 2 litros 💧')}>
+              <span className="atalho-ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.5s6.5 7.2 6.5 12a6.5 6.5 0 1 1-13 0c0-4.8 6.5-12 6.5-12Z" />
+                </svg>
+              </span>
+              <span className="atalho-rotulo">Água</span>
+              <span className="atalho-valor">Beba água</span>
+            </button>
+
+            <button type="button" className="atalho-rapido" onClick={() => setAba('dieta')}>
+              <span className="atalho-ic">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 11h18" /><path d="M6 11V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" /><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8" />
+                </svg>
+              </span>
+              <span className="atalho-rotulo">Próxima refeição</span>
+              <span className="atalho-valor">
+                {refeicaoSeguinte ? `${refeicaoSeguinte.horario} - ${TIPOS_REFEICAO[refeicaoSeguinte.tipo] || refeicaoSeguinte.nome}` : 'Sem dieta cadastrada'}
+              </span>
+            </button>
+          </div>
+
           <div className="card resumo-semana">
             <div className="name" style={{ marginBottom: 10 }}>Resumo da semana</div>
             <div className="row" style={{ gap: 8, marginBottom: 16 }}>
