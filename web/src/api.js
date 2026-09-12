@@ -43,6 +43,7 @@ export const api = {
 
   // Dashboard
   obterDashboard: (mes) => request(`/dashboard?mes=${mes}`),
+  obterHistoricoFinanceiro: () => request('/dashboard/historico'),
 
   // Avaliações físicas
   listarAvaliacoes: (alunoId) => request(`/avaliacoes${alunoId ? `?alunoId=${alunoId}` : ''}`),
@@ -160,6 +161,18 @@ export const api = {
   criarPlano: (dados) => request('/planos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarPlano: (id, dados) => request(`/planos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerPlano: (id) => request(`/planos/${id}`, { method: 'DELETE' }),
+
+  // Desafios (treino ou dieta, por prazo)
+  listarDesafios: (alunoId) => request(`/desafios${alunoId ? `?alunoId=${alunoId}` : ''}`),
+  criarDesafio: (dados) => request('/desafios', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarDesafio: (id, dados) => request(`/desafios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerDesafio: (id) => request(`/desafios/${id}`, { method: 'DELETE' }),
+
+  // Anotações particulares sobre o aluno (nunca aparecem no portal)
+  listarNotas: (alunoId) => request(`/notas?alunoId=${alunoId}`),
+  criarNota: (dados) => request('/notas', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarNota: (id, dados) => request(`/notas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerNota: (id) => request(`/notas/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -195,6 +208,27 @@ export const CANAIS_CAPTACAO = {
   outro: 'Outro',
   nao_informado: 'Não informado',
 };
+
+export const TIPOS_DESAFIO = { treino: 'Treino', dieta: 'Dieta' };
+
+/** Aniversariantes do mês atual, com quantos dias faltam (0 = hoje, negativo
+ * nunca aparece — vira o próximo ano). Ordenado por quem está mais perto. */
+export function aniversariantesDoMes(alunos) {
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const hojeSemHora = new Date(anoAtual, hoje.getMonth(), hoje.getDate());
+  return alunos
+    .filter((a) => a.ativo && a.dataNascimento)
+    .map((a) => {
+      const [, mes, dia] = a.dataNascimento.split('-').map(Number);
+      let proxima = new Date(anoAtual, mes - 1, dia);
+      if (proxima < hojeSemHora) proxima = new Date(anoAtual + 1, mes - 1, dia);
+      const diasRestantes = Math.round((proxima - hojeSemHora) / 86400000);
+      return { aluno: a, mes, dia, diasRestantes };
+    })
+    .filter((a) => a.mes === hoje.getMonth() + 1)
+    .sort((a, b) => a.dia - b.dia);
+}
 
 export function mesAtual() {
   return new Date().toISOString().slice(0, 7);

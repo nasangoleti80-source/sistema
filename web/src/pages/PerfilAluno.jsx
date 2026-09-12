@@ -39,29 +39,48 @@ export default function PerfilAluno() {
   const [registros, setRegistros] = useState([]);
   const [pacotes, setPacotes] = useState([]);
   const [avaliacoes, setAvaliacoes] = useState([]);
+  const [notas, setNotas] = useState([]);
+  const [textoNota, setTextoNota] = useState('');
+  const [dataNota, setDataNota] = useState(() => new Date().toISOString().slice(0, 10));
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
   async function carregar() {
     setCarregando(true);
     try {
-      const [a, t, r, p, av] = await Promise.all([
+      const [a, t, r, p, av, n] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarRegistrosTreino({ alunoId }),
         api.listarPacotes(alunoId),
         api.listarAvaliacoes(alunoId),
+        api.listarNotas(alunoId),
       ]);
       setAluno(a);
       setTreinos(t);
       setRegistros(r);
       setPacotes(p);
       setAvaliacoes(av);
+      setNotas(n);
     } catch (e) {
       setErro(e.message);
     } finally {
       setCarregando(false);
     }
+  }
+
+  async function salvarNota(e) {
+    e.preventDefault();
+    if (!textoNota.trim()) return;
+    await api.criarNota({ alunoId, texto: textoNota, data: dataNota });
+    setTextoNota('');
+    setNotas(await api.listarNotas(alunoId));
+  }
+
+  async function excluirNota(nota) {
+    if (!confirm('Excluir essa anotação?')) return;
+    await api.removerNota(nota.id);
+    setNotas((ns) => ns.filter((n) => n.id !== nota.id));
   }
 
   useEffect(() => { carregar(); }, [alunoId]);
@@ -178,6 +197,46 @@ export default function PerfilAluno() {
           ))}
         </div>
       )}
+
+      <h2>Anotações particulares</h2>
+      <p className="subtitle" style={{ marginTop: -8 }}>
+        Só você vê isso — nunca aparece no portal do aluno. Serve pra registrar algo de uma avaliação
+        ou de qualquer dia, treino ou dieta, pra não esquecer depois.
+      </p>
+      <div className="card">
+        <form onSubmit={salvarNota} className="row" style={{ alignItems: 'flex-start', gap: 8 }}>
+          <input
+            type="date"
+            value={dataNota}
+            onChange={(e) => setDataNota(e.target.value)}
+            style={{ flex: '0 0 140px' }}
+          />
+          <textarea
+            value={textoNota}
+            onChange={(e) => setTextoNota(e.target.value)}
+            placeholder="Ex: relatou dor no joelho direito, ajustar carga do agachamento"
+            rows={2}
+            style={{ flex: 1 }}
+          />
+          <button type="submit" className="btn-primary btn-small">Salvar</button>
+        </form>
+
+        {notas.length === 0 ? (
+          <p className="empty" style={{ marginTop: 10 }}>Nenhuma anotação ainda.</p>
+        ) : (
+          <div style={{ marginTop: 10 }}>
+            {notas.map((n) => (
+              <div className="list-item" key={n.id}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="name">{formatarData(n.data)}</div>
+                  <div className="meta" style={{ whiteSpace: 'pre-wrap' }}>{n.texto}</div>
+                </div>
+                <button className="btn-danger btn-small" onClick={() => excluirNota(n)}>Excluir</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

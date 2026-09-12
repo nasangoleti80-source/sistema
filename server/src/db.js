@@ -29,6 +29,8 @@ const defaultData = {
   gruposTroca: [],
   conteudos: [],
   planos: [],
+  desafios: [],
+  notas: [],
 };
 
 export const db = new Low(adapter, defaultData);
