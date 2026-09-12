@@ -37,9 +37,7 @@ export async function seedSubstitutosCafeManha(db) {
   db.data.bancosOpcoes ||= [];
   db.data.alimentos ||= [];
 
-  if (db.data.bancosOpcoes.some((b) => b.nome === NOME_BANCO)) return;
-
-  const opcoes = [
+  const opcoesCanonicas = [
     {
       id: nanoid(10),
       nome: 'Opção 02 — Crepioca com patê',
@@ -167,14 +165,75 @@ export async function seedSubstitutosCafeManha(db) {
         item(db, ['Queijo branco (cottage, ricota ou minas frescal light)', 30, 'g', 'laticinio']),
       ],
     },
+    // Opção 15 do material de referência é idêntica à Opção 09 (Beirute
+    // caseiro) — não duplicada aqui de propósito.
+    {
+      id: nanoid(10),
+      nome: 'Opção 14 — Wrap proteico',
+      itens: [
+        item(db, ['Wrap', 2, 'fatia', 'carboidrato']),
+        item(db, ['Requeijão light', 25, 'g', 'laticinio'], ['Ketchup', 25, 'g', 'outro'], ['Mostarda', 25, 'g', 'outro']),
+        item(
+          db,
+          ['Ovo mexido', 3, 'unidade', 'proteina'],
+          ['Frango, atum ou carne bovina', 120, 'g', 'proteina'],
+          ['Queijo muçarela light ou de búfala', 90, 'g', 'laticinio'],
+          ['Queijo branco (cottage, ricota ou minas frescal light)', 150, 'g', 'laticinio']
+        ),
+      ],
+    },
+    {
+      id: nanoid(10),
+      nome: 'Opção 16 — Pão com ovo',
+      itens: [
+        item(db, ['Pão francês', 75, 'g', 'carboidrato'], ['Pão de forma', 75, 'g', 'carboidrato']),
+        item(db, ['Ovo inteiro', 3, 'unidade', 'proteina']),
+        item(
+          db,
+          ['Requeijão light (opcional)', 20, 'g', 'laticinio'],
+          ['Ricota (opcional)', 20, 'g', 'laticinio'],
+          ['Cottage (opcional)', 20, 'g', 'laticinio']
+        ),
+      ],
+    },
+    {
+      id: nanoid(10),
+      nome: 'Opção 17 — Pastel proteico na air fryer',
+      itens: [
+        item(db, ['Massa para pastel (crua)', 75, 'g', 'carboidrato']),
+        item(db, ['Frango', 95, 'g', 'proteina'], ['Carne', 95, 'g', 'proteina']),
+        item(db, ['Queijo muçarela light', 20, 'g', 'laticinio']),
+        item(db, ['Molho de tomate', 20, 'g', 'outro']),
+      ],
+    },
+    {
+      id: nanoid(10),
+      nome: 'Opção 18 — Sanduíche proteico de lombo suíno e queijo',
+      itens: [
+        item(db, ['Pão francês', 100, 'g', 'carboidrato'], ['Pão de forma', 100, 'g', 'carboidrato']),
+        item(db, ['Lombo suíno', 55, 'g', 'proteina']),
+        item(
+          db,
+          ['Muçarela light ou de búfala', 40, 'g', 'laticinio'],
+          ['Queijo branco (minas frescal, cottage ou ricota)', 65, 'g', 'laticinio']
+        ),
+      ],
+    },
   ];
 
-  db.data.bancosOpcoes.push({
-    id: nanoid(10),
-    nome: NOME_BANCO,
-    opcoes,
-    createdAt: new Date().toISOString(),
-  });
+  let banco = db.data.bancosOpcoes.find((b) => b.nome === NOME_BANCO);
+  if (!banco) {
+    banco = { id: nanoid(10), nome: NOME_BANCO, opcoes: [], createdAt: new Date().toISOString() };
+    db.data.bancosOpcoes.push(banco);
+  }
+
+  // Idempotente por opção: um redeploy não duplica quem já está lá, mas
+  // preenche quem ainda falta — é assim que as opções novas (14, 16, 17, 18)
+  // chegam num banco que já existia em produção com só as opções 02-13.
+  const nomesExistentes = new Set(banco.opcoes.map((o) => o.nome));
+  for (const opcao of opcoesCanonicas) {
+    if (!nomesExistentes.has(opcao.nome)) banco.opcoes.push(opcao);
+  }
 
   await db.write();
 }
