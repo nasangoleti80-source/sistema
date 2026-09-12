@@ -32,6 +32,85 @@ const FORM_VAZIO = {
 
 const texto = (v) => (v === null || v === undefined ? '' : String(v));
 
+/**
+ * Busca o alimento na TACO e na USDA e traz os valores prontos.
+ *
+ * São 132 alimentos na prática dele, cinco números cada um. Digitar isso à
+ * mão é meio dia de trabalho e uma chance de errar a cada tecla — e um valor
+ * errado aqui contamina toda dieta que usar o alimento. Puxar da tabela
+ * elimina as duas coisas e ainda grava o código, então dá sempre para voltar
+ * na publicação e conferir de onde o número veio.
+ */
+function BuscaNaTabela({ nome, onEscolher }) {
+  const [termo, setTermo] = useState('');
+  const [resultados, setResultados] = useState(null);
+  const [buscando, setBuscando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function buscar(e) {
+    e?.preventDefault();
+    const q = (termo || nome || '').trim();
+    if (q.length < 2) {
+      setErro('Busque por pelo menos duas letras.');
+      return;
+    }
+    setBuscando(true);
+    setErro('');
+    try {
+      const r = await api.buscarNaTabela(q);
+      setResultados(r.resultados);
+      if (r.resultados.length === 0) {
+        setErro(`Nada com "${q}" nas duas tabelas. Tente o nome como a tabela escreve — "Ovo, de galinha" em vez de "ovo cozido".`);
+      }
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  return (
+    <div className="busca-tabela">
+      <label>Buscar na TACO e na USDA</label>
+      <div className="row" style={{ gap: 6 }}>
+        <input
+          value={termo}
+          onChange={(e) => setTermo(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && buscar(e)}
+          placeholder={nome ? `${nome}…` : 'Ex: ovo, de galinha'}
+          style={{ flex: 1 }}
+        />
+        <button type="button" className="btn-secondary btn-small" onClick={buscar} disabled={buscando}>
+          {buscando ? 'Buscando…' : 'Buscar'}
+        </button>
+      </div>
+      {erro && <p className="meta alerta">{erro}</p>}
+
+      {resultados?.length > 0 && (
+        <div className="resultados-tabela">
+          {resultados.map((r) => (
+            <button
+              type="button"
+              key={`${r.fonte}-${r.codigo}`}
+              className="resultado-tabela"
+              onClick={() => { onEscolher(r); setResultados(null); }}
+            >
+              <span className="resultado-nome">{r.nome}</span>
+              <span className="meta num">
+                {r.kcal} kcal · {r.proteina ?? '—'} P / {r.carboidrato ?? '—'} C / {r.gordura ?? '—'} G
+                {' '}<span className="selo-fonte">{r.fonte} {r.codigo}</span>
+              </span>
+              {r.gramasDaMedida && (
+                <span className="meta">Publicado como {r.medida} ({r.gramasDaMedida} g) — convertido para 100 g</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Alimentos() {
   const [alimentos, setAlimentos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -230,6 +309,24 @@ export default function Alimentos() {
               )}
 
               <h2>Por 100 {form.unidade === 'ml' ? 'ml' : 'g'}</h2>
+              <BuscaNaTabela
+                nome={form.nome}
+                onEscolher={(r) =>
+                  setForm((f) => ({
+                    ...f,
+                    kcal: texto(r.kcal),
+                    proteina: texto(r.proteina),
+                    carboidrato: texto(r.carboidrato),
+                    gordura: texto(r.gordura),
+                    fibra: texto(r.fibra),
+                    fonte: r.fonte,
+                    codigoFonte: `${r.fonte} ${r.codigo}`,
+                    // Valor da tabela ainda não é valor conferido: é ele quem
+                    // decide se aquele item é mesmo o alimento da dieta.
+                    conferido: false,
+                  }))
+                }
+              />
               <div className="grid-nutrientes">
                 {NUTRIENTES.map((n) => (
                   <div key={n.chave}>

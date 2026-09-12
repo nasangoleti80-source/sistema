@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, formatarData, NIVEIS_ATIVIDADE } from '../api.js';
+import { api, formatarData, NIVEIS_ATIVIDADE, MEDIDAS_CAMPOS } from '../api.js';
 
 const ANAMNESE_VAZIA = {
   queixasDor: '',
@@ -20,14 +20,6 @@ const ANAMNESE_VAZIA = {
 const DOBRAS_CAMPOS = [
   ['triceps', 'Tríceps'], ['subescapular', 'Subescapular'], ['axilarMedia', 'Axilar média'],
   ['suprailiaca', 'Suprailíaca'], ['abdominal', 'Abdominal'], ['coxa', 'Coxa'], ['peitoral', 'Peitoral'],
-];
-
-const MEDIDAS_CAMPOS = [
-  ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
-  ['quadril', 'Quadril'], ['bracoDireito', 'Braço direito'], ['bracoEsquerdo', 'Braço esquerdo'],
-  ['antebracoDireito', 'Antebraço direito'], ['antebracoEsquerdo', 'Antebraço esquerdo'],
-  ['coxaDireita', 'Coxa direita'], ['coxaEsquerda', 'Coxa esquerda'],
-  ['panturrilhaDireita', 'Panturrilha direita'], ['panturrilhaEsquerda', 'Panturrilha esquerda'],
 ];
 
 function formVazio() {
@@ -54,7 +46,8 @@ export default function Avaliacoes() {
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
-  const [comparar, setComparar] = useState([null, null]);
+  const [fotosComparadas, setFotosComparadas] = useState([null, null]);
+  const [idsComparados, setIdsComparados] = useState([]);
   const [anamnese, setAnamneseState] = useState(ANAMNESE_VAZIA);
   const [anamneseAberta, setAnamneseAberta] = useState(false);
   const [salvandoAnamnese, setSalvandoAnamnese] = useState(false);
@@ -144,8 +137,48 @@ export default function Avaliacoes() {
   if (carregando) return <p className="empty">Carregando...</p>;
   if (!aluno) return <p className="empty">Aluno não encontrado.</p>;
 
-  const avaliacaoA = avaliacoes.find((a) => a.id === comparar[0]);
-  const avaliacaoB = avaliacoes.find((a) => a.id === comparar[1]);
+  // Todas as fotos de todas as avaliações, numa lista só, para o treinador
+  // escolher quaisquer duas — não precisam ser da mesma dupla de avaliações.
+  const todasFotos = avaliacoes
+    .flatMap((a) => (a.fotos || []).map((f, i) => ({ avaliacaoId: a.id, indice: i, url: f.url, data: a.data })))
+    .sort((x, y) => (x.data < y.data ? -1 : 1));
+
+  function chaveFoto(f) {
+    return `${f.avaliacaoId}-${f.indice}`;
+  }
+
+  function alternarFotoComparada(foto) {
+    setFotosComparadas(([a, b]) => {
+      const k = chaveFoto(foto);
+      if (a && chaveFoto(a) === k) return [null, b];
+      if (b && chaveFoto(b) === k) return [a, null];
+      if (!a) return [foto, b];
+      if (!b) return [a, foto];
+      // As duas posições já estão ocupadas: a mais antiga sai, a nova entra.
+      return [b, foto];
+    });
+  }
+
+  const [fotoA, fotoB] = fotosComparadas;
+  const avaliacaoDaFotoA = fotoA && avaliacoes.find((a) => a.id === fotoA.avaliacaoId);
+  const avaliacaoDaFotoB = fotoB && avaliacoes.find((a) => a.id === fotoB.avaliacaoId);
+
+  // Até 5 avaliações, sempre em ordem cronológica na tabela — não na ordem
+  // em que o treinador clicou.
+  function alternarComparacao(id) {
+    setIdsComparados((ids) => {
+      if (ids.includes(id)) return ids.filter((x) => x !== id);
+      if (ids.length >= 5) return ids;
+      return [...ids, id];
+    });
+  }
+
+  const avaliacoesComparadas = avaliacoes
+    .filter((a) => idsComparados.includes(a.id))
+    .sort((a, b) => (a.data < b.data ? -1 : 1));
+
+  const linhasMedidas = MEDIDAS_CAMPOS.filter(([c]) => avaliacoesComparadas.some((a) => a.medidas?.[c] != null));
+  const linhasDobras = DOBRAS_CAMPOS.filter(([c]) => avaliacoesComparadas.some((a) => a.dobras?.[c] != null));
 
   return (
     <div>
@@ -353,39 +386,154 @@ export default function Avaliacoes() {
 
       {avaliacoes.length >= 2 && (
         <>
-          <h2>Comparar evolução</h2>
+          <h2>Comparar avaliações</h2>
           <div className="card">
-            <div className="row" style={{ gap: 10 }}>
-              <select value={comparar[0] || ''} onChange={(e) => setComparar([e.target.value, comparar[1]])}>
-                <option value="">Antes...</option>
-                {avaliacoes.map((a) => <option key={a.id} value={a.id}>{formatarData(a.data)}</option>)}
-              </select>
-              <select value={comparar[1] || ''} onChange={(e) => setComparar([comparar[0], e.target.value])}>
-                <option value="">Depois...</option>
-                {avaliacoes.map((a) => <option key={a.id} value={a.id}>{formatarData(a.data)}</option>)}
-              </select>
+            <p className="meta" style={{ marginBottom: 10 }}>
+              Escolha de 2 a 5 avaliações para comparar lado a lado.
+            </p>
+
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-start', marginBottom: 4 }}>
+              {avaliacoes.map((a) => {
+                const pos = avaliacoesComparadas.findIndex((x) => x.id === a.id);
+                return (
+                  <button
+                    type="button"
+                    key={a.id}
+                    className={`chip-avaliacao ${pos !== -1 ? 'selecionada' : ''}`}
+                    onClick={() => alternarComparacao(a.id)}
+                    disabled={pos === -1 && idsComparados.length >= 5}
+                  >
+                    {pos !== -1 && <span className="chip-avaliacao-badge">{pos + 1}</span>}
+                    {formatarData(a.data)}
+                  </button>
+                );
+              })}
             </div>
-            {avaliacaoA && avaliacaoB && (
-              <div className="row" style={{ gap: 16, marginTop: 14, alignItems: 'flex-start' }}>
-                {[avaliacaoA, avaliacaoB].map((a, i) => (
-                  <div key={i} style={{ flex: 1 }}>
-                    <div className="name">{formatarData(a.data)}</div>
-                    <div className="meta">{a.pesoKg}kg · IMC {a.calculado?.imc} · {a.calculado?.percentualGordura}% gordura</div>
-                    <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                      {(a.fotos || []).map((f, j) => (
-                        <img key={j} src={f.url} alt="" style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 8 }} />
+
+            {avaliacoesComparadas.length >= 2 && (
+              <>
+                <div className="tabela-comparativo-wrap">
+                  <table className="tabela-comparativo">
+                    <thead>
+                      <tr>
+                        <th></th>
+                        {avaliacoesComparadas.map((a, i) => <th key={a.id}>Avaliação {i + 1}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Data</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{formatarData(a.data)}</td>)}
+                      </tr>
+                      <tr>
+                        <td>Peso (kg)</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{a.pesoKg ?? '—'}</td>)}
+                      </tr>
+                      <tr>
+                        <td>IMC</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{a.calculado?.imc ?? '—'}</td>)}
+                      </tr>
+                      <tr className="destaque">
+                        <td>% Gordura</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{a.calculado?.percentualGordura ?? '—'}</td>)}
+                      </tr>
+                      <tr>
+                        <td>Massa gorda (kg)</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{a.calculado?.massaGordaKg ?? '—'}</td>)}
+                      </tr>
+                      <tr className="destaque">
+                        <td>Massa magra (kg)</td>
+                        {avaliacoesComparadas.map((a) => <td key={a.id}>{a.calculado?.massaMagraKg ?? '—'}</td>)}
+                      </tr>
+
+                      {linhasMedidas.length > 0 && (
+                        <tr className="secao">
+                          <td colSpan={avaliacoesComparadas.length + 1}>Perimetria</td>
+                        </tr>
+                      )}
+                      {linhasMedidas.map(([c, label]) => (
+                        <tr key={c}>
+                          <td>{label}</td>
+                          {avaliacoesComparadas.map((a) => <td key={a.id}>{a.medidas?.[c] ?? '—'}</td>)}
+                        </tr>
                       ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+
+                      {linhasDobras.length > 0 && (
+                        <tr className="secao">
+                          <td colSpan={avaliacoesComparadas.length + 1}>Dobras cutâneas</td>
+                        </tr>
+                      )}
+                      {linhasDobras.map(([c, label]) => (
+                        <tr key={c}>
+                          <td>{label}</td>
+                          {avaliacoesComparadas.map((a) => <td key={a.id}>{a.dobras?.[c] ?? '—'}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <button type="button" className="btn-secondary btn-small" style={{ marginTop: 10 }} onClick={() => setIdsComparados([])}>
+                  Limpar seleção
+                </button>
+              </>
             )}
-            {avaliacaoA && avaliacaoB && (
-              <p className="meta" style={{ marginTop: 10 }}>
-                Variação: {(avaliacaoB.pesoKg - avaliacaoA.pesoKg).toFixed(1)}kg de peso ·{' '}
-                {((avaliacaoB.calculado?.percentualGordura ?? 0) - (avaliacaoA.calculado?.percentualGordura ?? 0)).toFixed(1)}% de gordura ·{' '}
-                {((avaliacaoB.calculado?.massaMagraKg ?? 0) - (avaliacaoA.calculado?.massaMagraKg ?? 0)).toFixed(1)}kg de massa magra
-              </p>
+          </div>
+        </>
+      )}
+
+      {todasFotos.length >= 2 && (
+        <>
+          <h2>Comparar fotos</h2>
+          <div className="card">
+            <p className="meta" style={{ marginBottom: 10 }}>
+              Toque em duas fotos para colocar uma do lado da outra — não precisam ser da mesma avaliação.
+            </p>
+
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+              {todasFotos.map((f) => {
+                const k = chaveFoto(f);
+                const posicao = fotoA && chaveFoto(fotoA) === k ? 1 : fotoB && chaveFoto(fotoB) === k ? 2 : null;
+                return (
+                  <button
+                    type="button"
+                    key={k}
+                    className={`foto-selecionavel ${posicao ? `selecionada pos-${posicao}` : ''}`}
+                    onClick={() => alternarFotoComparada(f)}
+                  >
+                    <img src={f.url} alt="" />
+                    <span className="foto-selecionavel-data">{formatarData(f.data)}</span>
+                    {posicao && <span className="foto-selecionavel-badge">{posicao}</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {fotoA && fotoB && (
+              <>
+                <div className="row" style={{ gap: 12, marginTop: 16, alignItems: 'flex-start' }}>
+                  {[fotoA, fotoB].map((f, i) => (
+                    <div key={i} style={{ flex: 1 }}>
+                      <img src={f.url} alt="" style={{ width: '100%', aspectRatio: '3 / 4', objectFit: 'cover', borderRadius: 10 }} />
+                      <div className="meta" style={{ marginTop: 6, textAlign: 'center' }}>
+                        {i === 0 ? 'Antes' : 'Depois'} · {formatarData(f.data)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {avaliacaoDaFotoA && avaliacaoDaFotoB && avaliacaoDaFotoA.id !== avaliacaoDaFotoB.id && (
+                  <p className="meta" style={{ marginTop: 10 }}>
+                    Variação: {(avaliacaoDaFotoB.pesoKg - avaliacaoDaFotoA.pesoKg).toFixed(1)}kg de peso ·{' '}
+                    {((avaliacaoDaFotoB.calculado?.percentualGordura ?? 0) - (avaliacaoDaFotoA.calculado?.percentualGordura ?? 0)).toFixed(1)}% de gordura ·{' '}
+                    {((avaliacaoDaFotoB.calculado?.massaMagraKg ?? 0) - (avaliacaoDaFotoA.calculado?.massaMagraKg ?? 0)).toFixed(1)}kg de massa magra
+                  </p>
+                )}
+
+                <button type="button" className="btn-secondary btn-small" style={{ marginTop: 10 }} onClick={() => setFotosComparadas([null, null])}>
+                  Limpar seleção
+                </button>
+              </>
             )}
           </div>
         </>

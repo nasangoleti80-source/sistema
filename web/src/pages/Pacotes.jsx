@@ -105,8 +105,9 @@ export default function Pacotes() {
     }
   }
 
-  async function alternarRealizada(aula) {
-    await api.atualizarAula(aula.id, { realizada: !aula.realizada });
+  async function alternarRealizada(aula, realizada) {
+    if (aula.realizada === realizada) return;
+    await api.atualizarAula(aula.id, { realizada });
     await carregar(alunoId);
   }
 
@@ -184,17 +185,30 @@ export default function Pacotes() {
 
           <div className="card">
             {presenciais.map((a) => (
-              <div className="list-item" key={a.id}>
-                <div onClick={() => alternarRealizada(a)} style={{ cursor: 'pointer', flex: 1 }}>
-                  <div className="name">{formatarData(a.data)} · {TIPOS_AULA[a.tipo] || a.tipo}</div>
-                  <div className="meta">
-                    <span className={a.realizada ? 'badge pago' : 'badge atrasado'}>
-                      {a.realizada ? 'Realizada' : 'Faltou'}
-                    </span>
-                    {a.observacao ? ` · ${a.observacao}` : ''}
+              <div className="item-agenda" key={a.id}>
+                <div className="row">
+                  <div>
+                    <div className="name">{formatarData(a.data)} · {TIPOS_AULA[a.tipo] || a.tipo}</div>
+                    {a.observacao && <div className="meta">{a.observacao}</div>}
                   </div>
+                  <button className="btn-danger btn-small" onClick={() => excluirPresencial(a)}>Remover</button>
                 </div>
-                <button className="btn-danger btn-small" onClick={() => excluirPresencial(a)}>Remover</button>
+                <div className="row" style={{ gap: 6, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className={`btn-status-agenda ${a.realizada ? 'ativo-ok' : ''}`}
+                    onClick={() => alternarRealizada(a, true)}
+                  >
+                    ✅ Concluído
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-status-agenda ${!a.realizada ? 'ativo-falta' : ''}`}
+                    onClick={() => alternarRealizada(a, false)}
+                  >
+                    ❌ Faltou
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -268,10 +282,23 @@ export default function Pacotes() {
                 {Object.entries(TIPOS_AULA).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
 
-              <label className="checkbox-row" style={{ marginTop: 14 }}>
-                <input type="checkbox" checked={formPresencial.realizada} onChange={(e) => setFormPresencial({ ...formPresencial, realizada: e.target.checked })} />
-                Vai acontecer normalmente (desmarque para já registrar falta)
-              </label>
+              <label>Status</label>
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  type="button"
+                  className={`btn-status-agenda ${formPresencial.realizada ? 'ativo-ok' : ''}`}
+                  onClick={() => setFormPresencial({ ...formPresencial, realizada: true })}
+                >
+                  ✅ Concluído
+                </button>
+                <button
+                  type="button"
+                  className={`btn-status-agenda ${!formPresencial.realizada ? 'ativo-falta' : ''}`}
+                  onClick={() => setFormPresencial({ ...formPresencial, realizada: false })}
+                >
+                  ❌ Faltou
+                </button>
+              </div>
 
               <label>Observação</label>
               <textarea rows={2} value={formPresencial.observacao} onChange={(e) => setFormPresencial({ ...formPresencial, observacao: e.target.value })} />

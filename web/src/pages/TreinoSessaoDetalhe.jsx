@@ -7,6 +7,61 @@ import {
 import TimerDescanso from '../components/TimerDescanso.jsx';
 import ModalExercicioTreino from '../components/ModalExercicioTreino.jsx';
 
+// Cada método mostra estatísticas diferentes — não faz sentido exibir
+// "SÉRIES/REPS/DESCANSO/RIR" genérico para um rest-pause ou myo-reps.
+function statsDoExercicio(ex) {
+  const c = ex.config || {};
+  switch (ex.metodo) {
+    case 'drop_set':
+      return [
+        { valor: c.series ?? ex.series, rotulo: 'SÉRIES' },
+        { valor: c.repsAlvo, rotulo: 'REPS' },
+        { valor: c.numDrops, rotulo: 'DROPS' },
+        { valor: `${c.reducaoPercentual ?? 0}%`, rotulo: 'REDUÇÃO' },
+      ];
+    case 'cluster':
+      return [
+        { valor: c.series ?? ex.series, rotulo: 'SÉRIES' },
+        { valor: c.clusters, rotulo: 'CLUSTERS' },
+        { valor: c.repsPorCluster, rotulo: 'REPS/CLUSTER' },
+        { valor: `${c.pausaIntraClusterSeg ?? 0}s`, rotulo: 'PAUSA' },
+      ];
+    case 'rest_pause':
+      return [
+        { valor: c.repsAlvo, rotulo: 'REPS ALVO' },
+        { valor: `${c.pausaSeg ?? 0}s`, rotulo: 'PAUSA' },
+      ];
+    case 'myo_reps':
+      return [
+        { valor: c.repsAtivacao, rotulo: 'ATIVAÇÃO' },
+        { valor: c.maxMiniSeries, rotulo: 'MINI-SETS' },
+        { valor: c.repsMiniSerie, rotulo: 'REPS' },
+        { valor: `${c.pausaSeg ?? 0}s`, rotulo: 'PAUSA' },
+      ];
+    case 'super_slow':
+      return [
+        { valor: c.series ?? ex.series, rotulo: 'SÉRIES' },
+        { valor: c.repsAlvo, rotulo: 'REPS' },
+        { valor: `${c.faseConcentricaSeg ?? 0}s`, rotulo: 'SUBINDO' },
+        { valor: `${c.faseExcentricaSeg ?? 0}s`, rotulo: 'DESCENDO' },
+      ];
+    case 'negativo':
+      return [
+        { valor: c.series ?? ex.series, rotulo: 'SÉRIES' },
+        { valor: c.repsAlvo, rotulo: 'REPS' },
+        { valor: `${c.tempoFaseNegativaSeg ?? 0}s`, rotulo: 'FASE NEGATIVA' },
+        { valor: ex.rir ?? '—', rotulo: 'RIR' },
+      ];
+    default:
+      return [
+        { valor: ex.series, rotulo: 'SÉRIES' },
+        { valor: ex.repeticoes, rotulo: 'REPS' },
+        { valor: `${ex.descansoSeg ?? 0}s`, rotulo: 'DESCANSO' },
+        { valor: ex.rir ?? '—', rotulo: 'RIR' },
+      ];
+  }
+}
+
 export default function TreinoSessaoDetalhe() {
   const { treinoId, letra } = useParams();
   const [treino, setTreino] = useState(null);
@@ -141,9 +196,17 @@ export default function TreinoSessaoDetalhe() {
 
       {(dia.exercicios || []).length === 0 && <p className="empty">Nenhum exercício nesta sessão ainda.</p>}
 
-      {(dia.exercicios || []).map((ex, i) => {
+      {(() => {
+        const contagemCircuito = {};
+        for (const ex of dia.exercicios || []) {
+          if (ex.circuito) contagemCircuito[ex.circuito] = (contagemCircuito[ex.circuito] || 0) + 1;
+        }
+        return (dia.exercicios || []).map((ex, i) => {
         const doCatalogo = acharNoCatalogo(catalogo, ex.nome);
         const capa = capaDoExercicio(doCatalogo);
+        const nomeCircuito = ex.circuito
+          ? contagemCircuito[ex.circuito] === 2 ? 'Bi-Set' : contagemCircuito[ex.circuito] === 3 ? 'Tri-Set' : `Circuito ${ex.circuito}`
+          : null;
         return (
           <div className="card exercicio-card" key={i}>
             <div className="row" style={{ alignItems: 'flex-start' }}>
@@ -157,7 +220,7 @@ export default function TreinoSessaoDetalhe() {
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="name">
-                  {ex.circuito && <span className="badge pendente" style={{ marginRight: 6 }}>Circuito {ex.circuito}</span>}
+                  {nomeCircuito && <span className="badge pendente" style={{ marginRight: 6 }}>🔗 {nomeCircuito}</span>}
                   {ex.nome}
                 </div>
               </div>
@@ -174,12 +237,22 @@ export default function TreinoSessaoDetalhe() {
               )}
             </div>
 
-            <div className="stats-exercicio">
-              <div><span className="stats-valor">{ex.series}</span><span className="stats-rotulo">SÉRIES</span></div>
-              <div><span className="stats-valor">{ex.repeticoes}</span><span className="stats-rotulo">REPS</span></div>
-              <div><span className="stats-valor">{ex.descansoSeg}s</span><span className="stats-rotulo">DESCANSO</span></div>
-              <div><span className="stats-valor">{ex.rir ?? '—'}</span><span className="stats-rotulo">RIR</span></div>
-            </div>
+            {ex.metodo === 'piramide_crescente' || ex.metodo === 'piramide_decrescente' ? (
+              <div className="tabela-piramide">
+                {(ex.config?.seriesPiramide || []).map((s, k) => (
+                  <div className="row" key={k} style={{ padding: '4px 0' }}>
+                    <span className="numero-exercicio">{k + 1}</span>
+                    <span style={{ flex: 1 }}>{s.reps} reps · {s.cargaKg}kg</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="stats-exercicio">
+                {statsDoExercicio(ex).map((s, k) => (
+                  <div key={k}><span className="stats-valor">{s.valor ?? '—'}</span><span className="stats-rotulo">{s.rotulo}</span></div>
+                ))}
+              </div>
+            )}
 
             {ex.metodo && ex.metodo !== 'convencional' && (
               <div className="meta">Método: <strong>{METODOS_TREINO[ex.metodo] || ex.metodo}</strong></div>
@@ -192,7 +265,7 @@ export default function TreinoSessaoDetalhe() {
             )}
             {doCatalogo?.ondeFica && <div className="onde-fica">Onde fica: {doCatalogo.ondeFica}</div>}
             {!doCatalogo && <div className="meta fora-catalogo">Fora do catálogo — a aluna não vê foto nem vídeo deste.</div>}
-            {ex.observacao && <div className="meta">{ex.observacao}</div>}
+            {ex.observacao && <div className="obs-personal">Obs. do personal: {ex.observacao}</div>}
 
             <TimerDescanso segundos={ex.descansoSeg || 60} />
 
@@ -210,7 +283,8 @@ export default function TreinoSessaoDetalhe() {
             )}
           </div>
         );
-      })}
+        });
+      })()}
 
       <div className="row" style={{ gap: 8, marginTop: 12 }}>
         <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setModalExercicio('novo')}>

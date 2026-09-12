@@ -29,6 +29,8 @@ export const api = {
   registrarAula: (dados) => request('/aulas', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarAula: (id, dados) => request(`/aulas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAula: (id) => request(`/aulas/${id}`, { method: 'DELETE' }),
+  /** Gera várias aulas de uma vez, num padrão de dias da semana dentro de um período. */
+  programarAulas: (dados) => request('/aulas/programar', { method: 'POST', body: JSON.stringify(dados) }),
 
   // Pagamentos
   listarPagamentos: (params = {}) => {
@@ -102,6 +104,18 @@ export const api = {
   // Mensagens
   listarMensagens: (alunoId) => request(`/mensagens?alunoId=${alunoId}`),
   enviarMensagem: (dados) => request('/mensagens', { method: 'POST', body: JSON.stringify(dados) }),
+  removerMensagem: (id) => request(`/mensagens/${id}`, { method: 'DELETE' }),
+
+  /** Foto ou vídeo dentro da conversa — mesmo envio em fluxo cru usado nos exercícios. */
+  enviarMidiaMensagem: (id, blob, { capaDe } = {}) => {
+    const qs = new URLSearchParams();
+    if (capaDe) qs.set('capaDe', 'true');
+    return request(`/mensagens/${id}/midia${qs.toString() ? `?${qs}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': blob.type },
+      body: blob,
+    });
+  },
 
   // Dietas
   listarDietas: (alunoId) => request(`/dietas?alunoId=${alunoId}`),
@@ -111,6 +125,9 @@ export const api = {
 
   // Alimentos (catálogo para montar as dietas)
   listarAlimentos: (params) => request(`/alimentos${params ? `?${new URLSearchParams(params)}` : ''}`),
+  buscarNaTabela: (q, fonte) =>
+    request(`/tabelas?${new URLSearchParams({ q, ...(fonte ? { fonte } : {}) })}`),
+  listarFontesTabela: () => request('/tabelas/fontes'),
   criarAlimento: (dados) => request('/alimentos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
@@ -131,6 +148,18 @@ export const api = {
   criarModeloDieta: (dados) => request('/modelos-dieta', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarModeloDieta: (id, dados) => request(`/modelos-dieta/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerModeloDieta: (id) => request(`/modelos-dieta/${id}`, { method: 'DELETE' }),
+
+  // Conteúdos (vídeos estilo "Netflix" para os alunos)
+  listarConteudos: () => request('/conteudos'),
+  criarConteudo: (dados) => request('/conteudos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarConteudo: (id, dados) => request(`/conteudos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerConteudo: (id) => request(`/conteudos/${id}`, { method: 'DELETE' }),
+
+  // Planos (vitrine de preços do PlayFlix)
+  listarPlanos: () => request('/planos'),
+  criarPlano: (dados) => request('/planos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarPlano: (id, dados) => request(`/planos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerPlano: (id) => request(`/planos/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
@@ -188,6 +217,15 @@ export function somarMes(mes, delta) {
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** Soma meses a uma data completa (YYYY-MM-DD) — usado para sugerir o fim de
+ * um treino a partir do início (padrão: 1 mês de duração). */
+export function somarMeses(dataISO, meses) {
+  if (!dataISO) return '';
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  const data = new Date(ano, mes - 1 + meses, dia);
+  return data.toISOString().slice(0, 10);
+}
+
 export const NIVEIS_ATIVIDADE = {
   sedentario: 'Sedentário', leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso',
 };
@@ -204,11 +242,55 @@ export const GRUPOS_MUSCULARES = {
 };
 
 export const METODOS_TREINO = {
-  convencional: 'Convencional', cluster_set: 'Cluster-set', rest_pause: 'Rest-pause',
-  drop_set: 'Drop-set', tri_set: 'Tri-set', bi_set: 'Bi-set (super-série)',
-  piramide: 'Pirâmide', german_volume: 'German Volume Training', isometria: 'Isometria',
-  excentrica: 'Ênfase excêntrica',
+  convencional: 'Tradicional',
+  drop_set: 'Drop-Set',
+  cluster: 'Cluster',
+  rest_pause: 'Rest-Pause',
+  myo_reps: 'Myo-Reps',
+  super_slow: 'Super Slow',
+  negativo: 'Negativo',
+  piramide_crescente: 'Pirâmide Crescente',
+  piramide_decrescente: 'Pirâmide Decrescente',
 };
+
+export const METODOS_TREINO_DESC = {
+  convencional: 'Séries e repetições padrão',
+  drop_set: 'Reduções progressivas de carga',
+  cluster: 'Micro-séries com pausas curtas',
+  rest_pause: 'Pausas curtas até atingir o alvo',
+  myo_reps: 'Série de ativação + mini-séries',
+  super_slow: 'Cadência ultra lenta para máxima tensão',
+  negativo: 'Ênfase na fase excêntrica (descida controlada)',
+  piramide_crescente: 'Peso aumenta, repetições diminuem',
+  piramide_decrescente: 'Peso diminui, repetições aumentam',
+};
+
+/** Config padrão de cada método — o que preenche os campos ao trocar de método. */
+export function configPadraoMetodo(metodo) {
+  switch (metodo) {
+    case 'drop_set':
+      return { series: 3, repsAlvo: 12, numDrops: 3, reducaoPercentual: 20, descansoSeriesSeg: 90, pesoInicialKg: '' };
+    case 'cluster':
+      return { series: 3, clusters: 5, repsPorCluster: 3, pausaIntraClusterSeg: 15, descansoSeriesSeg: 90, pesoKg: '' };
+    case 'rest_pause':
+      return { repsAlvo: 30, pausaSeg: 15 };
+    case 'myo_reps':
+      return { repsAtivacao: 15, pausaSeg: 5, repsMiniSerie: 5, maxMiniSeries: 5 };
+    case 'super_slow':
+      return { series: 3, repsAlvo: 8, faseConcentricaSeg: 4, faseExcentricaSeg: 4, descansoSeg: 60 };
+    case 'negativo':
+      return { series: 3, repsAlvo: 6, tempoFaseNegativaSeg: 4, descansoSeg: 90 };
+    case 'piramide_crescente':
+    case 'piramide_decrescente':
+      return {
+        seriesPiramide: metodo === 'piramide_decrescente'
+          ? [{ reps: 6, cargaKg: 80 }, { reps: 8, cargaKg: 70 }, { reps: 10, cargaKg: 60 }, { reps: 12, cargaKg: 50 }]
+          : [{ reps: 12, cargaKg: 40 }, { reps: 10, cargaKg: 50 }, { reps: 8, cargaKg: 60 }, { reps: 6, cargaKg: 70 }],
+      };
+    default:
+      return {};
+  }
+}
 
 export const OBJETIVOS_TREINO = { hipertrofia: 'Hipertrofia', emagrecimento: 'Emagrecimento', saude: 'Saúde/condicionamento' };
 export const TIPOS_PERIODIZACAO = { linear: 'Linear', ondulatoria: 'Ondulatória', linear_inversa: 'Linear inversa', blocos: 'Blocos' };
@@ -236,6 +318,7 @@ export const FORMAS_PAGAMENTO = { pix: 'PIX', cartao: 'Cartão de crédito (parc
 export const TIPOS_AULA = {
   presencial: 'Aula',
   consulta: 'Consulta/avaliação',
+  reposicao: 'Reposição de aula',
   consultoria_ajuste: 'Ajuste de consultoria',
 };
 
@@ -303,6 +386,14 @@ export const CATEGORIAS_ALIMENTO = {
   suplemento: 'Suplemento', outro: 'Outro',
 };
 
+export const MEDIDAS_CAMPOS = [
+  ['ombro', 'Ombro'], ['torax', 'Tórax'], ['cintura', 'Cintura'], ['abdomen', 'Abdômen'],
+  ['quadril', 'Quadril'], ['bracoDireito', 'Braço direito'], ['bracoEsquerdo', 'Braço esquerdo'],
+  ['antebracoDireito', 'Antebraço direito'], ['antebracoEsquerdo', 'Antebraço esquerdo'],
+  ['coxaDireita', 'Coxa direita'], ['coxaEsquerda', 'Coxa esquerda'],
+  ['panturrilhaDireita', 'Panturrilha direita'], ['panturrilhaEsquerda', 'Panturrilha esquerda'],
+];
+
 export function formatarData(data) {
   if (!data) return '';
   const [ano, mes, dia] = data.split('-');
@@ -340,6 +431,79 @@ export function volumeDoDia(dia) {
 
 /** Faixa de referência para hipertrofia: 10 a 20 séries por grupo na semana. */
 export const FAIXA_HIPERTROFIA = { minimo: 10, maximo: 20 };
+
+/* --------------------------------------------------------- bonequinho muscular */
+
+/** Segunda a domingo da semana atual, no formato YYYY-MM-DD usado nos registros. */
+export function semanaAtualIntervalo() {
+  const hoje = new Date();
+  const seg = new Date(hoje);
+  seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
+  const dom = new Date(seg);
+  dom.setDate(seg.getDate() + 6);
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  return { inicio: fmt(seg), fim: fmt(dom) };
+}
+
+// Grupos musculares detalhados agrupados nas zonas visíveis de frente no
+// bonequinho. O que não aparece de frente (costas, glúteo, posterior de
+// coxa, tríceps) entra só no total de "costas", mostrado à parte.
+const ZONAS_FRENTE = {
+  ombros: ['deltoide_anterior', 'deltoide_medial', 'ombro'],
+  peito: ['peitoral', 'peito'],
+  biceps: ['biceps', 'antebraco'],
+  abdomen: ['abdomen'],
+  quadriceps: ['quadriceps', 'adutor'],
+  panturrilha: ['panturrilha'],
+};
+const GRUPOS_COSTAS = ['dorsais', 'trapezio', 'lombar', 'deltoide_posterior', 'triceps', 'gluteo', 'isquiotibiais', 'posterior', 'costas'];
+
+/** Quantas séries cada zona do corpo já treinou nesta semana, a partir dos
+ * treinos que o aluno já marcou como feitos (registrosTreino). */
+export function volumeSemanalPorZona(registros, treinos) {
+  const { inicio, fim } = semanaAtualIntervalo();
+  const porGrupo = {};
+  for (const r of registros) {
+    if (r.data < inicio || r.data > fim) continue;
+    const treino = treinos.find((t) => t.id === r.treinoId);
+    const dia = treino?.dias?.find((d) => d.letra === r.diaLetra);
+    if (!dia) continue;
+    for (const [grupo, series] of volumeDoDia(dia)) {
+      porGrupo[grupo] = (porGrupo[grupo] || 0) + series;
+    }
+  }
+  const frente = {};
+  for (const [zona, grupos] of Object.entries(ZONAS_FRENTE)) {
+    frente[zona] = grupos.reduce((s, g) => s + (porGrupo[g] || 0), 0);
+  }
+  const costas = GRUPOS_COSTAS.reduce((s, g) => s + (porGrupo[g] || 0), 0);
+  return { frente, costas };
+}
+
+/** Resumo de uma linha do que fazer, no vocabulário de cada método — o que a
+ * aluna lê no treino em vez de só "3×8-12" para todo método. */
+export function resumoMetodo(ex) {
+  const c = ex.config || {};
+  switch (ex.metodo) {
+    case 'drop_set':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · ${c.numDrops ?? 0} drops de ${c.reducaoPercentual ?? 0}%`;
+    case 'cluster':
+      return `${c.series ?? ex.series} séries · ${c.clusters ?? 0}x${c.repsPorCluster ?? 0} reps (pausa ${c.pausaIntraClusterSeg ?? 0}s)`;
+    case 'rest_pause':
+      return `Até a falha, pausa ${c.pausaSeg ?? 0}s, repita até ${c.repsAlvo ?? 0} reps`;
+    case 'myo_reps':
+      return `Ativação ${c.repsAtivacao ?? 0} reps + até ${c.maxMiniSeries ?? 0} mini-séries de ${c.repsMiniSerie ?? 0}`;
+    case 'super_slow':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · cadência ${c.faseConcentricaSeg ?? 0}/${c.faseExcentricaSeg ?? 0}s`;
+    case 'negativo':
+      return `${c.series ?? ex.series}x${c.repsAlvo ?? ex.repeticoes} · descida em ${c.tempoFaseNegativaSeg ?? 0}s, subida com ajuda`;
+    case 'piramide_crescente':
+    case 'piramide_decrescente':
+      return (c.seriesPiramide || []).map((s) => `${s.reps}x${s.cargaKg}kg`).join(' → ');
+    default:
+      return `${ex.series}×${ex.repeticoes}`;
+  }
+}
 
 /** Total de séries de um dia (soma de todos os exercícios). */
 export function seriesDoDia(dia) {
@@ -393,6 +557,14 @@ export function capaDoExercicio(exercicio) {
   const foto = exercicio.midia.find((m) => m.tipo === 'foto');
   const item = foto || exercicio.midia[0];
   return `/midia/${item.capa || item.arquivo}`;
+}
+
+/** O aluno "tem assinatura ativa" quando tem algum pacote ainda não vencido —
+ * usado para travar conteúdo exclusivo sem criar um sistema de cobrança novo,
+ * já que o pagamento em si continua sendo registrado à mão em Pacotes. */
+export function temPacoteAtivo(pacotes) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return (pacotes || []).some((p) => p.dataFim >= hoje);
 }
 
 export function formatarTamanho(bytes) {

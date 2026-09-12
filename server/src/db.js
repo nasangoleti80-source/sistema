@@ -27,6 +27,8 @@ const defaultData = {
   bancosOpcoes: [],
   modelosDieta: [],
   gruposTroca: [],
+  conteudos: [],
+  planos: [],
 };
 
 export const db = new Low(adapter, defaultData);
