@@ -197,6 +197,7 @@ export default function BancosOpcoes() {
                 {b.opcoes?.length === 1 ? '1 opção' : `${b.opcoes?.length || 0} opções`}
                 {b.baseKcal ? <> · base de <span className="num">{b.baseKcal}</span> kcal</> : ''}
               </div>
+              {b.observacao && <div className="meta aviso-gerado">{b.observacao}</div>}
             </div>
             <button className="btn-danger btn-small" onClick={() => excluir(b)}>Excluir</button>
           </div>
@@ -236,6 +237,12 @@ export default function BancosOpcoes() {
                     <input value={op.nome} onChange={(e) => renomearOpcao(op.id, e.target.value)} style={{ flex: 1 }} />
                     <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(op.id)}>Excluir opção</button>
                   </div>
+                  {op.derivadaDe && (
+                    <div className="meta aviso-gerado">
+                      Gerada pelo sistema a partir de {op.derivadaDe}
+                      {op.ancoraReduzida ? ', com a proteína reduzida para caber na base' : ''}.
+                    </div>
+                  )}
                   <Aferidor opcao={op} base={Number(form.baseKcal) || 0} catalogo={alimentosIndexados} />
 
                   <div className="row" style={{ gap: 8, marginTop: 8, alignItems: 'center' }}>

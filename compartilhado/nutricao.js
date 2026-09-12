@@ -117,12 +117,18 @@ export function escalarParaBase(itens, baseAlvo, catalogo, { tolerancia = 0.05 }
   const kcalEscalavelAtual = escalaveis.reduce((s, i) => s + kcalDe(i), 0);
   const restante = alvo - kcalFixa;
 
+  /* Nas duas saídas abaixo nada é reescalado, então `kcal` é o que a opção
+     vale como está. Devolver só a parte fixa aqui já fez um gerador aceitar
+     uma opção de 498 kcal como se fosse de 220: quem lê a resposta não tem
+     como saber que o número era parcial. */
+  const totalAtual = () => Math.round(calcular(itens, catalogo).kcal);
+
   if (!escalaveis.length) {
     return {
       itens,
       ok: Math.abs(kcalFixa - alvo) <= alvo * tolerancia,
       aviso: 'Nenhum item marcado para escalar — a opção só tem âncora e itens fixos.',
-      kcal: Math.round(kcalFixa),
+      kcal: totalAtual(),
     };
   }
 
@@ -133,7 +139,7 @@ export function escalarParaBase(itens, baseAlvo, catalogo, { tolerancia = 0.05 }
       aviso:
         `A âncora sozinha já dá ${Math.round(kcalFixa)} kcal, acima da base de ${alvo}. ` +
         'Reduza a proteína ou use outra opção nesta base.',
-      kcal: Math.round(kcalFixa),
+      kcal: totalAtual(),
     };
   }
 
@@ -143,11 +149,22 @@ export function escalarParaBase(itens, baseAlvo, catalogo, { tolerancia = 0.05 }
     if (item.papel !== PAPEIS.ESCALA) return item;
     const alimento = catalogo.get(item.alimentoId);
     const unidade = item.unidade || alimento?.unidade || 'g';
-    const passo = Number(alimento?.passo) || (ehContagem(unidade) ? 1 : 5);
+
+    /* Passo, mínimo e máximo estão na unidade do alimento. O mesmo alimento
+       às vezes aparece em outra unidade dentro da opção — o wrap é grama no
+       catálogo e fatia na receita — e aí esses limites não valem: arredondar
+       fatia de 5 em 5 transforma 2 fatias em zero. Quando a unidade muda,
+       cai no passo natural da unidade e os limites ficam de fora. */
+    const mesmaUnidade = !alimento?.unidade || unidade === alimento.unidade;
+    const passo = (mesmaUnidade && Number(alimento?.passo)) || (ehContagem(unidade) ? 1 : 5);
+
     let qtd = (Number(item.quantidade) || 0) * fator;
     qtd = Math.round(qtd / passo) * passo;
-    if (alimento?.minimo != null) qtd = Math.max(Number(alimento.minimo), qtd);
-    if (alimento?.maximo != null) qtd = Math.min(Number(alimento.maximo), qtd);
+    if (mesmaUnidade && alimento?.minimo != null) qtd = Math.max(Number(alimento.minimo), qtd);
+    if (mesmaUnidade && alimento?.maximo != null) qtd = Math.min(Number(alimento.maximo), qtd);
+
+    /* Arredondar para baixo pode zerar um item que a receita precisa ter. */
+    if (qtd <= 0) qtd = passo;
     return { ...item, quantidade: qtd };
   });
 

@@ -2348,3 +2348,14 @@ label {
   font-size: 10px;
   color: var(--texto-tenue);
 }
+
+/* Banco ou opção que o sistema montou: precisa ficar claro que é proposta,
+   não prescrição. Fio na esquerda em areia, a cor de detalhe da marca. */
+.aviso-gerado {
+  margin-top: 6px;
+  padding-left: 8px;
+  border-left: 2px solid var(--areia);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--texto-fraco);
+}

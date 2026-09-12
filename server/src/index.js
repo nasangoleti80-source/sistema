@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { db, initDb } from './db.js';
 import { seedSubstitutosCafeManha } from './seeds/substitutosCafeManha.js';
+import { seedValoresNutricionais } from './seeds/valoresNutricionais.js';
+import { seedBasesDerivadas } from './seeds/basesDerivadas.js';
 import { seedCatalogoExercicios } from './seeds/catalogoExercicios.js';
 import alunosRouter from './routes/alunos.js';
 import aulasRouter from './routes/aulas.js';
@@ -70,6 +72,10 @@ if (fs.existsSync(webDist)) {
 
 await initDb();
 await seedSubstitutosCafeManha(db);
+// Depois do banco: é ele que cria os alimentos que vão receber o valor.
+await seedValoresNutricionais(db);
+// Por último: precisa do banco de 450 já com valor em cada alimento.
+await seedBasesDerivadas(db);
 await seedCatalogoExercicios(db);
 
 app.listen(PORT, () => {

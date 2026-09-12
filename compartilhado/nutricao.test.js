@@ -115,7 +115,10 @@ test('âncora maior que a base avisa em vez de devolver quantidade negativa', ()
   const r = escalarParaBase(itens, 200, catalogo);
   assert.equal(r.ok, false);
   assert.match(r.aviso, /âncora sozinha/);
-  assert.equal(r.kcal, 560);   // 5 ovos (350) + 3 frutas (210)
+  // O aviso fala da âncora (560), mas o kcal é o da opção inteira — a tapioca
+  // de 50 g continua lá, porque nada foi reescalado.
+  assert.match(r.aviso, /já dá 560 kcal/);
+  assert.equal(r.kcal, 660);   // 5 ovos (350) + 3 frutas (210) + 50 g tapioca (100)
   assert.equal(r.itens, itens, 'não mexe em nada quando não sabe o que fazer');
 });
 
@@ -193,4 +196,62 @@ test('toda unidade que não é g nem ml é contada', () => {
   }
   for (const u of ['g', 'ml']) assert.equal(ehContagem(u), false, `${u} devia ser medida`);
   assert.equal(ehContagem(undefined), false, 'sem unidade, assume grama');
+});
+
+test('limite do alimento não vale quando o item usa outra unidade', () => {
+  // O mesmo wrap é grama no catálogo e fatia na receita. Aplicar o passo de
+  // 5 g à fatia arredondava 2 fatias para zero.
+  const WRAP = { id: 'wrap', nome: 'Wrap', unidade: 'g', passo: 5, minimo: 50, maximo: 150,
+    gramasPorUnidade: 45, porcao100: { kcal: 310 } };
+  const cat = indexar([WRAP]);
+
+  const emFatias = escalarParaBase(
+    [{ alimentoId: 'wrap', quantidade: 2, unidade: 'fatia', papel: PAPEIS.ESCALA }],
+    280, cat
+  );
+  assert.equal(emFatias.itens[0].quantidade, 2, '2 fatias = 90 g = 279 kcal; o passo de 5 g não se aplica');
+  assert.equal(Number.isInteger(emFatias.itens[0].quantidade), true);
+
+  // Na unidade do próprio alimento, passo e limites continuam valendo.
+  const emGramas = escalarParaBase(
+    [{ alimentoId: 'wrap', quantidade: 100, unidade: 'g', papel: PAPEIS.ESCALA }],
+    600, cat
+  );
+  assert.equal(emGramas.itens[0].quantidade, 150, 'trava no máximo de 150 g');
+});
+
+test('escala nunca zera um item da receita', () => {
+  const AZEITE = { id: 'az', nome: 'Azeite', unidade: 'g', passo: 5, porcao100: { kcal: 884 } };
+  const OVO = { id: 'ovo', nome: 'Ovo', unidade: 'unidade', gramasPorUnidade: 50, porcao100: { kcal: 140 } };
+  const r = escalarParaBase(
+    [
+      { alimentoId: 'ovo', quantidade: 2, papel: PAPEIS.ANCORA },
+      { alimentoId: 'az', quantidade: 40, papel: PAPEIS.ESCALA },
+    ],
+    150, indexar([AZEITE, OVO])
+  );
+  assert.ok(r.itens[1].quantidade > 0, 'o azeite continua existindo na receita');
+});
+
+test('quando desiste de escalar, o kcal devolvido é o da opção inteira', () => {
+  // A âncora sozinha passa da base, então nada é reescalado. O número que
+  // volta tem que ser o da opção como ela está — devolver só a âncora fez um
+  // gerador gravar uma opção de 498 kcal num banco de 200.
+  const BARRA = { id: 'barra', nome: 'Barrinha', unidade: 'unidade', gramasPorUnidade: 60,
+    passo: 1, minimo: 1, porcao100: { kcal: 367 } };
+  const AVEIA = { id: 'aveia', nome: 'Aveia', unidade: 'g', passo: 5, porcao100: { kcal: 394 } };
+  const cat = indexar([BARRA, AVEIA]);
+
+  const r = escalarParaBase(
+    [
+      { alimentoId: 'barra', quantidade: 1, papel: PAPEIS.ANCORA },
+      { alimentoId: 'aveia', quantidade: 35, papel: PAPEIS.ESCALA },
+    ],
+    200, cat
+  );
+
+  assert.equal(r.ok, false);
+  assert.match(r.aviso, /âncora sozinha já dá 220/);
+  assert.equal(r.kcal, 358, 'barrinha (220) + aveia (138), não só a barrinha');
+  assert.equal(Math.round(calcular(r.itens, cat).kcal), r.kcal, 'o resumo bate com a soma dos itens');
 });

@@ -79,18 +79,67 @@ Para reimportar:
 node scripts/importar-tabelas.mjs <taco.md> <usda.md>
 ```
 
-## O que ainda falta
+## O catálogo preenchido
 
-**As opções das quatro bases novas** (200, 270, 370, 450), montadas a partir
-das que ele já usa em 540 e 600. O caminho é:
+Os 54 alimentos do banco de substitutos estão com valor, em
+`server/src/seeds/valoresNutricionais.js`. Cada linha registra de onde o
+número veio, e o arquivo é a fonte da verdade: corrigir lá e reimplantar
+arruma o catálogo inteiro.
 
-1. preencher os valores dos alimentos do banco de 450 que já está semeado
-   (a busca na tabela faz isso em poucos cliques por alimento);
-2. marcar o papel de cada um — âncora, escala ou fixo;
-3. duplicar o banco para cada base e usar "fechar na base".
+- **41 vieram de tabela** — 28 da TACO e 13 da USDA, com o código gravado.
+- **13 são estimativa**, porque nenhuma das duas tabelas tem o item: whey,
+  proteína em pó (nas duas formas), barrinha, bebida e iogurte proteicos, os
+  dois patês caseiros, requeijão light (nas duas formas), wrap, a porção de
+  fruta e os legumes "à vontade". Todos entram marcados como `estimado`, e a
+  conta que gerou o valor está escrita na nota do alimento.
 
-O passo 1 é o único que não dá para automatizar sem risco: casar "Frango" com
-uma linha da TACO é escolha dele, não de um algoritmo de nome parecido.
+Três armadilhas que a busca por nome parecido cria, e que ficaram resolvidas:
+
+| Nome no catálogo | O que parece | O que é |
+|---|---|---|
+| Pasta de amendoim | USDA 536 | é BISCOITO de amendoim — o certo é USDA 713 |
+| Farinha de tapioca | TACO 551 "Tapioca" | é o prato pronto com manteiga — o certo é polvilho doce, TACO 146 |
+| Queijo muçarela light | TACO 463 | é a muçarela integral — a light é USDA 70 |
+
+Nenhum entra conferido. O selo é dele.
+
+## Os mínimos práticos
+
+Cada alimento tem um mínimo abaixo do qual deixa de ser aquele alimento:
+20 g de farinha de tapioca, 25 g de pão, 40 g de pão sírio. Sem isso o motor
+fechava a base com "5 g de farinha de tapioca", que é aritmética certa e
+receita que ninguém faz.
+
+É esse mínimo que decide quais opções cabem em cada base — e por isso o
+hambúrguer caseiro não existe no banco de 200 kcal: um pão de hambúrguer
+sozinho já são 143 kcal, e não existe meio pão.
+
+## Os bancos por base
+
+`server/src/seeds/basesDerivadas.js` monta 200, 270 e 370 a partir do de 450.
+
+| Base | Opções | Média | Pior desvio |
+|------|--------|-------|-------------|
+| 200 | 9 | 203 kcal | 6% |
+| 270 | 15 | 271 kcal | 8% |
+| 370 | 21 | 372 kcal | 11% |
+| 450 | 15 | 482 kcal | 25% |
+
+O banco de 450 é o dele, com as quantidades que ele prescreveu — não foi
+mexido. Pelos valores das tabelas ele dá 482 kcal de média, 7% acima do nome.
+Fechar cada opção nos 450 é um clique por opção, se ele quiser.
+
+Duas coisas que o gerador faz:
+
+- **Nas bases baixas a âncora cede**, como ele faz (a opção do ovo tem 3 ovos
+  em 450 e 2 ovos mais 1 fruta em 200). A proteína só encolhe quando sozinha
+  passa de 70% da base.
+- **Opções simples entram nas bases baixas.** Encolher um beirute até 200 kcal
+  dava 20 g de pão sírio. As seis opções "S" são combinações de uma proteína
+  com um carboidrato, montadas para essas bases — a S1, "ovo com fruta", dá
+  216 kcal, que é a regra que ele passou (2 ovos + 1 fruta ≈ 210).
+
+Todo banco gerado carrega o aviso na tela: quem assina é o nutricionista.
 
 ## Uma regra que não se negocia
 
