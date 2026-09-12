@@ -110,7 +110,7 @@ export const api = {
   removerDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' }),
 
   // Alimentos (catálogo para montar as dietas)
-  listarAlimentos: () => request('/alimentos'),
+  listarAlimentos: (params) => request(`/alimentos${params ? `?${new URLSearchParams(params)}` : ''}`),
   criarAlimento: (dados) => request('/alimentos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarAlimento: (id, dados) => request(`/alimentos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerAlimento: (id) => request(`/alimentos/${id}`, { method: 'DELETE' }),
@@ -283,6 +283,18 @@ export const UNIDADES_ALIMENTO = {
   g: 'g', ml: 'ml', unidade: 'unidade(s)', fatia: 'fatia(s)', dose: 'dose(s)',
   colher_sopa: 'colher(es) de sopa', colher_cha: 'colher(es) de chá',
   xicara: 'xícara(s)', porcao: 'porção',
+};
+
+/** Unidades contadas: precisam do peso de uma unidade para virar caloria. */
+export const UNIDADES_CONTADAS = ['unidade', 'fatia', 'dose', 'colher_sopa', 'colher_cha', 'xicara', 'porcao'];
+
+/**
+ * De onde saiu o valor nutricional. O nutricionista trabalha com a TACO
+ * (Unicamp) e a USDA; rótulo é o que vem na embalagem e estimado é chute
+ * assumido — fica marcado para ninguém confundir com tabela.
+ */
+export const FONTES_ALIMENTO = {
+  TACO: 'TACO (Unicamp)', USDA: 'USDA', rotulo: 'Rótulo do produto', estimado: 'Estimado',
 };
 
 export const CATEGORIAS_ALIMENTO = {

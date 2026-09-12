@@ -3,37 +3,59 @@ import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import { indexarCatalogo, api, formatarData, formatarMoeda, INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO } from '../api.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
+import { indexarAlimentos, nutrientesDaOpcao, nutrientesDaTroca, kcalCurto, resumoCurto } from '../nutricao.js';
 
-function ItemDieta({ item }) {
+/**
+ * Um item da refeição e as trocas dele.
+ *
+ * No PDF o aluno lia "pão com ovo" e tinha que virar a página para descobrir
+ * o que podia comer no lugar. Aqui as trocas ficam no mesmo lugar, arrastando
+ * para o lado, e cada uma mostra quanto vale — que é o que o nutricionista
+ * equilibrou e o papel não conseguia dizer.
+ */
+function ItemDieta({ item, catalogo }) {
   const [escolhida, setEscolhida] = useState(0);
   const opcoes = item.opcoes || [];
   if (opcoes.length === 0) return null;
 
+  const quanto = (op) => `${op.quantidade} ${UNIDADES_ALIMENTO[op.unidade] || op.unidade}`;
+
   if (opcoes.length === 1) {
     const op = opcoes[0];
+    const kcal = kcalCurto(nutrientesDaTroca(op, catalogo));
     return (
       <div className="list-item">
         <div>
           <div className="name">{op.nome}</div>
-          <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
+          <div className="meta">
+            {quanto(op)}
+            {kcal && <> · <span className="num">{kcal}</span></>}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ marginBottom: 10 }}>
+    <div className="bloco-trocas">
+      <p className="rotulo-trocas">Escolha um:</p>
       <CarrosselOpcoes
+        miudo
         opcoes={opcoes}
         escolhida={escolhida}
         onEscolher={setEscolhida}
-        render={(op) => (
-          <>
-            <div className="name" style={{ fontSize: 14 }}>{op.nome}</div>
-            <div className="meta">{op.quantidade} {UNIDADES_ALIMENTO[op.unidade] || op.unidade}</div>
-          </>
-        )}
+        render={(op) => {
+          const kcal = kcalCurto(nutrientesDaTroca(op, catalogo));
+          return (
+            <>
+              <div className="name" style={{ fontSize: 14 }}>{op.nome}</div>
+              <div className="meta">{quanto(op)}</div>
+              {kcal && <div className="meta num opcao-kcal">{kcal}</div>}
+            </>
+          );
+        }}
       />
+      <p className="meta dica-arrastar">Arraste para o lado</p>
     </div>
   );
 }
@@ -41,23 +63,32 @@ function ItemDieta({ item }) {
 // Refeição vinculada a um banco de opções: o aluno escolhe UMA opção
 // inteira (ex: "Opção 03"), não alimento por alimento. A opção escolhida
 // fica fixa à esquerda como principal; as outras deslizam ao lado.
-function RefeicaoBanco({ banco }) {
+function RefeicaoBanco({ banco, catalogo }) {
   const [escolhida, setEscolhida] = useState(0);
   if (!banco || !banco.opcoes?.length) return <p className="meta">Nenhuma opção cadastrada neste banco ainda.</p>;
   const opcao = banco.opcoes[escolhida] || banco.opcoes[0];
+  const total = nutrientesDaOpcao(opcao, catalogo);
   return (
     <div>
       <CarrosselOpcoes
         opcoes={banco.opcoes}
         escolhida={escolhida}
         onEscolher={setEscolhida}
-        render={(o, principal) => (
-          <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
-        )}
+        render={(o, principal) => {
+          const kcal = kcalCurto(nutrientesDaOpcao(o, catalogo));
+          return (
+            <>
+              <div className="name" style={{ fontSize: 14 }}>{principal ? '✓ ' : ''}{o.nome}</div>
+              {kcal && <div className="meta num opcao-kcal">{kcal}</div>}
+            </>
+          );
+        }}
       />
-      <div style={{ marginTop: 10 }}>
-        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+      <p className="meta dica-arrastar">Arraste para o lado para ver as outras opções</p>
+      <div className="itens-da-opcao">
+        {(opcao.itens || []).map((item, j) => <ItemDieta key={j} item={item} catalogo={catalogo} />)}
       </div>
+      {resumoCurto(total) && <p className="meta num total-refeicao">{resumoCurto(total)}</p>}
     </div>
   );
 }
@@ -75,12 +106,13 @@ export default function Portal() {
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('treino');
   const [catalogo, setCatalogo] = useState(() => new Map());
+  const [alimentos, setAlimentos] = useState(() => new Map());
   const [erro, setErro] = useState('');
   const fimRef = useRef(null);
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex, bo] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, bo, al] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -91,6 +123,8 @@ export default function Portal() {
         // O catálogo traz foto, vídeo e a dica de onde o aparelho fica.
         api.listarExercicios(),
         api.listarBancosOpcoes(),
+        // O catálogo de alimentos é o que dá as calorias de cada troca.
+        api.listarAlimentos().catch(() => []),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -101,6 +135,7 @@ export default function Portal() {
       setMensagens(m);
       setCatalogo(indexarCatalogo(ex));
       setBancos(bo);
+      setAlimentos(indexarAlimentos(al));
     } catch (e) {
       setErro(e.message);
     }
@@ -233,8 +268,8 @@ export default function Portal() {
                 <div key={i} className="card" style={{ background: 'var(--bg)' }}>
                   <div className="name">{TIPOS_REFEICAO[r.tipo] || r.nome}</div>
                   {r.bancoId
-                    ? <RefeicaoBanco banco={bancos.find((b) => b.id === r.bancoId)} />
-                    : (r.itens || []).map((item, j) => <ItemDieta key={j} item={item} />)}
+                    ? <RefeicaoBanco banco={bancos.find((b) => b.id === r.bancoId)} catalogo={alimentos} />
+                    : (r.itens || []).map((item, j) => <ItemDieta key={j} item={item} catalogo={alimentos} />)}
                   {!r.itens && !r.bancoId && r.alimentos && <div className="meta">{r.alimentos}</div>}
                 </div>
               ))}

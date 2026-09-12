@@ -1,13 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api.js';
 import EditorItens from '../components/EditorItens.jsx';
+import {
+  BASES_KCAL, PAPEIS, escalarParaBase, indexarAlimentos, nutrientesDaOpcao, resumoCurto,
+} from '../nutricao.js';
 
 function novaOpcao(numero) {
   return { id: crypto.randomUUID(), nome: `Opção ${numero}`, itens: [] };
 }
 
 function formVazio() {
-  return { nome: '', opcoes: [novaOpcao(1)] };
+  return { nome: '', baseKcal: '', opcoes: [novaOpcao(1)] };
+}
+
+/**
+ * Quanto a opção está longe da base do banco.
+ *
+ * O nutricionista trabalha com bases fechadas — 200, 270, 370 e 450 no café e
+ * no lanche da tarde; 540 e 600 nas refeições maiores. Todas as opções de um
+ * mesmo banco precisam valer mais ou menos o mesmo, senão trocar uma pela
+ * outra deixa de ser indiferente, que é a premissa do substituto.
+ */
+function Aferidor({ opcao, base, catalogo }) {
+  const n = nutrientesDaOpcao(opcao, catalogo);
+  const resumo = resumoCurto(n);
+
+  if (!n.confiavel) {
+    const nomes = n.incompleto.map((i) => i.nome).filter(Boolean);
+    return (
+      <div className="meta alerta aferidor">
+        Não dá para somar ainda{nomes.length ? `: falta valor de ${nomes.join(', ')}` : ' — algum alimento está fora do catálogo'}.
+      </div>
+    );
+  }
+  if (!base) return <div className="meta num aferidor">{resumo}</div>;
+
+  const desvio = Math.round(((n.kcal - base) / base) * 100);
+  const dentro = Math.abs(desvio) <= 5;
+  return (
+    <div className={`meta num aferidor ${dentro ? 'no-alvo' : 'alerta'}`}>
+      {resumo} · {dentro ? 'na base' : `${desvio > 0 ? '+' : ''}${desvio}% da base de ${base}`}
+    </div>
+  );
 }
 
 export default function BancosOpcoes() {
@@ -35,6 +69,39 @@ export default function BancosOpcoes() {
     api.listarAlimentos().then(setCatalogo);
   }, []);
 
+  const alimentosIndexados = useMemo(() => indexarAlimentos(catalogo), [catalogo]);
+
+  /**
+   * Ajusta as gramaturas da opção para ela fechar na base do banco.
+   *
+   * O motor mexe só no que está marcado como "escala" — a âncora é decisão
+   * clínica e continua onde ele pôs. Quando não dá (a âncora sozinha já passa
+   * da base), a tela diz o motivo em vez de devolver um número torto.
+   */
+  function fecharNaBase(opcaoId) {
+    const base = Number(form.baseKcal);
+    if (!base) return;
+    const opcao = form.opcoes.find((o) => o.id === opcaoId);
+    if (!opcao) return;
+
+    const principais = opcao.itens.map((it) => it.opcoes?.[0]).filter(Boolean);
+    const r = escalarParaBase(principais, base, alimentosIndexados);
+    if (!r.ok && r.aviso && r.itens === principais) {
+      setErro(r.aviso);
+      return;
+    }
+
+    let i = 0;
+    const itens = opcao.itens.map((it) => {
+      if (!it.opcoes?.length) return it;
+      const opcoes = [...it.opcoes];
+      opcoes[0] = r.itens[i++] || opcoes[0];
+      return { ...it, opcoes };
+    });
+    setItensOpcao(opcaoId, itens);
+    setErro(r.ok ? '' : r.aviso || '');
+  }
+
   function abrirNovo() {
     setEditando(null);
     setForm(formVazio());
@@ -44,7 +111,11 @@ export default function BancosOpcoes() {
 
   function abrirEdicao(banco) {
     setEditando(banco);
-    setForm({ nome: banco.nome, opcoes: banco.opcoes.length ? banco.opcoes : [novaOpcao(1)] });
+    setForm({
+      nome: banco.nome,
+      baseKcal: banco.baseKcal ? String(banco.baseKcal) : '',
+      opcoes: banco.opcoes.length ? banco.opcoes : [novaOpcao(1)],
+    });
     setErro('');
     setModalAberto(true);
   }
@@ -77,8 +148,9 @@ export default function BancosOpcoes() {
             .filter((it) => it.opcoes.length > 0),
         }))
         .filter((o) => o.itens.length > 0);
-      if (editando) await api.atualizarBancoOpcoes(editando.id, { ...form, opcoes: opcoesLimpas });
-      else await api.criarBancoOpcoes({ ...form, opcoes: opcoesLimpas });
+      const dados = { ...form, baseKcal: form.baseKcal ? Number(form.baseKcal) : null, opcoes: opcoesLimpas };
+      if (editando) await api.atualizarBancoOpcoes(editando.id, dados);
+      else await api.criarBancoOpcoes(dados);
       setModalAberto(false);
       await carregar();
     } catch (e) {
@@ -110,7 +182,10 @@ export default function BancosOpcoes() {
           <div className="row">
             <div onClick={() => abrirEdicao(b)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{b.nome}</div>
-              <div className="meta">{b.opcoes?.length || 0} opção(ões) cadastrada(s)</div>
+              <div className="meta">
+                {b.opcoes?.length === 1 ? '1 opção' : `${b.opcoes?.length || 0} opções`}
+                {b.baseKcal ? <> · base de <span className="num">{b.baseKcal}</span> kcal</> : ''}
+              </div>
             </div>
             <button className="btn-danger btn-small" onClick={() => excluir(b)}>Excluir</button>
           </div>
@@ -125,7 +200,17 @@ export default function BancosOpcoes() {
             <form onSubmit={salvar}>
               <label>Nome do banco</label>
               <input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Ex: Café da manhã / lanche / jantar — 450kcal" />
+                placeholder="Ex: Café da manhã e lanche da tarde" />
+
+              <label>Base calórica</label>
+              <select value={form.baseKcal} onChange={(e) => setForm({ ...form, baseKcal: e.target.value })}>
+                <option value="">Sem base definida</option>
+                {BASES_KCAL.map((b) => <option key={b} value={b}>{b} kcal</option>)}
+              </select>
+              <p className="meta">
+                Todas as opções do banco miram nessa base. É o que faz o aluno poder trocar uma pela outra
+                sem o plano mudar de tamanho.
+              </p>
 
               {form.opcoes.map((op) => (
                 <div key={op.id} className="card" style={{ background: 'var(--bg)', marginTop: 12 }}>
@@ -133,12 +218,21 @@ export default function BancosOpcoes() {
                     <input value={op.nome} onChange={(e) => renomearOpcao(op.id, e.target.value)} style={{ flex: 1 }} />
                     <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(op.id)}>Excluir opção</button>
                   </div>
+                  <Aferidor opcao={op} base={Number(form.baseKcal) || 0} catalogo={alimentosIndexados} />
                   <EditorItens
                     itens={op.itens}
                     catalogo={catalogo}
                     onChange={(itens) => setItensOpcao(op.id, itens)}
                     rotuloItem="Alimento"
+                    mostrarPapel={!!form.baseKcal}
+                    alimentosIndexados={alimentosIndexados}
                   />
+                  {form.baseKcal && op.itens.length > 0 && (
+                    <button type="button" className="btn-secondary btn-small" style={{ marginTop: 8 }}
+                      onClick={() => fecharNaBase(op.id)}>
+                      Fechar em {form.baseKcal} kcal
+                    </button>
+                  )}
                 </div>
               ))}
 

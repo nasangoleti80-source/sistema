@@ -1,15 +1,36 @@
 import { useEffect, useId, useState } from 'react';
 import { api, UNIDADES_ALIMENTO } from '../api.js';
+import { PAPEIS, nutrientesDaTroca, kcalCurto } from '../nutricao.js';
 
 export function novoItemDieta() {
   return { id: crypto.randomUUID(), opcoes: [{ alimentoId: '', nome: '', quantidade: '', unidade: 'g' }] };
 }
 
-// Editor reutilizável de "itens" de uma refeição/opção: cada item pode ter
-// várias opções de troca (ex: frango OU tilápia), cada uma com sua própria
-// quantidade. Usado tanto na dieta de um aluno quanto dentro de um banco de
-// opções ou de um modelo de dieta.
-export default function EditorItens({ itens, catalogo, onChange, rotuloItem = 'Item' }) {
+/**
+ * Papel de cada troca quando a opção precisa fechar numa base calórica.
+ * A âncora é a proteína, que o nutricionista define e o motor não mexe; o que
+ * escala é o carboidrato/gordura; fixo é o acompanhamento que entra na conta
+ * mas não muda (o café, o tempero).
+ */
+const ROTULO_PAPEL = {
+  [PAPEIS.ANCORA]: 'Âncora',
+  [PAPEIS.ESCALA]: 'Escala',
+  [PAPEIS.FIXO]: 'Fixo',
+};
+
+/**
+ * Editor de "itens" de uma refeição: cada item pode ter várias trocas
+ * (frango OU tilápia), cada uma com sua quantidade. Serve para a dieta de um
+ * aluno, para o banco de opções e para o modelo de dieta.
+ *
+ * Passando `alimentosIndexados` a tela mostra as calorias de cada linha
+ * enquanto ele digita — e diz quando o alimento está fora do catálogo, porque
+ * aí ele não entra em conta nenhuma. `mostrarPapel` só faz sentido onde a
+ * opção precisa fechar numa base calórica.
+ */
+export default function EditorItens({
+  itens, catalogo, onChange, rotuloItem = 'Item', mostrarPapel = false, alimentosIndexados,
+}) {
   const uid = useId();
   const listaId = `alimentos-${uid}`;
   const [grupos, setGrupos] = useState([]);
@@ -66,6 +87,7 @@ export default function EditorItens({ itens, catalogo, onChange, rotuloItem = 'I
         const atual = opcoes[idx];
         opcoes[idx] = alimento
           ? {
+              ...atual,   // o papel escolhido não se perde ao trocar o alimento
               alimentoId: alimento.id,
               nome: alimento.nome,
               quantidade: atual.quantidade === '' ? alimento.quantidadePadrao ?? '' : atual.quantidade,
@@ -110,29 +132,47 @@ export default function EditorItens({ itens, catalogo, onChange, rotuloItem = 'I
           {item.opcoes.map((op, idx) => (
             <div key={idx} style={{ marginBottom: idx < item.opcoes.length - 1 ? 10 : 0 }}>
               {idx > 0 && <div className="meta" style={{ marginBottom: 4 }}>ou:</div>}
-              <div className="row" style={{ gap: 6 }}>
+              <div className="row linha-alimento">
                 <input
                   list={listaId}
-                  style={{ flex: 2 }}
+                  className="campo-nome"
                   value={op.nome}
                   placeholder="Buscar alimento..."
                   onChange={(e) => digitarAlimento(item.id, idx, e.target.value)}
                 />
                 <input
-                  type="number" min="0" step="0.1" style={{ flex: 1 }}
+                  type="number" min="0" step="0.1" className="campo-qtd"
                   value={op.quantidade}
                   onChange={(e) => setOpcaoCampo(item.id, idx, 'quantidade', e.target.value)}
                   placeholder="qtd"
                 />
-                <select style={{ flex: 1 }} value={op.unidade} onChange={(e) => setOpcaoCampo(item.id, idx, 'unidade', e.target.value)}>
+                <select className="campo-unidade" value={op.unidade} onChange={(e) => setOpcaoCampo(item.id, idx, 'unidade', e.target.value)}>
                   {Object.entries(UNIDADES_ALIMENTO).map(([v, l]) => (
                     <option key={v} value={v}>{l}</option>
                   ))}
                 </select>
+                {mostrarPapel && (
+                  <select
+                    className="campo-papel"
+                    value={op.papel || PAPEIS.ESCALA}
+                    onChange={(e) => setOpcaoCampo(item.id, idx, 'papel', e.target.value)}
+                    title="O que o motor pode ajustar para fechar a base"
+                  >
+                    {Object.entries(ROTULO_PAPEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                )}
                 {item.opcoes.length > 1 && (
                   <button type="button" className="btn-danger btn-small" onClick={() => removerOpcao(item.id, idx)}>×</button>
                 )}
               </div>
+              {alimentosIndexados && (() => {
+                const n = nutrientesDaTroca(op, alimentosIndexados);
+                const kcal = kcalCurto(n);
+                if (kcal) return <div className="meta num linha-kcal">{kcal}</div>;
+                if (op.alimentoId) return <div className="meta alerta">Sem valor nutricional no catálogo</div>;
+                if (op.nome?.trim()) return <div className="meta alerta">Fora do catálogo — não entra na conta</div>;
+                return null;
+              })()}
             </div>
           ))}
 

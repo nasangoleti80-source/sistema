@@ -263,6 +263,10 @@ p.subtitle {
   padding: 10px 12px;
   color: var(--texto);
   cursor: pointer;
+  /* "Batata-doce cozida" não pode virar "Batata-doce cozi": nome de alimento
+     quebra em duas linhas em vez de ser cortado na borda do cartão. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .opcao-card.principal {
@@ -272,6 +276,42 @@ p.subtitle {
   left: 0;
   z-index: 1;
   box-shadow: 10px 0 12px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Nível de dentro: trocar UM alimento da refeição, não a refeição inteira.
+   Cartão menor e sem contorno cheio, para não competir com o de fora — dois
+   carrosséis iguais empilhados não dizem o que está sendo escolhido. */
+.carrossel-opcoes.miudo .opcao-card {
+  min-width: 120px;
+  max-width: 180px;
+  padding: 8px 10px;
+  background: transparent;
+  border-style: dashed;
+}
+
+.carrossel-opcoes.miudo .opcao-card.principal {
+  background: var(--sup-2);
+  border-style: solid;
+  box-shadow: none;
+}
+
+.bloco-trocas {
+  margin: 10px 0 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--linha);
+}
+
+.rotulo-trocas {
+  margin: 0 0 5px;
+  font-family: var(--fonte-black);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+.itens-da-opcao {
+  margin-top: 12px;
 }
 
 .acoes-rapidas {
@@ -1513,4 +1553,124 @@ label {
 
 .portais-topo .modulo-ic {
   flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------ dieta e macros */
+
+/* Grade dos cinco nutrientes no cadastro do alimento. No celular ficam dois
+   por linha; caber cinco campos numa fila só deixaria cada um estreito demais
+   para digitar um número de três dígitos. */
+.grid-nutrientes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 10px;
+}
+
+@media (min-width: 560px) {
+  .grid-nutrientes {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Caixa de marcar com o texto do lado, e não embaixo como os outros campos. */
+.check-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+.check-linha input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--azul-claro);
+}
+
+.check-linha span {
+  font-size: 13px;
+  color: var(--texto-fraco);
+}
+
+/* O que falta num alimento para ele entrar numa conta. */
+.list-item .meta.alerta {
+  color: var(--atencao);
+}
+
+/* Calorias no card do carrossel: número em mono, como toda cifra do sistema. */
+.opcao-kcal {
+  margin-top: 4px;
+  color: var(--azul-claro);
+  font-size: 12px;
+}
+
+/* O gesto não é óbvio num card parado: a dica sai depois do primeiro arrasto. */
+.dica-arrastar {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--texto-tenue);
+}
+
+.total-refeicao {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--linha);
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+}
+
+/* Quanto a opção do banco está valendo, medido contra a base do banco. */
+.aferidor {
+  margin: 6px 0 2px;
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+}
+
+.aferidor.no-alvo {
+  color: var(--positivo);
+}
+
+.meta.alerta {
+  color: var(--atencao);
+}
+
+/* Calorias da linha que ele acabou de digitar, no editor de itens. */
+.linha-kcal {
+  margin: 3px 0 0 2px;
+  font-size: 11.5px;
+  color: var(--texto-tenue);
+}
+
+/* Linha de alimento no editor de dieta.
+   São quatro controles — nome, quantidade, unidade e papel — mais o botão de
+   remover. Numa tela de 390px eles não cabem lado a lado: o nome virava
+   "ZZ Gor" e a quantidade, "10". Então o nome fica com a linha inteira e o
+   resto se divide embaixo; em tela larga tudo volta para uma fila só. */
+.linha-alimento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.linha-alimento .campo-nome {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.linha-alimento .campo-qtd {
+  flex: 1 1 64px;
+  min-width: 58px;
+}
+
+.linha-alimento .campo-unidade,
+.linha-alimento .campo-papel {
+  flex: 1 1 96px;
+  min-width: 84px;
+}
+
+@media (min-width: 620px) {
+  .linha-alimento .campo-nome {
+    flex: 2 1 180px;
+  }
 }
