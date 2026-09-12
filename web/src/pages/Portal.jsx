@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
 import {
   indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo, volumeSemanalPorZona, semanaAtualIntervalo,
-  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES, DIAS_SEMANA_SESSAO,
+  INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES, DIAS_SEMANA_SESSAO, TIPOS_DESAFIO,
 } from '../api.js';
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
@@ -309,6 +309,7 @@ export default function Portal() {
   const [planos, setPlanos] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [todosTreinos, setTodosTreinos] = useState([]);
+  const [desafios, setDesafios] = useState([]);
   const [texto, setTexto] = useState('');
   const [aba, setAba] = useState('inicio');
   const [catalogo, setCatalogo] = useState(() => new Map());
@@ -322,7 +323,7 @@ export default function Portal() {
 
   async function carregarTudo() {
     try {
-      const [a, t, e, av, p, d, m, ex, c, pl, reg, al] = await Promise.all([
+      const [a, t, e, av, p, d, m, ex, c, pl, reg, al, des] = await Promise.all([
         api.obterAluno(alunoId),
         api.listarTreinos(alunoId),
         api.listarEndurance(alunoId),
@@ -337,6 +338,7 @@ export default function Portal() {
         api.listarRegistrosTreino({ alunoId }).catch(() => []),
         // O catálogo de alimentos é de onde saem as calorias de cada troca.
         api.listarAlimentos().catch(() => []),
+        api.listarDesafios(alunoId).catch(() => []),
       ]);
       setAluno(a);
       setTreinos(t.filter((tr) => tr.ativo));
@@ -351,6 +353,7 @@ export default function Portal() {
       setPlanos(pl);
       setRegistros(reg);
       setAlimentos(indexarAlimentos(al));
+      setDesafios(des);
     } catch (e) {
       setErro(e.message);
     }
@@ -533,6 +536,25 @@ export default function Portal() {
           <button className="btn-primary" style={{ width: '100%' }} onClick={() => setAba('treino')}>
             Ir para o treino de hoje
           </button>
+
+          {desafios.length > 0 && (
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="name" style={{ marginBottom: 8 }}>🏆 Desafios</div>
+              {desafios.map((d) => (
+                <div className="list-item" key={d.id}>
+                  <div>
+                    <div className="name">{d.nome}</div>
+                    <div className="meta">
+                      {TIPOS_DESAFIO[d.tipo]} · até {formatarData(d.dataFim)}
+                    </div>
+                  </div>
+                  <span className={`badge ${d.concluidos.includes(alunoId) ? 'pago' : 'pendente'}`}>
+                    {d.concluidos.includes(alunoId) ? 'Concluído' : 'Em andamento'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 
