@@ -151,6 +151,12 @@ export const api = {
   criarConteudo: (dados) => request('/conteudos', { method: 'POST', body: JSON.stringify(dados) }),
   atualizarConteudo: (id, dados) => request(`/conteudos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   removerConteudo: (id) => request(`/conteudos/${id}`, { method: 'DELETE' }),
+
+  // Planos (vitrine de preços do PlayFlix)
+  listarPlanos: () => request('/planos'),
+  criarPlano: (dados) => request('/planos', { method: 'POST', body: JSON.stringify(dados) }),
+  atualizarPlano: (id, dados) => request(`/planos/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
+  removerPlano: (id) => request(`/planos/${id}`, { method: 'DELETE' }),
 };
 
 export const TIPOS_ALUNO = {
