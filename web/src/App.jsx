@@ -21,6 +21,7 @@ import BancosOpcoes from './pages/BancosOpcoes.jsx';
 import ModelosDieta from './pages/ModelosDieta.jsx';
 import Conteudos from './pages/Conteudos.jsx';
 import Desafios from './pages/Desafios.jsx';
+import SaudeConsultoria from './pages/SaudeConsultoria.jsx';
 import Portal from './pages/Portal.jsx';
 
 /* Só o que ela abre todo dia. Os outros módulos entram pelo Início, que é o
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/conteudos" element={<Conteudos />} />
           <Route path="/desafios" element={<Desafios />} />
+          <Route path="/saude-consultoria" element={<SaudeConsultoria />} />
           <Route path="/portal/:alunoId" element={<Portal />} />
         </Routes>
       </main>

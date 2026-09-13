@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, formatarMoeda, formatarData, mesAtual, aniversariantesDoMes, CANAIS_CAPTACAO, TIPOS_ALUNO } from '../api.js';
+import { api, formatarMoeda, mesAtual, aniversariantesDoMes, CANAIS_CAPTACAO } from '../api.js';
 
 /**
  * Índice do sistema.
@@ -42,6 +42,7 @@ const DESENHOS = {
   portal: ['M6 2h12a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 18 22H6a2.5 2.5 0 0 1-2.5-2.5v-15A2.5 2.5 0 0 1 6 2Z', 'M11 18h2'],
   desafios: ['M8 21h8', 'M12 17v4', 'M7 4h10v4a5 5 0 0 1-10 0Z', 'M7 6H4a3 3 0 0 0 3 3', 'M17 6h3a3 3 0 0 1-3 3'],
   bolo: ['M4 21v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8', 'M4 21h16', 'M9 11V7a3 3 0 0 1 6 0v4', 'M12 4v.01'],
+  saude: ['M20.8 8.6c0-3-2.5-5.4-5.5-5.4-2 0-3.8 1.1-4.7 2.7A5.4 5.4 0 0 0 5.9 3.2c-3 0-5.5 2.4-5.5 5.4 0 6.4 8.4 11.3 9.6 12A24 24 0 0 0 20.8 8.6Z', 'M3 12h3l2 4 3-8 2 5h3'],
 };
 
 export default function Inicio() {
@@ -50,8 +51,6 @@ export default function Inicio() {
   const [desafios, setDesafios] = useState([]);
   const [erro, setErro] = useState('');
   const [copiado, setCopiado] = useState('');
-  const [tipoConsultoria, setTipoConsultoria] = useState('online');
-  const [editandoAvaliacao, setEditandoAvaliacao] = useState(null);
 
   useEffect(() => {
     const mes = mesAtual();
@@ -106,57 +105,18 @@ export default function Inicio() {
     : [];
   const maiorCanal = Math.max(1, ...canaisComContagem.map(([, n]) => n));
 
-  // Ranking de atenção — só faz sentido pra consultoria (quem treina sem
-  // ela ver ao vivo): classifica pelo tempo desde o último treino registrado,
-  // e traz junto vencimento de pacote e próxima avaliação.
-  const ehOnline = (tipo) => tipo?.startsWith('consultoria_online');
-  const ehSemipresencial = (tipo) => tipo === 'consultoria_semipresencial';
-  const hojeISO = new Date().toISOString().slice(0, 10);
-
-  const todosConsultoria = dashboard ? ativos.filter((a) => ehOnline(a.tipo) || ehSemipresencial(a.tipo)) : [];
-  const consultoriaComStatus = todosConsultoria
-    .filter((a) => (tipoConsultoria === 'online' ? ehOnline(a.tipo) : ehSemipresencial(a.tipo)))
-    .map((aluno) => {
-      const status = dashboard.treinoStatusPorAluno.find((t) => t.alunoId === aluno.id);
-      const ultimo = status?.ultimoTreinoData;
-      const diasSemTreinar = ultimo ? Math.floor((Date.now() - new Date(ultimo)) / 86400000) : null;
-      let grupo = 'engajado';
-      if (diasSemTreinar == null) grupo = 'sem_inicio';
-      else if (diasSemTreinar >= 14) grupo = 'abandono';
-      else if (diasSemTreinar >= 7) grupo = 'em_risco';
-
-      const pacote = d.pacotes
-        .filter((p) => p.alunoId === aluno.id)
-        .sort((a, b) => (a.dataVencimento < b.dataVencimento ? -1 : 1))
-        .find((p) => p.status !== 'pago') || null;
-
-      const diasProximaAvaliacao = aluno.proximaAvaliacaoData
-        ? Math.round((new Date(aluno.proximaAvaliacaoData) - new Date(hojeISO)) / 86400000)
-        : null;
-
-      return { aluno, diasSemTreinar, grupo, pacote, diasProximaAvaliacao };
-    })
-    .sort((a, b) => (b.diasSemTreinar || 0) - (a.diasSemTreinar || 0));
-
-  const contagemPorGrupo = {
-    abandono: consultoriaComStatus.filter((c) => c.grupo === 'abandono').length,
-    em_risco: consultoriaComStatus.filter((c) => c.grupo === 'em_risco').length,
-    engajado: consultoriaComStatus.filter((c) => c.grupo === 'engajado').length,
-    sem_inicio: consultoriaComStatus.filter((c) => c.grupo === 'sem_inicio').length,
-  };
-
-  async function salvarProximaAvaliacao(alunoId, novaData) {
-    const atualizado = await api.atualizarAluno(alunoId, { proximaAvaliacaoData: novaData || null });
-    setDados((prev) => ({ ...prev, alunos: prev.alunos.map((a) => (a.id === alunoId ? atualizado : a)) }));
-    setEditandoAvaliacao(null);
-  }
-
-  async function toggleChecklist(aluno, chave) {
-    const atualizado = await api.atualizarAluno(aluno.id, {
-      checklistConsultoria: { ...aluno.checklistConsultoria, [chave]: !aluno.checklistConsultoria?.[chave] },
-    });
-    setDados((prev) => ({ ...prev, alunos: prev.alunos.map((a) => (a.id === aluno.id ? atualizado : a)) }));
-  }
+  // Quantos de consultoria (online ou semipresencial) estão sem treinar há
+  // 7+ dias — o número que aparece no botão "Saúde da consultoria" do Início.
+  // O detalhamento por abas, pacote, avaliação e checklist mora na página dela.
+  const ehConsultoria = (tipo) => tipo?.startsWith('consultoria_online') || tipo === 'consultoria_semipresencial';
+  const consultoriaEmAtencao = dashboard
+    ? ativos.filter((a) => ehConsultoria(a.tipo)).filter((a) => {
+        const status = dashboard.treinoStatusPorAluno.find((t) => t.alunoId === a.id);
+        const ultimo = status?.ultimoTreinoData;
+        const diasSemTreinar = ultimo ? Math.floor((Date.now() - new Date(ultimo)) / 86400000) : null;
+        return diasSemTreinar == null || diasSemTreinar >= 7;
+      }).length
+    : 0;
 
   /** Um módulo: para onde vai, o que faz e o número que importa nele. */
   const Modulo = ({ para, icone, nome, oQueE, contagem, alerta }) => (
@@ -252,96 +212,16 @@ export default function Inicio() {
             />
           </div>
 
-          {todosConsultoria.length > 0 && (
-            <div className="card">
-              <div className="name" style={{ marginBottom: 10 }}>Saúde da consultoria</div>
-
-              <div className="row" style={{ gap: 6, marginBottom: 12 }}>
-                <button
-                  type="button"
-                  className={tipoConsultoria === 'online' ? 'btn-primary btn-small' : 'btn-secondary btn-small'}
-                  onClick={() => setTipoConsultoria('online')}
-                >
-                  Online
-                </button>
-                <button
-                  type="button"
-                  className={tipoConsultoria === 'semipresencial' ? 'btn-primary btn-small' : 'btn-secondary btn-small'}
-                  onClick={() => setTipoConsultoria('semipresencial')}
-                >
-                  Semipresencial
-                </button>
-              </div>
-
-              <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: consultoriaComStatus.length ? 14 : 0 }}>
-                <span className="pilula-atencao critico">{contagemPorGrupo.abandono} abandono</span>
-                <span className="pilula-atencao alerta">{contagemPorGrupo.em_risco} em risco</span>
-                <span className="pilula-atencao neutro">{contagemPorGrupo.sem_inicio} sem início</span>
-                <span className="pilula-atencao bom">{contagemPorGrupo.engajado} engajado</span>
-              </div>
-
-              {consultoriaComStatus.length === 0 && (
-                <p className="empty">Nenhum aluno {tipoConsultoria === 'online' ? 'de consultoria online' : 'semipresencial'} ativo.</p>
-              )}
-
-              {consultoriaComStatus.map(({ aluno, diasSemTreinar, grupo, pacote, diasProximaAvaliacao }) => (
-                <div className="card-aluno-consultoria" key={aluno.id}>
-                  <div className="row" style={{ alignItems: 'flex-start' }}>
-                    <Link to={`/alunos/${aluno.id}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
-                      <div className="name">{aluno.nome}</div>
-                    </Link>
-                    <span className={`badge ${{ abandono: 'atrasado', em_risco: 'pendente', engajado: 'pago', sem_inicio: 'sem-cobranca' }[grupo]}`}>
-                      {{ abandono: 'Abandono', em_risco: 'Em risco', engajado: 'Engajado', sem_inicio: 'Sem início' }[grupo]}
-                    </span>
-                    <Link to={`/mensagens?alunoId=${aluno.id}`} className="btn-secondary btn-small link-botao">Chamar</Link>
-                  </div>
-
-                  <div className="meta" style={{ marginTop: 4 }}>
-                    {diasSemTreinar != null ? `${diasSemTreinar} dias sem treinar` : 'Nunca treinou'}
-                    {pacote && ` · pacote vence ${formatarData(pacote.dataVencimento)} (${pacote.status})`}
-                  </div>
-
-                  <div className="row" style={{ marginTop: 6, gap: 8, flexWrap: 'wrap' }}>
-                    <span className="meta">
-                      Próxima avaliação:{' '}
-                      {aluno.proximaAvaliacaoData
-                        ? `${formatarData(aluno.proximaAvaliacaoData)} (${diasProximaAvaliacao < 0 ? `atrasada ${-diasProximaAvaliacao}d` : `faltam ${diasProximaAvaliacao}d`})`
-                        : 'não agendada'}
-                    </span>
-                    {editandoAvaliacao === aluno.id ? (
-                      <input
-                        type="date"
-                        autoFocus
-                        defaultValue={aluno.proximaAvaliacaoData || ''}
-                        onBlur={(e) => salvarProximaAvaliacao(aluno.id, e.target.value)}
-                        style={{ padding: '2px 6px', fontSize: 12 }}
-                      />
-                    ) : (
-                      <button type="button" className="link-editar" onClick={() => setEditandoAvaliacao(aluno.id)}>editar</button>
-                    )}
-                  </div>
-
-                  <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: 'wrap' }}>
-                    {[
-                      ['cobreiReacao', 'Cobrei a reação'],
-                      ['marqueiAvaliacao', 'Marquei avaliação'],
-                      ['faleiRenovacao', 'Falei sobre renovação'],
-                      ['ajusteiTreino', 'Ajustei treino/dieta'],
-                    ].map(([chave, rotulo]) => (
-                      <button
-                        key={chave}
-                        type="button"
-                        className={`checklist-item ${aluno.checklistConsultoria?.[chave] ? 'feito' : ''}`}
-                        onClick={() => toggleChecklist(aluno, chave)}
-                      >
-                        {aluno.checklistConsultoria?.[chave] ? '☑' : '☐'} {rotulo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="modulos">
+            <Modulo
+              para="/saude-consultoria"
+              icone="saude"
+              nome="Saúde da consultoria"
+              oQueE="Abandono, vencimento, avaliação e checklist"
+              contagem={consultoriaEmAtencao || null}
+              alerta={consultoriaEmAtencao > 0}
+            />
+          </div>
 
           {/* ----------------------------------------------------- financeiro */}
           <h2>Financeiro</h2>
