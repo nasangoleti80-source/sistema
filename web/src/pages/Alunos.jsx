@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData } from '../api.js';
+import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData, mesAtual } from '../api.js';
 import { useNavigate } from 'react-router-dom';
 
 const FORM_VAZIO = {
@@ -27,12 +27,14 @@ export default function Alunos() {
   const [form, setForm] = useState(FORM_VAZIO);
   const [erro, setErro] = useState('');
   const [mostrarInativos, setMostrarInativos] = useState(false);
+  const [pacotes, setPacotes] = useState([]);
 
   async function carregar() {
     setCarregando(true);
     try {
-      const dados = await api.listarAlunos();
+      const [dados, todosPacotes] = await Promise.all([api.listarAlunos(), api.listarPacotes()]);
       setAlunos(dados);
+      setPacotes(todosPacotes);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -110,11 +112,33 @@ export default function Alunos() {
   }
 
   const listaFiltrada = alunos.filter((a) => mostrarInativos || a.ativo);
+  const mes = mesAtual();
+  const pacotesVencendo = pacotes
+    .filter((p) => p.dataVencimento?.startsWith(mes))
+    .sort((a, b) => (a.dataVencimento < b.dataVencimento ? -1 : 1));
 
   return (
     <div>
       <h1>Alunos</h1>
       <p className="subtitle">Cadastro dos seus clientes</p>
+
+      {pacotesVencendo.length > 0 && (
+        <div className="card">
+          <div className="name" style={{ marginBottom: 8 }}>Pacotes vencendo este mês</div>
+          {pacotesVencendo.map((p) => {
+            const aluno = alunos.find((a) => a.id === p.alunoId);
+            return (
+              <div className="list-item" key={p.id}>
+                <div onClick={() => aluno && navigate(`/alunos/${aluno.id}`)} style={{ cursor: aluno ? 'pointer' : 'default', flex: 1 }}>
+                  <div className="name">{aluno?.nome || 'Aluno removido'}</div>
+                  <div className="meta">{p.nomePacote} · {formatarMoeda(p.valorTotal)} · vence {formatarData(p.dataVencimento)}</div>
+                </div>
+                <span className={`badge ${p.status}`}>{p.status}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="row" style={{ marginBottom: 12 }}>
         <label className="checkbox-row" style={{ margin: 0 }}>

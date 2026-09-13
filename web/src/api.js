@@ -43,7 +43,6 @@ export const api = {
 
   // Dashboard
   obterDashboard: (mes) => request(`/dashboard?mes=${mes}`),
-  obterHistoricoFinanceiro: () => request('/dashboard/historico'),
 
   // Avaliações físicas
   listarAvaliacoes: (alunoId) => request(`/avaliacoes${alunoId ? `?alunoId=${alunoId}` : ''}`),

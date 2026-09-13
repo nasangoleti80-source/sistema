@@ -47,7 +47,6 @@ const DESENHOS = {
 export default function Inicio() {
   const [dados, setDados] = useState(null);
   const [dashboard, setDashboard] = useState(null);
-  const [historico, setHistorico] = useState([]);
   const [desafios, setDesafios] = useState([]);
   const [erro, setErro] = useState('');
   const [copiado, setCopiado] = useState('');
@@ -66,13 +65,11 @@ export default function Inicio() {
       api.listarModelosDieta().catch(() => []),
       api.listarConteudos().catch(() => []),
       api.obterDashboard(mes).catch(() => null),
-      api.obterHistoricoFinanceiro().catch(() => []),
       api.listarDesafios().catch(() => []),
     ])
-      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos, dash, hist, des]) => {
+      .then(([alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos, dash, des]) => {
         setDados({ alunos, treinos, pagamentos, exercicios, mensagens, endurance, pacotes, alimentos, modelos, conteudos });
         setDashboard(dash);
-        setHistorico(hist);
         setDesafios(des);
       })
       .catch((e) => setErro(e.message));
@@ -102,8 +99,6 @@ export default function Inicio() {
     const hoje = new Date().toISOString().slice(0, 10);
     return hoje >= ds.dataInicio && hoje <= ds.dataFim;
   });
-  const historicoRecente = historico.slice(-6);
-  const maiorRecebido = Math.max(1, ...historicoRecente.map((h) => h.recebido || 0));
   const canaisComContagem = dashboard
     ? Object.entries(dashboard.porCanal).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
     : [];
@@ -170,6 +165,25 @@ export default function Inicio() {
             ))}
           </div>
 
+          {/* ------------------------------------------- desafios e playflix */}
+          <h2>Desafios e PlayFlix</h2>
+          <div className="modulos">
+            <Modulo
+              para="/desafios"
+              icone="desafios"
+              nome="Desafios"
+              oQueE="Desafios de treino ou dieta, com prazo"
+              contagem={desafiosAtivos.length || null}
+            />
+            <Modulo
+              para="/conteudos"
+              icone="conteudos"
+              nome="PlayFlix"
+              oQueE="Vídeos exclusivos para quem tem pacote ativo"
+              contagem={d.conteudos.length || null}
+            />
+          </div>
+
           {/* --------------------------------------------------------- aluno */}
           <h2>Aluno</h2>
           <div className="modulos">
@@ -190,41 +204,12 @@ export default function Inicio() {
             <Modulo para="/pagamentos" icone="cobranca" nome="Cobrança" oQueE="Mensalidade de cada aluno" contagem={d.pagamentos.filter((p) => p.status !== 'pago').length || null} alerta />
             <Modulo para="/pacotes" icone="pacotes" nome="Pacotes" oQueE="Venda fechada, com parcelas e vencimento" contagem={d.pacotes.length || null} />
           </div>
-          <div className={`grid-stats ${historicoRecente.length ? '' : ''}`} style={{ marginBottom: 12 }}>
+          <div className="grid-stats" style={{ marginBottom: 12 }}>
             <div className={`stat ${aReceber > 0 ? 'amber' : 'green'}`}>
               <div className="value">{formatarMoeda(aReceber)}</div>
               <div className="label">A receber no mês</div>
             </div>
           </div>
-          {historicoRecente.length > 0 && (
-            <div className="card">
-              <div className="name" style={{ marginBottom: 10 }}>Quanto entrou por mês</div>
-              <div className="grafico-barras">
-                {historicoRecente.map((h) => (
-                  <div key={h.mes} className="grafico-barra-item">
-                    <div className="grafico-barra-trilha">
-                      <div className="grafico-barra-fill" style={{ height: `${Math.max(6, (h.recebido / maiorRecebido) * 100)}%` }} />
-                    </div>
-                    <div className="grafico-barra-valor num">{formatarMoeda(h.recebido || 0)}</div>
-                    <div className="grafico-barra-label">{h.mes.slice(5)}/{h.mes.slice(2, 4)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ------------------------------------------------------ desafios */}
-          <h2>Desafios</h2>
-          <div className="modulos">
-            <Modulo
-              para="/desafios"
-              icone="desafios"
-              nome="Desafios"
-              oQueE="Desafios de treino ou dieta, com prazo"
-              contagem={desafiosAtivos.length || null}
-            />
-          </div>
-
           {/* --------------------------------------------- de onde vêm os alunos */}
           {canaisComContagem.length > 0 && (
             <>
@@ -268,18 +253,6 @@ export default function Inicio() {
               oQueE={semMidia ? `${plural(semMidia, 'exercício', 'exercícios')} sem foto ou vídeo` : 'Catálogo com foto, vídeo e onde fica'}
               contagem={d.exercicios.length}
               alerta={semMidia > 0}
-            />
-          </div>
-
-          {/* ------------------------------------- o que chega até a aluna */}
-          <h2>O que a aluna vê no celular dela</h2>
-          <div className="modulos">
-            <Modulo
-              para="/conteudos"
-              icone="conteudos"
-              nome="PlayFlix"
-              oQueE="Vídeos exclusivos para quem tem pacote ativo"
-              contagem={d.conteudos.length || null}
             />
           </div>
 
