@@ -5,6 +5,15 @@ import { calcularIdade, calcularVencimentoPlano } from '../lib/calculos.js';
 
 const router = Router();
 
+// Checklist fixo de acompanhamento da consultoria — a treinadora marca o que
+// já fez com cada aluno; ela mesma desmarca quando quiser refazer o ciclo.
+const CHECKLIST_VAZIO = {
+  cobreiReacao: false,
+  marqueiAvaliacao: false,
+  faleiRenovacao: false,
+  ajusteiTreino: false,
+};
+
 const ANAMNESE_VAZIA = {
   queixasDor: '',
   objetivo: '',
@@ -72,6 +81,10 @@ router.post('/', async (req, res) => {
     altura: altura ? Number(altura) : null,
     sexo: sexo || 'masculino',
     anamnese: montarAnamnese(anamnese),
+    // Cadência fixa de 45 dias — recalculada sozinha a cada avaliação nova,
+    // mas editável na mão pela treinadora quando precisar remarcar.
+    proximaAvaliacaoData: null,
+    checklistConsultoria: { ...CHECKLIST_VAZIO },
     ativo: true,
     createdAt: new Date().toISOString(),
   };
@@ -88,6 +101,7 @@ router.put('/:id', async (req, res) => {
   const {
     nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
+    proximaAvaliacaoData, checklistConsultoria,
   } = req.body;
 
   const inicioFinal = dataInicio !== undefined ? dataInicio : atual.dataInicio;
@@ -116,6 +130,10 @@ router.put('/:id', async (req, res) => {
     altura: altura !== undefined ? (altura ? Number(altura) : null) : atual.altura,
     sexo: sexo !== undefined ? sexo : atual.sexo,
     anamnese: anamnese !== undefined ? montarAnamnese({ ...atual.anamnese, ...anamnese }) : atual.anamnese,
+    proximaAvaliacaoData: proximaAvaliacaoData !== undefined ? proximaAvaliacaoData : (atual.proximaAvaliacaoData ?? null),
+    checklistConsultoria: checklistConsultoria !== undefined
+      ? { ...CHECKLIST_VAZIO, ...atual.checklistConsultoria, ...checklistConsultoria }
+      : (atual.checklistConsultoria || { ...CHECKLIST_VAZIO }),
   };
   db.data.alunos[idx] = atualizado;
   await db.write();

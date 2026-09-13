@@ -80,6 +80,16 @@ router.post('/', async (req, res) => {
     createdAt: new Date().toISOString(),
   };
   db.data.avaliacoes.push(avaliacao);
+
+  // Marca sozinha a próxima avaliação em 45 dias — a treinadora edita na mão
+  // se precisar remarcar por emergência.
+  const idxAluno = db.data.alunos.findIndex((a) => a.id === alunoId);
+  if (idxAluno !== -1) {
+    const [ano, mes, dia] = avaliacao.data.split('-').map(Number);
+    const proxima = new Date(ano, mes - 1, dia + 45);
+    db.data.alunos[idxAluno].proximaAvaliacaoData = proxima.toISOString().slice(0, 10);
+  }
+
   await db.write();
   res.status(201).json(avaliacao);
 });
