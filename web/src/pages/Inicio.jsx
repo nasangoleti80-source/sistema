@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, formatarMoeda, mesAtual, aniversariantesDoMes, CANAIS_CAPTACAO } from '../api.js';
+import { api, formatarMoeda, mesAtual, aniversariantesDoMes, CANAIS_CAPTACAO, TIPOS_ALUNO } from '../api.js';
 
 /**
  * Índice do sistema.
@@ -104,6 +104,29 @@ export default function Inicio() {
     : [];
   const maiorCanal = Math.max(1, ...canaisComContagem.map(([, n]) => n));
 
+  // Ranking de atenção — só faz sentido pra consultoria (quem treina sem
+  // ela ver ao vivo): classifica pelo tempo desde o último treino registrado.
+  const consultoriaComStatus = (dashboard ? ativos.filter((a) => a.tipo?.startsWith('consultoria')) : [])
+    .map((aluno) => {
+      const status = dashboard.treinoStatusPorAluno.find((t) => t.alunoId === aluno.id);
+      const ultimo = status?.ultimoTreinoData;
+      const diasSemTreinar = ultimo ? Math.floor((Date.now() - new Date(ultimo)) / 86400000) : null;
+      let grupo = 'engajado';
+      if (diasSemTreinar == null) grupo = 'sem_inicio';
+      else if (diasSemTreinar >= 14) grupo = 'abandono';
+      else if (diasSemTreinar >= 7) grupo = 'em_risco';
+      return { aluno, diasSemTreinar, grupo };
+    });
+  const contagemPorGrupo = {
+    abandono: consultoriaComStatus.filter((c) => c.grupo === 'abandono').length,
+    em_risco: consultoriaComStatus.filter((c) => c.grupo === 'em_risco').length,
+    engajado: consultoriaComStatus.filter((c) => c.grupo === 'engajado').length,
+    sem_inicio: consultoriaComStatus.filter((c) => c.grupo === 'sem_inicio').length,
+  };
+  const precisamAtencao = consultoriaComStatus
+    .filter((c) => c.grupo === 'abandono' || c.grupo === 'em_risco')
+    .sort((a, b) => (b.diasSemTreinar || 0) - (a.diasSemTreinar || 0));
+
   /** Um módulo: para onde vai, o que faz e o número que importa nele. */
   const Modulo = ({ para, icone, nome, oQueE, contagem, alerta }) => (
     <Link to={para} className="modulo">
@@ -197,6 +220,34 @@ export default function Inicio() {
               contagem={dashboard ? treinosConcluidosNoMes : null}
             />
           </div>
+
+          {consultoriaComStatus.length > 0 && (
+            <div className="card">
+              <div className="name" style={{ marginBottom: 10 }}>Atenção — consultoria</div>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: precisamAtencao.length ? 14 : 0 }}>
+                <span className="pilula-atencao critico">{contagemPorGrupo.abandono} abandono</span>
+                <span className="pilula-atencao alerta">{contagemPorGrupo.em_risco} em risco</span>
+                <span className="pilula-atencao neutro">{contagemPorGrupo.sem_inicio} sem início</span>
+                <span className="pilula-atencao bom">{contagemPorGrupo.engajado} engajado</span>
+              </div>
+              {precisamAtencao.map(({ aluno, diasSemTreinar, grupo }) => (
+                <div className="list-item" key={aluno.id}>
+                  <Link to={`/alunos/${aluno.id}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+                    <div className="name">{aluno.nome}</div>
+                    <div className="meta">
+                      {TIPOS_ALUNO[aluno.tipo]} · {diasSemTreinar} dias sem treinar
+                    </div>
+                  </Link>
+                  <span className={`badge ${grupo === 'abandono' ? 'atrasado' : 'pendente'}`}>
+                    {grupo === 'abandono' ? 'Abandono' : 'Em risco'}
+                  </span>
+                  <Link to={`/mensagens?alunoId=${aluno.id}`} className="btn-secondary btn-small link-botao">
+                    Chamar
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ----------------------------------------------------- financeiro */}
           <h2>Financeiro</h2>

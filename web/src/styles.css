@@ -2526,3 +2526,40 @@ label {
 .estrela-mensagem.ativa {
   color: var(--atencao);
 }
+
+/* --------------------------------------------------- ranking de atenção */
+
+.pilula-atencao {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.pilula-atencao.critico {
+  color: var(--negativo);
+  border-color: rgba(217, 138, 123, 0.32);
+  background: rgba(217, 138, 123, 0.1);
+}
+
+.pilula-atencao.alerta {
+  color: var(--atencao);
+  border-color: rgba(201, 168, 134, 0.34);
+  background: rgba(201, 168, 134, 0.1);
+}
+
+.pilula-atencao.bom {
+  color: var(--positivo);
+  border-color: rgba(126, 200, 169, 0.32);
+  background: rgba(126, 200, 169, 0.1);
+}
+
+.pilula-atencao.neutro {
+  color: var(--texto-fraco);
+  border-color: var(--linha);
+  background: var(--sup-2);
+}
