@@ -105,6 +105,7 @@ export const api = {
   listarMensagens: (alunoId) => request(`/mensagens?alunoId=${alunoId}`),
   enviarMensagem: (dados) => request('/mensagens', { method: 'POST', body: JSON.stringify(dados) }),
   removerMensagem: (id) => request(`/mensagens/${id}`, { method: 'DELETE' }),
+  marcarMensagemLida: (id) => request(`/mensagens/${id}/lida`, { method: 'PUT' }),
 
   /** Foto ou vídeo dentro da conversa — mesmo envio em fluxo cru usado nos exercícios. */
   enviarMidiaMensagem: (id, blob, { capaDe } = {}) => {

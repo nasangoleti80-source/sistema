@@ -2412,3 +2412,117 @@ label {
   color: var(--texto-fraco);
   text-align: right;
 }
+
+/* ---------------------------------------------------- Mensagens: conversas */
+
+.conversa-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 15px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--linha);
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversa-item:first-child {
+  border-radius: var(--raio) var(--raio) 0 0;
+}
+
+.conversa-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--raio) var(--raio);
+}
+
+.conversa-avatar {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fonte-black);
+  font-size: 14px;
+  color: var(--texto-fraco);
+}
+
+.conversa-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conversa-nome {
+  font-weight: 600;
+  color: var(--texto);
+  letter-spacing: -0.01em;
+}
+
+.conversa-preview {
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversa-lado {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.conversa-hora {
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  color: var(--texto-tenue);
+}
+
+.conversa-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--positivo);
+  color: var(--noite);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-cabecalho {
+  gap: 10px;
+  margin-bottom: 12px;
+  justify-content: flex-start;
+}
+
+/* Discreta: só aparece de verdade (dourada) quando a mensagem já foi
+   salva — do contrário é um contorno fraco, quase invisível na bolha. */
+.estrela-mensagem {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--texto-tenue);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.estrela-mensagem.ativa {
+  color: var(--atencao);
+}

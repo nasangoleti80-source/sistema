@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { alunoId, texto, data } = req.body;
+  const { alunoId, texto, data, origemMensagemId } = req.body;
   if (!alunoId) return res.status(400).json({ error: 'alunoId é obrigatório' });
   if (!texto?.trim()) return res.status(400).json({ error: 'Texto é obrigatório' });
   await db.read();
@@ -25,6 +25,9 @@ router.post('/', async (req, res) => {
     alunoId,
     texto: texto.trim(),
     data: data || new Date().toISOString().slice(0, 10),
+    // Quando a nota vem de uma mensagem "marcada com estrela" na conversa —
+    // guarda o id de origem pra saber que aquela mensagem já foi salva.
+    origemMensagemId: origemMensagemId || null,
     createdAt: new Date().toISOString(),
   };
   db.data.notas.push(nota);
