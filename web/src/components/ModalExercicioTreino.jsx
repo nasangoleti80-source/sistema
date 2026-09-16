@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { api, GRUPOS_MUSCULARES, METODOS_TREINO, METODOS_TREINO_DESC, configPadraoMetodo } from '../api.js';
+import { api, GRUPOS_MUSCULARES, METODOS_TREINO, METODOS_TREINO_DESC, configPadraoMetodo, capaDoExercicio } from '../api.js';
 
 function formVazio() {
   return {
@@ -257,6 +257,9 @@ export default function ModalExercicioTreino({ exercicio, onSalvar, onClose }) {
     }));
   }
 
+  const doCatalogo = catalogo.find((e) => e.nome.toLowerCase() === form.nome.trim().toLowerCase());
+  const videoCapa = doCatalogo && capaDoExercicio(doCatalogo);
+
   function mudarMetodo(metodo) {
     setForm((f) => ({ ...f, metodo, config: configPadraoMetodo(metodo) }));
   }
@@ -284,14 +287,23 @@ export default function ModalExercicioTreino({ exercicio, onSalvar, onClose }) {
         <h1>{exercicio ? 'Editar exercício' : 'Novo exercício'}</h1>
         <form onSubmit={salvar}>
           <label>Exercício</label>
-          <input
-            required list={listaId} value={form.nome}
-            onChange={(e) => digitarNome(e.target.value)}
-            placeholder="Buscar no catálogo ou digitar..."
-          />
-          <datalist id={listaId}>
-            {catalogo.map((ex) => <option key={ex.id} value={ex.nome} />)}
-          </datalist>
+          <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <input
+                required list={listaId} value={form.nome}
+                onChange={(e) => digitarNome(e.target.value)}
+                placeholder="Buscar no catálogo ou digitar..."
+              />
+              <datalist id={listaId}>
+                {catalogo.map((ex) => <option key={ex.id} value={ex.nome} />)}
+              </datalist>
+            </div>
+            {videoCapa && (
+              <a href={doCatalogo.videoUrl} target="_blank" rel="noreferrer" style={{ flexShrink: 0 }} title="Ver vídeo de execução">
+                <img src={videoCapa} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+              </a>
+            )}
+          </div>
 
           <label>Grupo muscular</label>
           <select value={form.grupoMuscular} onChange={(e) => setForm({ ...form, grupoMuscular: e.target.value })}>

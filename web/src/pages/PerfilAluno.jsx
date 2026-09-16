@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  api, mesAtual, formatarMoeda, formatarData, TIPOS_ALUNO, PERIODICIDADES,
+  api, mesAtual, formatarMoeda, formatarData, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO,
 } from '../api.js';
 
 function iniciais(nome) {
@@ -44,6 +44,9 @@ export default function PerfilAluno() {
   const [dataNota, setDataNota] = useState(() => new Date().toISOString().slice(0, 10));
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState(null);
+  const [erroForm, setErroForm] = useState('');
 
   async function carregar() {
     setCarregando(true);
@@ -95,6 +98,38 @@ export default function PerfilAluno() {
     }
   }
 
+  function abrirEdicao() {
+    setForm({
+      nome: aluno.nome,
+      telefone: aluno.telefone || '',
+      email: aluno.email || '',
+      tipo: aluno.tipo,
+      valorMensal: String(aluno.valorMensal),
+      desconto: aluno.desconto || '',
+      periodicidade: aluno.periodicidade || 'mensal',
+      dataInicio: aluno.dataInicio,
+      observacoes: aluno.observacoes || '',
+      comoConheceu: aluno.comoConheceu || 'nao_informado',
+      dataNascimento: aluno.dataNascimento || '',
+      altura: aluno.altura ? String(aluno.altura) : '',
+      sexo: aluno.sexo || 'masculino',
+    });
+    setErroForm('');
+    setEditando(true);
+  }
+
+  async function salvarEdicao(e) {
+    e.preventDefault();
+    setErroForm('');
+    try {
+      const atualizado = await api.atualizarAluno(alunoId, form);
+      setAluno(atualizado);
+      setEditando(false);
+    } catch (e) {
+      setErroForm(e.message);
+    }
+  }
+
   if (carregando) return <p className="empty">Carregando...</p>;
   if (erro) return <p className="empty">{erro}</p>;
   if (!aluno) return <p className="empty">Aluno não encontrado.</p>;
@@ -124,6 +159,7 @@ export default function PerfilAluno() {
             {TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)} ({PERIODICIDADES[aluno.periodicidade] || 'Mensal'})
           </div>
         </div>
+        <button type="button" className="btn-secondary btn-small" onClick={abrirEdicao}>Editar</button>
       </div>
 
       <div className="grid-stats" style={{ marginTop: 12 }}>
@@ -237,6 +273,80 @@ export default function PerfilAluno() {
           </div>
         )}
       </div>
+
+      {editando && form && (
+        <div className="modal-backdrop" onClick={() => setEditando(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h1>Editar aluno</h1>
+            {erroForm && <div className="error-msg">{erroForm}</div>}
+            <form onSubmit={salvarEdicao}>
+              <label>Nome *</label>
+              <input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+
+              <label>Telefone</label>
+              <input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+
+              <label>E-mail</label>
+              <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+
+              <label>Tipo</label>
+              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                {Object.entries(TIPOS_ALUNO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+
+              <div className="row" style={{ gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <label>Valor mensal</label>
+                  <input type="number" min="0" step="0.01" value={form.valorMensal} onChange={(e) => setForm({ ...form, valorMensal: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Periodicidade</label>
+                  <select value={form.periodicidade} onChange={(e) => setForm({ ...form, periodicidade: e.target.value })}>
+                    {Object.entries(PERIODICIDADES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <label>Desconto (opcional)</label>
+              <input value={form.desconto} onChange={(e) => setForm({ ...form, desconto: e.target.value })} />
+
+              <label>Data de início</label>
+              <input type="date" value={form.dataInicio} onChange={(e) => setForm({ ...form, dataInicio: e.target.value })} />
+
+              <label>Como conheceu</label>
+              <select value={form.comoConheceu} onChange={(e) => setForm({ ...form, comoConheceu: e.target.value })}>
+                {Object.entries(CANAIS_CAPTACAO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+
+              <div className="row" style={{ gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <label>Data de nascimento</label>
+                  <input type="date" value={form.dataNascimento} onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Altura (cm)</label>
+                  <input type="number" min="0" value={form.altura} onChange={(e) => setForm({ ...form, altura: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Sexo</label>
+                  <select value={form.sexo} onChange={(e) => setForm({ ...form, sexo: e.target.value })}>
+                    <option value="masculino">Masculino</option>
+                    <option value="feminino">Feminino</option>
+                  </select>
+                </div>
+              </div>
+
+              <label>Observações</label>
+              <textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
+
+              <div className="form-actions">
+                <button type="submit" className="btn-primary">Salvar</button>
+                <button type="button" className="btn-secondary" onClick={() => setEditando(false)}>Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

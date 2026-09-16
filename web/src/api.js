@@ -585,12 +585,17 @@ export function acharNoCatalogo(indice, nome) {
   return indice.get(normalizar(nome)) || null;
 }
 
-/** A imagem que representa o exercício: capa do vídeo, ou a primeira foto. */
+/** Extrai o ID do vídeo de qualquer formato de link do YouTube (watch, youtu.be, shorts). */
+export function youtubeId(url) {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+/** Miniatura do vídeo do exercício — é a única "imagem" que o catálogo guarda agora. */
 export function capaDoExercicio(exercicio) {
-  if (!exercicio?.midia?.length) return null;
-  const foto = exercicio.midia.find((m) => m.tipo === 'foto');
-  const item = foto || exercicio.midia[0];
-  return `/midia/${item.capa || item.arquivo}`;
+  const id = youtubeId(exercicio?.videoUrl);
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
 }
 
 /** O aluno "tem assinatura ativa" quando tem algum pacote ainda não vencido —
