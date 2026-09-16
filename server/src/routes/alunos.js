@@ -37,8 +37,28 @@ function comIdade(aluno) {
   return { ...aluno, idade: calcularIdade(aluno.dataNascimento) };
 }
 
+// Senha do portal — só um código curto pra evitar que alguém que ache o link
+// entre sem querer; o app não tem login de verdade em lugar nenhum, então
+// isso segue o mesmo nível de proteção do resto do sistema.
+const ALFABETO_SENHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem O/0/I/1, que confundem
+function gerarSenhaPortal() {
+  let s = '';
+  for (let i = 0; i < 6; i++) s += ALFABETO_SENHA[Math.floor(Math.random() * ALFABETO_SENHA.length)];
+  return s;
+}
+
+// Alunos criados antes da senha do portal existir ganham uma na primeira
+// leitura — sem isso, o link deles nunca teria como ser enviado com senha.
+async function garantirSenhas(lista) {
+  const faltando = lista.filter((a) => !a.senhaPortal);
+  if (!faltando.length) return;
+  for (const a of faltando) a.senhaPortal = gerarSenhaPortal();
+  await db.write();
+}
+
 router.get('/', async (req, res) => {
   await db.read();
+  await garantirSenhas(db.data.alunos);
   const { ativo } = req.query;
   let alunos = db.data.alunos;
   if (ativo === 'true') alunos = alunos.filter((a) => a.ativo);
@@ -50,6 +70,7 @@ router.get('/:id', async (req, res) => {
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === req.params.id);
   if (!aluno) return res.status(404).json({ error: 'Aluno não encontrado' });
+  await garantirSenhas([aluno]);
   res.json(comIdade(aluno));
 });
 
@@ -85,6 +106,7 @@ router.post('/', async (req, res) => {
     // mas editável na mão pela treinadora quando precisar remarcar.
     proximaAvaliacaoData: null,
     checklistConsultoria: { ...CHECKLIST_VAZIO },
+    senhaPortal: gerarSenhaPortal(),
     ativo: true,
     createdAt: new Date().toISOString(),
   };
@@ -101,7 +123,7 @@ router.put('/:id', async (req, res) => {
   const {
     nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
-    proximaAvaliacaoData, checklistConsultoria,
+    proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal,
   } = req.body;
 
   const inicioFinal = dataInicio !== undefined ? dataInicio : atual.dataInicio;
@@ -134,6 +156,7 @@ router.put('/:id', async (req, res) => {
     checklistConsultoria: checklistConsultoria !== undefined
       ? { ...CHECKLIST_VAZIO, ...atual.checklistConsultoria, ...checklistConsultoria }
       : (atual.checklistConsultoria || { ...CHECKLIST_VAZIO }),
+    senhaPortal: regenerarSenhaPortal ? gerarSenhaPortal() : (atual.senhaPortal || gerarSenhaPortal()),
   };
   db.data.alunos[idx] = atualizado;
   await db.write();

@@ -341,6 +341,13 @@ p.subtitle {
   margin-bottom: 16px;
 }
 
+.tela-senha-portal {
+  max-width: 360px;
+  margin: 15vh auto 0;
+  text-align: center;
+  padding: 0 16px;
+}
+
 .acao-rapida {
   display: block;
   text-align: left;

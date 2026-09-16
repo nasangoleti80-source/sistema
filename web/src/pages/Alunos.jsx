@@ -95,13 +95,14 @@ export default function Alunos() {
     await carregar();
   }
 
-  async function copiarLinkPortal(aluno) {
+  async function copiarAcessoPortal(aluno) {
     const link = `${window.location.origin}/portal/${aluno.id}`;
+    const texto = `Seu acesso ao treino:\n${link}\nSenha: ${aluno.senhaPortal}`;
     try {
-      await navigator.clipboard.writeText(link);
-      alert(`Link copiado!\n${link}`);
+      await navigator.clipboard.writeText(texto);
+      alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
     } catch {
-      prompt('Copie o link de acesso do aluno:', link);
+      prompt('Copie o acesso do aluno:', texto);
     }
   }
 
@@ -172,8 +173,8 @@ export default function Alunos() {
             <button className="btn-secondary btn-small" onClick={() => abrirEdicao(aluno)}>
               Editar
             </button>
-            <button className="btn-secondary btn-small" onClick={() => copiarLinkPortal(aluno)}>
-              Link do aluno
+            <button className="btn-secondary btn-small" onClick={() => copiarAcessoPortal(aluno)}>
+              Acesso do aluno
             </button>
             <button className="btn-secondary btn-small" onClick={() => alternarAtivo(aluno)}>
               {aluno.ativo ? 'Pausar' : 'Reativar'}

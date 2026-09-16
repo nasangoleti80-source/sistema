@@ -318,6 +318,11 @@ export default function Portal() {
   const [enviandoMidia, setEnviandoMidia] = useState(false);
   const [fotoAmpliada, setFotoAmpliada] = useState(null);
   const [videoAberto, setVideoAberto] = useState(null);
+  const [senhaDigitada, setSenhaDigitada] = useState('');
+  const [erroSenha, setErroSenha] = useState('');
+  const [desbloqueado, setDesbloqueado] = useState(
+    () => sessionStorage.getItem(`portal-senha-${alunoId}`) === 'ok'
+  );
   const fimRef = useRef(null);
   const entradaArquivo = useRef(null);
 
@@ -440,6 +445,36 @@ export default function Portal() {
 
   if (erro) return <p className="empty">{erro}</p>;
   if (!aluno) return <p className="empty">Carregando...</p>;
+
+  if (!desbloqueado) {
+    const conferirSenha = (e) => {
+      e.preventDefault();
+      if (senhaDigitada.trim().toUpperCase() === aluno.senhaPortal) {
+        sessionStorage.setItem(`portal-senha-${alunoId}`, 'ok');
+        setDesbloqueado(true);
+        setErroSenha('');
+      } else {
+        setErroSenha('Senha incorreta. Confira com sua treinadora.');
+      }
+    };
+    return (
+      <div className="tela-senha-portal">
+        <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
+        <p className="subtitle">Digite a senha que sua treinadora te passou para entrar.</p>
+        {erroSenha && <div className="error-msg">{erroSenha}</div>}
+        <form onSubmit={conferirSenha} className="row" style={{ gap: 8 }}>
+          <input
+            autoFocus
+            value={senhaDigitada}
+            onChange={(e) => setSenhaDigitada(e.target.value)}
+            placeholder="Senha de acesso"
+            style={{ flex: 1, textTransform: 'uppercase' }}
+          />
+          <button type="submit" className="btn-primary">Entrar</button>
+        </form>
+      </div>
+    );
+  }
 
   const proximoPacote = pacotes.sort((a, b) => (a.dataVencimento < b.dataVencimento ? -1 : 1))[0];
   const ultimaAvaliacao = avaliacoes[0];

@@ -88,14 +88,21 @@ export default function PerfilAluno() {
 
   useEffect(() => { carregar(); }, [alunoId]);
 
-  async function copiarLinkPortal() {
+  async function copiarAcessoPortal() {
     const link = `${window.location.origin}/portal/${alunoId}`;
+    const texto = `Seu acesso ao treino:\n${link}\nSenha: ${aluno.senhaPortal}`;
     try {
-      await navigator.clipboard.writeText(link);
-      alert(`Link copiado!\n${link}`);
+      await navigator.clipboard.writeText(texto);
+      alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
     } catch {
-      prompt('Copie o link de acesso do aluno:', link);
+      prompt('Copie o acesso do aluno:', texto);
     }
+  }
+
+  async function gerarNovaSenha() {
+    if (!confirm('Gerar uma nova senha? A senha antiga deixa de funcionar.')) return;
+    const atualizado = await api.atualizarAluno(alunoId, { regenerarSenhaPortal: true });
+    setAluno(atualizado);
   }
 
   function abrirEdicao() {
@@ -189,7 +196,8 @@ export default function PerfilAluno() {
         <AcaoRapida to={`/dietas?alunoId=${alunoId}`} icone="🍽" titulo="Dieta" sub="Plano alimentar" />
         <AcaoRapida to={`/pacotes?alunoId=${alunoId}`} icone="💳" titulo="Pacotes" sub={`${pacotes.length} pacote(s)`} />
         <AcaoRapida to={`/mensagens?alunoId=${alunoId}`} icone="💬" titulo="Mensagens" sub="Conversar" />
-        <AcaoRapida onClick={copiarLinkPortal} icone="🔗" titulo="Link do aluno" sub="Copiar link" />
+        <AcaoRapida onClick={copiarAcessoPortal} icone="🔗" titulo="Acesso do aluno" sub={`Copiar link + senha (${aluno.senhaPortal || '…'})`} />
+        <AcaoRapida onClick={gerarNovaSenha} icone="🔑" titulo="Nova senha" sub="Invalida a senha atual" />
       </div>
 
       <h2>Assinaturas</h2>
