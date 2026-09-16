@@ -1,5 +1,9 @@
 import { nanoid } from 'nanoid';
 import { PAPEIS } from '../../../compartilhado/nutricao.js';
+import { FOTOS_REFEICAO } from './fotosRefeicoes.js';
+
+/** Tira o "Opção NN — " da frente do nome, que é como a foto está indexada. */
+const nomeCurto = (nome) => nome.replace(/^Opção\s*\S*\s*—\s*/, '');
 
 // Substitutos de ~450kcal que servem tanto pro café da manhã quanto pro
 // lanche da tarde e pro jantar — por isso o mesmo conjunto de opções é
@@ -284,11 +288,19 @@ export async function seedSubstitutosCafeManha(db) {
     }
 
     // Idempotente por opção: um redeploy não duplica quem já está lá, mas
-    // preenche quem ainda falta.
-    const nomesExistentes = new Set(banco.opcoes.map((o) => o.nome));
+    // preenche quem ainda falta — e também a foto de quem já existe sem uma
+    // (sem sobrescrever uma que a treinadora já tenha trocado na mão).
     for (const opcao of opcoesCanonicas(db)) {
-      if (!nomesExistentes.has(opcao.nome)) {
+      const existente = banco.opcoes.find((o) => o.nome === opcao.nome);
+      const foto = FOTOS_REFEICAO[nomeCurto(opcao.nome)];
+      if (!existente) {
+        if (foto) opcao.fotoUrl = foto;
         banco.opcoes.push(opcao);
+        mudou = true;
+        continue;
+      }
+      if (!existente.fotoUrl && foto) {
+        existente.fotoUrl = foto;
         mudou = true;
       }
     }

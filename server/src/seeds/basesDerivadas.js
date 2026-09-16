@@ -1,5 +1,9 @@
 import { nanoid } from 'nanoid';
 import { PAPEIS, calcular, escalarParaBase, indexar, ehContagem } from '../../../compartilhado/nutricao.js';
+import { FOTOS_REFEICAO } from './fotosRefeicoes.js';
+
+/** Tira o "Opção NN — " da frente do nome, que é como a foto está indexada. */
+const nomeCurto = (nome) => nome.replace(/^Opção\s*\S*\s*—\s*/, '');
 
 /**
  * Gera os bancos de 200, 270 e 370 kcal a partir do de 450.
@@ -141,7 +145,8 @@ function montarSimples(molde, catalogo) {
     if (!opcoes.length) return null;
     itens.push({ id: nanoid(10), opcoes });
   }
-  return { id: nanoid(10), nome: molde.nome, itens };
+  const foto = FOTOS_REFEICAO[nomeCurto(molde.nome)];
+  return { id: nanoid(10), nome: molde.nome, itens, ...(foto ? { fotoUrl: foto } : {}) };
 }
 
 const chaveNome = (s) =>
@@ -224,10 +229,13 @@ function derivarOpcao(opcao, base, catalogo) {
     };
   });
 
+  const foto = opcao.fotoUrl || FOTOS_REFEICAO[nomeCurto(opcao.nome)];
+
   return {
     id: nanoid(10),
     nome: opcao.nome,
     itens,
+    ...(foto ? { fotoUrl: foto } : {}),
     derivadaDe: `banco de ${BASE_DE_ORIGEM} kcal`,
     kcalCalculada: Math.round(total.kcal),
     ancoraReduzida,
@@ -243,6 +251,7 @@ export async function seedBasesDerivadas(db) {
   if (![...catalogo.values()].some((a) => a.porcao100?.kcal)) return;
 
   let criados = 0;
+  let mudouFotos = false;
   for (const refeicao of REFEICOES) {
     const origem = db.data.bancosOpcoes.find(
       (b) => b.nome === refeicao && b.baseKcal === BASE_DE_ORIGEM
@@ -251,7 +260,19 @@ export async function seedBasesDerivadas(db) {
 
     for (const base of BASES) {
       const nome = nomeDoBanco(refeicao, base);
-      if (db.data.bancosOpcoes.some((b) => b.nome === nome)) continue;
+      const jaExiste = db.data.bancosOpcoes.find((b) => b.nome === nome);
+      if (jaExiste) {
+        // Banco já gerado num boot anterior — só preenche a foto de quem
+        // ainda não tem, sem tocar no resto.
+        for (const op of jaExiste.opcoes || []) {
+          const foto = FOTOS_REFEICAO[nomeCurto(op.nome)];
+          if (!op.fotoUrl && foto) {
+            op.fotoUrl = foto;
+            mudouFotos = true;
+          }
+        }
+        continue;
+      }
 
       const daOrigem = origem.opcoes
         .map((o) => derivarOpcao(o, base, catalogo))
@@ -289,5 +310,5 @@ export async function seedBasesDerivadas(db) {
     }
   }
 
-  if (criados) await db.write();
+  if (criados || mudouFotos) await db.write();
 }
