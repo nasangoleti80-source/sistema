@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { Assinatura } from './componentes/Marca.jsx';
 import Inicio from './pages/Inicio.jsx';
+import GrupoTreino from './pages/GrupoTreino.jsx';
+import GrupoFinanceiro from './pages/GrupoFinanceiro.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Alunos from './pages/Alunos.jsx';
 import PerfilAluno from './pages/PerfilAluno.jsx';
@@ -84,6 +86,8 @@ export default function App() {
       <main className="content">
         <Routes>
           <Route path="/" element={<Inicio />} />
+          <Route path="/grupo/treino" element={<GrupoTreino />} />
+          <Route path="/grupo/financeiro" element={<GrupoFinanceiro />} />
           <Route path="/resumo" element={<Dashboard />} />
           <Route path="/alunos" element={<Alunos />} />
           <Route path="/alunos/:alunoId" element={<PerfilAluno />} />

@@ -1867,6 +1867,61 @@ label {
   margin-top: 9px;
 }
 
+/* As duas únicas escolhas do Início — bem grandes, uma coisa de cada vez. */
+.escolha-grupos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+@media (min-width: 480px) {
+  .escolha-grupos {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 36px 20px;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio, 20px);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.card-grupo:hover {
+  border-color: var(--linha2, #243040);
+}
+
+.card-grupo-ic {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  background: var(--sup-2);
+  border: 1px solid var(--linha);
+  border-radius: 18px;
+  color: var(--azul-claro);
+}
+
+.card-grupo-nome {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.card-grupo-oque {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--texto-fraco);
+}
+
 /* O endereço é longo e não pode empurrar os botões para fora da tela. */
 .portal-link {
   overflow: hidden;
