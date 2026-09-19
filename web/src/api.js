@@ -364,12 +364,15 @@ export const MENSAGENS_PRONTAS = {
   Cobrança: [
     'Oi {nome}, passando para lembrar que o pagamento do seu pacote vence em breve. Qualquer coisa me avisa 🙂',
     'Oi {nome}, tudo bem? Notei que o pagamento deste mês ainda está pendente. Pode verificar para mim quando puder?',
-    'Oi {nome}! Seu pacote está perto de vencer, quer que eu já deixe o próximo period renovado?',
+    'Oi {nome}! Passando pra avisar que seu pacote vence em duas semanas. Já fica no radar pra gente conversar com calma sobre a renovação, sem correria de última hora 💪',
+    'Oi {nome}! Seu pacote vence essa semana — falta pouco! Pra não ter interrupção no seu treino e na dieta, quero já deixar certinha a renovação. Posso te mandar os detalhes agora?',
   ],
   Treino: [
     'Oi {nome}, como foi o treino de hoje? Conseguiu fazer todas as séries?',
     'Oi {nome}, notei que faz alguns dias que você não registra treino. Está tudo bem? Precisa ajustar algo na agenda?',
     'Oi {nome}, seu treino foi atualizado! Já pode conferir no app 💪',
+    'Oi {nome}, já faz duas semanas desde que passei seu treino novo — como está indo? Tá conseguindo seguir certinho ou precisa ajustar alguma coisa?',
+    'Oi {nome}! Dia de mandar seu vídeo de execução 🎥 Manda por aqui mesmo pra eu conferir a forma e tirar qualquer dúvida.',
   ],
   Avaliação: [
     'Oi {nome}, chegou a hora da sua reavaliação física! Vamos marcar um horário essa semana?',

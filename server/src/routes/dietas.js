@@ -26,6 +26,7 @@ router.post('/', async (req, res) => {
     observacoes: observacoes?.trim() || '',
     ativa: true,
     createdAt: new Date().toISOString(),
+    atualizadoEm: new Date().toISOString(),
   };
   db.data.dietas.push(dieta);
   await db.write();
@@ -38,12 +39,16 @@ router.put('/:id', async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Dieta não encontrada' });
   const atual = db.data.dietas[idx];
   const { nome, refeicoes, observacoes, ativa } = req.body;
+  // Refeições são o que muda depois de uma avaliação (ajuste de caloria/macro) —
+  // nome e status de ativa não contam como "mexi na dieta" pra esse controle.
+  const mexeuNasRefeicoes = refeicoes !== undefined;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
     refeicoes: refeicoes !== undefined ? refeicoes : atual.refeicoes,
     observacoes: observacoes !== undefined ? observacoes.trim() : atual.observacoes,
     ativa: ativa !== undefined ? Boolean(ativa) : atual.ativa,
+    atualizadoEm: mexeuNasRefeicoes ? new Date().toISOString() : (atual.atualizadoEm || atual.createdAt),
   };
   db.data.dietas[idx] = atualizado;
   await db.write();

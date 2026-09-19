@@ -20,7 +20,7 @@ const GRUPOS = [
     para: '/grupo/financeiro',
     icone: 'cobranca',
     nome: 'Financeiro',
-    oQueE: 'Cobrança, pacotes, agenda e checklist',
+    oQueE: 'Cobrança, pacotes, agenda e consultoria',
   },
 ];
 

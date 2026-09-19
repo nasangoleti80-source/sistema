@@ -2646,6 +2646,37 @@ label {
   background: var(--sup-2);
 }
 
+/* Sinais automáticos por aluno em Saúde da consultoria — vídeo, avaliação,
+   treino/dieta e pacote, cada um com sua cor calculada sozinha pela data. */
+.sinal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.sinal-chip.sinal-vermelho {
+  color: var(--negativo);
+  border-color: rgba(217, 138, 123, 0.32);
+  background: rgba(217, 138, 123, 0.1);
+}
+
+.sinal-chip.sinal-amarelo {
+  color: var(--atencao);
+  border-color: rgba(201, 168, 134, 0.34);
+  background: rgba(201, 168, 134, 0.1);
+}
+
+.sinal-chip.sinal-verde {
+  color: var(--positivo);
+  border-color: rgba(126, 200, 169, 0.32);
+  background: rgba(126, 200, 169, 0.1);
+}
+
 .card-aluno-consultoria {
   padding: 12px;
   margin-bottom: 10px;

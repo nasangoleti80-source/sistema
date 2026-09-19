@@ -37,6 +37,7 @@ router.post('/', async (req, res) => {
     geradoPorIA: false,
     ativo: true,
     criadoEm: new Date().toISOString(),
+    atualizadoEm: new Date().toISOString(),
   };
   db.data.treinos.push(treino);
   await db.write();
@@ -49,6 +50,9 @@ router.put('/:id', async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Treino não encontrado' });
   const atual = db.data.treinos[idx];
   const { nome, configuracao, dias, ativo, dataInicio, dataFim } = req.body;
+  // Mexer nos dias/exercícios é o que conta como "ajustei o treino" pra esse
+  // controle — trocar nome ou arquivar não é um ajuste de prescrição.
+  const mexeuNosDias = dias !== undefined;
   const atualizado = {
     ...atual,
     nome: nome !== undefined ? nome.trim() : atual.nome,
@@ -57,6 +61,7 @@ router.put('/:id', async (req, res) => {
     ativo: ativo !== undefined ? Boolean(ativo) : atual.ativo,
     dataInicio: dataInicio !== undefined ? dataInicio : atual.dataInicio,
     dataFim: dataFim !== undefined ? dataFim : atual.dataFim,
+    atualizadoEm: mexeuNosDias ? new Date().toISOString() : (atual.atualizadoEm || atual.criadoEm),
   };
   db.data.treinos[idx] = atualizado;
   await db.write();

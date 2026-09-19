@@ -72,7 +72,7 @@ export default function GrupoFinanceiro() {
               para="/saude-consultoria"
               icone="saude"
               nome="Saúde da consultoria"
-              oQueE="Abandono, vencimento, avaliação e checklist"
+              oQueE="Vídeo, avaliação, treino/dieta e pacote — sinais automáticos"
               contagem={consultoriaEmAtencao || null}
               alerta={consultoriaEmAtencao > 0}
             />
