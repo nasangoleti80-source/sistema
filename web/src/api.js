@@ -221,12 +221,12 @@ export function aniversariantesDoMes(alunos) {
     .filter((a) => a.ativo && a.dataNascimento)
     .map((a) => {
       const [, mes, dia] = a.dataNascimento.split('-').map(Number);
-      let proxima = new Date(anoAtual, mes - 1, dia);
-      if (proxima < hojeSemHora) proxima = new Date(anoAtual + 1, mes - 1, dia);
-      const diasRestantes = Math.round((proxima - hojeSemHora) / 86400000);
+      const data = new Date(anoAtual, mes - 1, dia);
+      const diasRestantes = Math.round((data - hojeSemHora) / 86400000);
       return { aluno: a, mes, dia, diasRestantes };
     })
-    .filter((a) => a.mes === hoje.getMonth() + 1)
+    // Só quem ainda vai fazer aniversário este mês — quem já passou some da lista.
+    .filter((a) => a.mes === hoje.getMonth() + 1 && a.diasRestantes >= 0)
     .sort((a, b) => a.dia - b.dia);
 }
 
