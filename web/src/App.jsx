@@ -56,6 +56,7 @@ function useTema() {
 export default function App() {
   const location = useLocation();
   const isPortal = location.pathname.startsWith('/portal/');
+  const isInicio = location.pathname === '/';
   const [tema, setTema] = useTema();
 
   return (
@@ -72,8 +73,9 @@ export default function App() {
       </header>
 
       {/* Antes do conteúdo no HTML: em tela larga a barra fica logo abaixo do
-          cabeçalho; no celular o CSS a prende no rodapé. */}
-      {!isPortal && (
+          cabeçalho; no celular o CSS a prende no rodapé. Some no Início — ali
+          a escolha já é só entre os 2 cards, sem mais nada competindo. */}
+      {!isPortal && !isInicio && (
         <nav className="tabbar">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => (isActive ? 'active' : '')}>
