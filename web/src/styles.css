@@ -1513,6 +1513,26 @@ label {
   justify-content: flex-start;
 }
 
+.botao-voltar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--sup);
+  border: 1px solid var(--linha);
+  border-radius: 50%;
+  color: var(--texto);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.botao-voltar:hover {
+  color: var(--azul-claro);
+  border-color: var(--linha2, #243040);
+}
+
 /* ------------------------------------ exercício do treino ligado ao catálogo */
 
 .ex-treino {

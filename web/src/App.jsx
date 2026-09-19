@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Assinatura } from './componentes/Marca.jsx';
 import Inicio from './pages/Inicio.jsx';
 import GrupoTreino from './pages/GrupoTreino.jsx';
@@ -55,6 +55,7 @@ function useTema() {
 
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isPortal = location.pathname.startsWith('/portal/');
   const isInicio = location.pathname === '/';
   const [tema, setTema] = useTema();
@@ -62,6 +63,13 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar row">
+        {/* Em toda página, exceto o Início (não tem pra onde voltar) e o
+            portal do aluno (é outro app, com abas em vez de rotas). */}
+        {!isPortal && !isInicio && (
+          <button type="button" className="botao-voltar" onClick={() => navigate(-1)} aria-label="Voltar">
+            ←
+          </button>
+        )}
         {isPortal ? <span className="brand-portal">Meu treino</span> : <Assinatura />}
         <button
           className="theme-toggle"
