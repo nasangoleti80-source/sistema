@@ -11,11 +11,20 @@ router.get('/', async (req, res) => {
   let aulas = db.data.aulas;
   if (mes) aulas = aulas.filter((a) => a.data.startsWith(mes));
   if (alunoId) aulas = aulas.filter((a) => a.alunoId === alunoId);
-  res.json(aulas.sort((a, b) => (a.data < b.data ? 1 : -1)));
+  res.json(
+    aulas.sort((a, b) => {
+      if (a.data !== b.data) return a.data < b.data ? 1 : -1;
+      // Dentro do mesmo dia, por horário — quem não tem horário vai por último.
+      if (!a.hora && !b.hora) return 0;
+      if (!a.hora) return 1;
+      if (!b.hora) return -1;
+      return a.hora < b.hora ? -1 : 1;
+    })
+  );
 });
 
 router.post('/', async (req, res) => {
-  const { alunoId, data, tipo, realizada, observacao } = req.body;
+  const { alunoId, data, hora, tipo, realizada, observacao } = req.body;
   if (!alunoId || !data) return res.status(400).json({ error: 'alunoId e data são obrigatórios' });
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === alunoId);
@@ -24,6 +33,7 @@ router.post('/', async (req, res) => {
     id: nanoid(10),
     alunoId,
     data,
+    hora: hora || null,
     tipo: tipo || 'presencial',
     realizada: realizada !== undefined ? Boolean(realizada) : true,
     observacao: observacao?.trim() || '',
@@ -39,10 +49,11 @@ router.put('/:id', async (req, res) => {
   const idx = db.data.aulas.findIndex((a) => a.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Registro não encontrado' });
   const atual = db.data.aulas[idx];
-  const { data, tipo, realizada, observacao } = req.body;
+  const { data, hora, tipo, realizada, observacao } = req.body;
   const atualizado = {
     ...atual,
     data: data !== undefined ? data : atual.data,
+    hora: hora !== undefined ? (hora || null) : atual.hora,
     tipo: tipo !== undefined ? tipo : atual.tipo,
     realizada: realizada !== undefined ? Boolean(realizada) : atual.realizada,
     observacao: observacao !== undefined ? observacao.trim() : atual.observacao,
@@ -68,12 +79,16 @@ const DIA_SEMANA_NUMERO = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab:
  * treinador escolhe os dias da semana (ex: seg e qua) e o período (ex: o mês
  * inteiro), e a agenda já nasce com todas as aulas daquele padrão.
  *
- *   POST /api/aulas/programar { alunoId, tipo, diasSemana: ['seg','qua'], dataInicio, dataFim }
+ *   POST /api/aulas/programar { alunoId, tipo, diasSemana: ['seg','qua'], dataInicio, dataFim, hora }
+ *
+ * dataInicio e dataFim: basta informar um dos dois — o outro é preenchido
+ * sozinho (início = hoje; fim = 3 meses depois do início), já que gerar aula
+ * pra sempre não é viável.
  */
 router.post('/programar', async (req, res) => {
-  const { alunoId, tipo, diasSemana, dataInicio, dataFim } = req.body;
-  if (!alunoId || !dataInicio || !dataFim || !Array.isArray(diasSemana) || diasSemana.length === 0) {
-    return res.status(400).json({ error: 'alunoId, dataInicio, dataFim e diasSemana são obrigatórios' });
+  const { alunoId, tipo, diasSemana, dataInicio, dataFim, hora } = req.body;
+  if (!alunoId || (!dataInicio && !dataFim) || !Array.isArray(diasSemana) || diasSemana.length === 0) {
+    return res.status(400).json({ error: 'alunoId, diasSemana e ao menos uma das datas (início ou fim) são obrigatórios' });
   }
   await db.read();
   const aluno = db.data.alunos.find((a) => a.id === alunoId);
@@ -82,10 +97,18 @@ router.post('/programar', async (req, res) => {
   const diasNumeros = diasSemana.map((d) => DIA_SEMANA_NUMERO[d]).filter((n) => n !== undefined);
   const tipoFinal = tipo || 'presencial';
 
-  const [anoI, mesI, diaI] = dataInicio.split('-').map(Number);
-  const [anoF, mesF, diaF] = dataFim.split('-').map(Number);
-  const cursor = new Date(anoI, mesI - 1, diaI);
-  const fim = new Date(anoF, mesF - 1, diaF);
+  const inicioBase = dataInicio ? (() => {
+    const [a, m, d] = dataInicio.split('-').map(Number);
+    return new Date(a, m - 1, d);
+  })() : null;
+  const fimBase = dataFim ? (() => {
+    const [a, m, d] = dataFim.split('-').map(Number);
+    return new Date(a, m - 1, d);
+  })() : null;
+
+  const cursor = inicioBase || new Date();
+  cursor.setHours(0, 0, 0, 0);
+  const fim = fimBase || new Date(cursor.getFullYear(), cursor.getMonth() + 3, cursor.getDate());
 
   const existentes = new Set(
     db.data.aulas.filter((a) => a.alunoId === alunoId).map((a) => `${a.data}|${a.tipo}`)
@@ -101,6 +124,7 @@ router.post('/programar', async (req, res) => {
           id: nanoid(10),
           alunoId,
           data: dataISO,
+          hora: hora || null,
           tipo: tipoFinal,
           realizada: true,
           observacao: '',

@@ -55,6 +55,7 @@ function montarGrade(mesStr) {
 const FORM_VAZIO = {
   alunoId: '',
   data: hojeISO(),
+  hora: '',
   tipo: 'presencial',
   realizada: true,
   observacao: '',
@@ -65,9 +66,20 @@ function formProgramacaoVazio(mes) {
     alunoId: '',
     tipo: 'presencial',
     diasSemana: [],
+    hora: '',
     dataInicio: primeiroDiaMes(mes),
     dataFim: ultimoDiaMes(mes),
   };
+}
+
+/** Ordena por horário — quem não tem horário marcado vai por último. */
+function ordenarPorHora(lista) {
+  return [...lista].sort((a, b) => {
+    if (!a.hora && !b.hora) return 0;
+    if (!a.hora) return 1;
+    if (!b.hora) return -1;
+    return a.hora < b.hora ? -1 : 1;
+  });
 }
 
 export default function Presenca() {
@@ -112,6 +124,7 @@ export default function Presenca() {
       if (!mapa.has(a.data)) mapa.set(a.data, []);
       mapa.get(a.data).push(a);
     }
+    for (const [iso, lista] of mapa) mapa.set(iso, ordenarPorHora(lista));
     return mapa;
   }, [aulas]);
 
@@ -248,7 +261,7 @@ export default function Presenca() {
                       key={a.id}
                       className={`dia-chip ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : a.tipo === 'reposicao' ? 'reposicao' : 'aula'}`}
                     >
-                      {nomeAluno(a.alunoId)}
+                      {a.hora && `${a.hora} `}{nomeAluno(a.alunoId)}
                     </span>
                   ))}
                   {doDia.length > 3 && <span className="dia-chip-extra">+{doDia.length - 3}</span>}
@@ -272,7 +285,7 @@ export default function Presenca() {
                   <div className="item-agenda" key={aula.id}>
                     <div className="row">
                       <div>
-                        <div className="name">{nomeAluno(aula.alunoId)}</div>
+                        <div className="name">{aula.hora && <span className="mono">{aula.hora} · </span>}{nomeAluno(aula.alunoId)}</div>
                         <div className="meta">{TIPOS_AULA[aula.tipo] || aula.tipo}</div>
                       </div>
                       <button className="btn-secondary btn-small" onClick={() => excluir(aula)}>Remover</button>
@@ -331,8 +344,16 @@ export default function Presenca() {
                 ))}
               </select>
 
-              <label>Data</label>
-              <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
+              <div className="row" style={{ gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <label>Data</label>
+                  <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Horário (opcional)</label>
+                  <input type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
+                </div>
+              </div>
 
               <label>Tipo</label>
               <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
@@ -409,6 +430,9 @@ export default function Presenca() {
                 ))}
               </div>
 
+              <label>Horário (opcional, vale pra todas as aulas geradas)</label>
+              <input type="time" value={formProgramacao.hora} onChange={(e) => setFormProgramacao({ ...formProgramacao, hora: e.target.value })} />
+
               <div className="row" style={{ gap: 10 }}>
                 <div style={{ flex: 1 }}>
                   <label>De</label>
@@ -419,7 +443,10 @@ export default function Presenca() {
                   <input type="date" value={formProgramacao.dataFim} onChange={(e) => setFormProgramacao({ ...formProgramacao, dataFim: e.target.value })} />
                 </div>
               </div>
-              <p className="dica">Já vem preenchido com o mês inteiro que está aberto no calendário — mas dá para ajustar o período.</p>
+              <p className="dica">
+                Já vem preenchido com o mês inteiro que está aberto no calendário — ajuste como quiser. Pode
+                apagar uma das duas datas: sem "De", começa hoje; sem "Até", programa por 3 meses.
+              </p>
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary" disabled={programando}>{programando ? 'Programando...' : 'Programar'}</button>
