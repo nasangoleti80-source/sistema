@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Assinatura } from './componentes/Marca.jsx';
 import Inicio from './pages/Inicio.jsx';
@@ -53,20 +53,46 @@ function useTema() {
   return [tema, setTema];
 }
 
+/**
+ * "Voltar" que não depende do histórico do navegador — depender dele falha
+ * toda vez que a página foi aberta direto (link do WhatsApp, atalho salvo,
+ * F5), que é o caso comum no celular. Em vez disso, o próprio app guarda a
+ * pilha de rotas visitadas nesta aba, e "voltar" sempre sabe pra onde ir —
+ * cai no Início quando não há uma anterior registrada.
+ */
+function usePilhaDeRotas(pathname) {
+  const pilha = useRef([]);
+
+  useEffect(() => {
+    const p = pilha.current;
+    if (p[p.length - 1] !== pathname) p.push(pathname);
+  }, [pathname]);
+
+  return () => {
+    const p = pilha.current;
+    if (p.length > 1) {
+      p.pop();
+      return p[p.length - 1];
+    }
+    return '/';
+  };
+}
+
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const isPortal = location.pathname.startsWith('/portal/');
   const isInicio = location.pathname === '/';
   const [tema, setTema] = useTema();
+  const paginaAnterior = usePilhaDeRotas(location.pathname);
 
   return (
     <div className="app">
       <header className="topbar row">
-        {/* Em toda página, exceto o Início (não tem pra onde voltar) e o
-            portal do aluno (é outro app, com abas em vez de rotas). */}
-        {!isPortal && !isInicio && (
-          <button type="button" className="botao-voltar" onClick={() => navigate(-1)} aria-label="Voltar">
+        {/* Em toda página, exceto o portal do aluno (é outro app, com abas
+            em vez de rotas — voltar ali não pode cair no painel dela). */}
+        {!isPortal && (
+          <button type="button" className="botao-voltar" onClick={() => navigate(paginaAnterior())} aria-label="Voltar">
             ←
           </button>
         )}
