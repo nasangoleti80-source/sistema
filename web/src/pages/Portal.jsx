@@ -36,6 +36,22 @@ function ModalVideo({ url, onFechar }) {
   );
 }
 
+/** Cabeçalho de vídeo com botão de play e duração — usado tanto na
+ * videoteca liberada quanto no mostruário da vitrine. */
+function CartaoVideo({ conteudo, onClick, mostruario }) {
+  return (
+    <div className="video-item">
+      <button type="button" className={`video-card ${mostruario ? 'video-card-mostruario' : ''}`} onClick={onClick}>
+        {conteudo.capaUrl
+          ? <img src={conteudo.capaUrl} alt="" />
+          : <span className="video-capa-vazia" />}
+        {!mostruario && <span className="video-play">▶</span>}
+      </button>
+      <span className="video-titulo-fora">{conteudo.titulo || conteudo.categoria}</span>
+    </div>
+  );
+}
+
 /** Fileiras horizontais por categoria, estilo Netflix — só é chamado depois
  * que o aluno já tem pacote ativo, então nenhum vídeo aqui fica travado. */
 function FileirasVideos({ conteudos, onAbrir }) {
@@ -44,19 +60,22 @@ function FileirasVideos({ conteudos, onAbrir }) {
 
   return (
     <div className="videoteca">
-      {categorias.map((cat) => (
-        <div key={cat} className="fileira-videos">
-          <div className="name">{cat}</div>
-          <div className="fileira-scroll">
-            {conteudos.filter((c) => c.categoria === cat).map((c) => (
-              <button key={c.id} type="button" className="video-card" onClick={() => onAbrir(c.videoUrl)}>
-                {c.capaUrl && <img src={c.capaUrl} alt="" />}
-                <span className="video-titulo">{c.titulo}</span>
-              </button>
-            ))}
+      {categorias.map((cat) => {
+        const doCategoria = conteudos.filter((c) => c.categoria === cat);
+        return (
+          <div key={cat} className="fileira-videos">
+            <div className="fileira-cabecalho">
+              <span className="fileira-titulo">{cat}</span>
+              <span className="fileira-contagem">{doCategoria.length} {doCategoria.length === 1 ? 'AULA' : 'AULAS'}</span>
+            </div>
+            <div className="fileira-scroll">
+              {doCategoria.map((c) => (
+                <CartaoVideo key={c.id} conteudo={c} onClick={() => onAbrir(c.videoUrl)} />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -72,22 +91,23 @@ function PlayFlixPromo({ categorias, conteudos, planos, onQuero }) {
   return (
     <div className="playflix-vitrine">
       <div className="playflix-hero">
-        <span className="playflix-hero-tag">Novo</span>
-        <div className="playflix-hero-titulo">
-          a solução da sua<br /><strong>SAÚDE FÍSICA<br />E MENTAL</strong>
-        </div>
-        <p className="playflix-hero-sub">Vídeo-aulas exclusivas — treinos extras, bem-estar e muito mais</p>
+        <span className="playflix-hero-tag">Exclusivo</span>
+        <div className="playflix-hero-marca">PLAYFLIX</div>
+        <p className="playflix-hero-sub">a solução da sua <em>saúde física e mental</em></p>
       </div>
 
       {categorias.length > 0 && (
         <div className="fileira-videos">
-          <div className="name">O que tem no PlayFlix</div>
+          <div className="fileira-cabecalho">
+            <span className="fileira-titulo">O que tem no PlayFlix</span>
+          </div>
           <div className="fileira-scroll">
             {categorias.map((cat) => (
-              <div key={cat} className="video-card video-card-mostruario">
-                {capaPorCategoria(cat) && <img src={capaPorCategoria(cat)} alt="" />}
-                <span className="video-titulo">{cat}</span>
-              </div>
+              <CartaoVideo
+                key={cat}
+                conteudo={{ titulo: cat, capaUrl: capaPorCategoria(cat) }}
+                mostruario
+              />
             ))}
           </div>
         </div>
@@ -100,10 +120,12 @@ function PlayFlixPromo({ categorias, conteudos, planos, onQuero }) {
         )}
         {planos.map((p) => (
           <div key={p.id} className={`card plano-card ${p.destaque ? 'plano-card-destaque' : ''}`}>
-            {p.destaque && <span className="plano-selo">Mais vendido 🔥</span>}
+            {p.destaque && <span className="plano-selo">Mais vendido</span>}
             <div className="name">{p.nome}</div>
             <div className="plano-preco">
-              {formatarMoeda(p.preco)}<span className="plano-preco-periodo">/{PERIODICIDADES[p.periodicidade]?.toLowerCase() || p.periodicidade}</span>
+              <span className="plano-preco-cifrao">R$</span>
+              {formatarMoeda(p.preco).replace('R$', '').trim()}
+              <span className="plano-preco-periodo">/{PERIODICIDADES[p.periodicidade]?.toLowerCase() || p.periodicidade}</span>
             </div>
             <button className="btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => onQuero(p)}>
               Quero esse plano
