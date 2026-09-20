@@ -9,7 +9,7 @@
   --noite-clara:    #0C121B;  /* fundo secundário */
   --azul:           #0F4C81;  /* azul marca — preenchimento cheio */
   --azul-claro:     #6FA8DC;  /* AÇÃO e destaque; não usar como enfeite */
-  --azul-claro-2:   #8ABBE4;  /* variante mais clara — itálicos, realces */
+  --azul-claro-2:   #9BC6EA;  /* variante mais clara — hover, itálicos, realces */
   --osso:           #EFEAE1;  /* texto sobre escuro / fundo do tema claro */
   --areia:          #C9A886;  /* detalhe fino */
 
@@ -29,7 +29,7 @@
   /* --- semânticos (dessaturados para não brigar com a paleta) --- */
   --positivo:       #7EC8A9;
   --atencao:        var(--areia);
-  --negativo:       #FF9AA0;  /* texto de erro/falta */
+  --negativo:       #FF8D93;  /* texto de erro/falta */
   --negativo-forte: #E4141C;  /* preenchimento sólido (badges, alertas) */
 
   /* --- tipografia --- */

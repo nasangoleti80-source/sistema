@@ -456,8 +456,8 @@ button {
 }
 
 .btn-danger {
-  background: transparent;
-  border-color: rgba(255, 154, 160, 0.35);
+  background: rgba(228, 20, 28, 0.16);
+  border-color: transparent;
   color: var(--negativo);
 }
 
