@@ -7,6 +7,7 @@ const FORM_VAZIO = {
   telefone: '',
   email: '',
   tipo: 'presencial',
+  dietaAvulsa: false,
   valorMensal: '',
   desconto: '',
   periodicidade: 'mensal',
@@ -61,6 +62,7 @@ export default function Alunos() {
       telefone: aluno.telefone,
       email: aluno.email || '',
       tipo: aluno.tipo,
+      dietaAvulsa: aluno.dietaAvulsa || false,
       valorMensal: String(aluno.valorMensal),
       desconto: aluno.desconto || '',
       periodicidade: aluno.periodicidade || 'mensal',
@@ -112,13 +114,12 @@ export default function Alunos() {
     await carregar();
   }
 
-  const ehOnline = (tipo) => tipo?.startsWith('consultoria_online');
-  const ehSemipresencial = (tipo) => tipo === 'consultoria_semipresencial';
   const FILTROS_TIPO = {
     todos: () => true,
     presencial: (a) => a.tipo === 'presencial',
-    online: (a) => ehOnline(a.tipo),
-    semipresencial: (a) => ehSemipresencial(a.tipo),
+    online: (a) => a.tipo === 'consultoria_online',
+    semipresencial: (a) => a.tipo === 'consultoria_semipresencial',
+    treino_dieta: (a) => a.tipo === 'consultoria_online_treino_dieta',
   };
   const listaFiltrada = alunos.filter((a) => (mostrarInativos || a.ativo) && FILTROS_TIPO[filtroTipo](a));
   const mes = mesAtual();
@@ -155,6 +156,7 @@ export default function Alunos() {
           ['presencial', 'Presencial'],
           ['online', 'Online'],
           ['semipresencial', 'Semipresencial'],
+          ['treino_dieta', 'Treino + Dieta'],
         ].map(([valor, rotulo]) => (
           <button
             key={valor}
@@ -190,7 +192,7 @@ export default function Alunos() {
             <div onClick={() => navigate(`/alunos/${aluno.id}`)} style={{ cursor: 'pointer', flex: 1 }}>
               <div className="name">{aluno.nome} {!aluno.ativo && <span className="badge sem-cobranca">inativo</span>}</div>
               <div className="meta">
-                {TIPOS_ALUNO[aluno.tipo]} · {formatarMoeda(aluno.valorMensal)} ({PERIODICIDADES[aluno.periodicidade] || 'Mensal'})
+                {TIPOS_ALUNO[aluno.tipo]}{aluno.dietaAvulsa && ' + dieta avulsa'} · {formatarMoeda(aluno.valorMensal)} ({PERIODICIDADES[aluno.periodicidade] || 'Mensal'})
                 {aluno.dataVencimento && ` · vence ${formatarData(aluno.dataVencimento)}`}
                 {aluno.idade != null && ` · ${aluno.idade} anos`}
                 {aluno.altura ? ` · ${aluno.altura}cm` : ''}
@@ -241,12 +243,24 @@ export default function Alunos() {
                 <option value="feminino">Feminino</option>
               </select>
 
-              <label>Tipo de atendimento</label>
-              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                {Object.entries(TIPOS_ALUNO).map(([valor, label]) => (
-                  <option key={valor} value={valor}>{label}</option>
-                ))}
-              </select>
+              <div className="row" style={{ gap: 10, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Tipo de atendimento</label>
+                  <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                    {Object.entries(TIPOS_ALUNO).map(([valor, label]) => (
+                      <option key={valor} value={valor}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <label className="checkbox-row" style={{ flexShrink: 0, marginBottom: 10 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.dietaAvulsa}
+                    onChange={(e) => setForm({ ...form, dietaAvulsa: e.target.checked })}
+                  />
+                  Comprou a dieta à parte
+                </label>
+              </div>
 
               <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>

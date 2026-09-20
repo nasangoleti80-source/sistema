@@ -77,7 +77,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const {
     nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
-    observacoes, comoConheceu, dataNascimento, altura, sexo, anamnese,
+    observacoes, comoConheceu, dataNascimento, altura, sexo, anamnese, dietaAvulsa,
   } = req.body;
   if (!nome || !nome.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
   await db.read();
@@ -90,6 +90,7 @@ router.post('/', async (req, res) => {
     telefone: telefone?.trim() || '',
     email: email?.trim() || '',
     tipo: tipo || 'presencial',
+    dietaAvulsa: Boolean(dietaAvulsa),
     valorMensal: Number(valorMensal) || 0,
     periodicidade: periodicidadeFinal,
     desconto: desconto?.trim() || '',
@@ -123,7 +124,7 @@ router.put('/:id', async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Aluno não encontrado' });
   const atual = db.data.alunos[idx];
   const {
-    nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
+    nome, telefone, email, tipo, dietaAvulsa, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
     proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal, cronogramaAvaliacoes, cronogramaChamadas,
   } = req.body;
@@ -141,6 +142,7 @@ router.put('/:id', async (req, res) => {
     telefone: telefone !== undefined ? telefone.trim() : atual.telefone,
     email: email !== undefined ? email.trim() : atual.email,
     tipo: tipo !== undefined ? tipo : atual.tipo,
+    dietaAvulsa: dietaAvulsa !== undefined ? Boolean(dietaAvulsa) : (atual.dietaAvulsa || false),
     valorMensal: valorMensal !== undefined ? Number(valorMensal) : atual.valorMensal,
     periodicidade: periodicidadeFinal,
     desconto: desconto !== undefined ? desconto.trim() : atual.desconto || '',

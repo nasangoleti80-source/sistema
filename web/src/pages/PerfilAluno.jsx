@@ -110,6 +110,7 @@ export default function PerfilAluno() {
       telefone: aluno.telefone || '',
       email: aluno.email || '',
       tipo: aluno.tipo,
+      dietaAvulsa: aluno.dietaAvulsa || false,
       valorMensal: String(aluno.valorMensal),
       desconto: aluno.desconto || '',
       periodicidade: aluno.periodicidade || 'mensal',
@@ -296,10 +297,22 @@ export default function PerfilAluno() {
               <label>E-mail</label>
               <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
 
-              <label>Tipo</label>
-              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                {Object.entries(TIPOS_ALUNO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              <div className="row" style={{ gap: 10, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Tipo</label>
+                  <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                    {Object.entries(TIPOS_ALUNO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <label className="checkbox-row" style={{ flexShrink: 0, marginBottom: 10 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.dietaAvulsa}
+                    onChange={(e) => setForm({ ...form, dietaAvulsa: e.target.checked })}
+                  />
+                  Comprou a dieta à parte
+                </label>
+              </div>
 
               <div className="row" style={{ gap: 8 }}>
                 <div style={{ flex: 1 }}>
