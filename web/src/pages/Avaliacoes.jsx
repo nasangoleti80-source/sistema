@@ -39,10 +39,27 @@ function paraNumeros(obj) {
   return out;
 }
 
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Gera as datas de início até fim, de tantos em tantos dias, incluindo as duas pontas. */
+function gerarDatas(inicio, fim, intervaloDias) {
+  const datas = [];
+  const cursor = new Date(`${inicio}T00:00:00`);
+  const limite = new Date(`${fim}T00:00:00`);
+  while (cursor <= limite) {
+    datas.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + intervaloDias);
+  }
+  return datas;
+}
+
 export default function Avaliacoes() {
   const { alunoId } = useParams();
   const [aluno, setAluno] = useState(null);
   const [avaliacoes, setAvaliacoes] = useState([]);
+  const [pacotes, setPacotes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState(formVazio());
   const [erro, setErro] = useState('');
@@ -51,13 +68,20 @@ export default function Avaliacoes() {
   const [anamnese, setAnamneseState] = useState(ANAMNESE_VAZIA);
   const [anamneseAberta, setAnamneseAberta] = useState(false);
   const [salvandoAnamnese, setSalvandoAnamnese] = useState(false);
+  const [mostrarGerarCronograma, setMostrarGerarCronograma] = useState(false);
+  const [formCronograma, setFormCronograma] = useState({ dataInicio: hojeISO(), dataFim: '', intervalo: '30' });
 
   async function carregar() {
     setCarregando(true);
     try {
-      const [a, avals] = await Promise.all([api.obterAluno(alunoId), api.listarAvaliacoes(alunoId)]);
+      const [a, avals, pcts] = await Promise.all([
+        api.obterAluno(alunoId),
+        api.listarAvaliacoes(alunoId),
+        api.listarPacotes(alunoId),
+      ]);
       setAluno(a);
       setAvaliacoes(avals);
+      setPacotes(pcts);
       setAnamneseState({ ...ANAMNESE_VAZIA, ...a.anamnese });
     } catch (e) {
       setErro(e.message);
@@ -84,6 +108,41 @@ export default function Avaliacoes() {
     } finally {
       setSalvandoAnamnese(false);
     }
+  }
+
+  function abrirGerarCronograma() {
+    const ultimoPacote = [...pacotes].sort((a, b) => (a.dataVencimento < b.dataVencimento ? 1 : -1))[0];
+    setFormCronograma({ dataInicio: hojeISO(), dataFim: ultimoPacote?.dataVencimento || '', intervalo: '30' });
+    setMostrarGerarCronograma(true);
+  }
+
+  async function gerarCronograma(e) {
+    e.preventDefault();
+    if (!formCronograma.dataInicio || !formCronograma.dataFim) return;
+    const cronogramaAtual = aluno.cronogramaAvaliacoes || [];
+    if (cronogramaAtual.length > 0 && !confirm('Isso substitui o calendário de avaliações atual. Continuar?')) return;
+    const datas = gerarDatas(formCronograma.dataInicio, formCronograma.dataFim, Number(formCronograma.intervalo));
+    const cronogramaAvaliacoes = datas.map((data) => ({ id: crypto.randomUUID(), data, feito: false }));
+    const atualizado = await api.atualizarAluno(alunoId, {
+      cronogramaAvaliacoes,
+      proximaAvaliacaoData: cronogramaAvaliacoes[0]?.data || null,
+    });
+    setAluno(atualizado);
+    setMostrarGerarCronograma(false);
+  }
+
+  async function alternarDataCronograma(item) {
+    const cronogramaAvaliacoes = (aluno.cronogramaAvaliacoes || []).map((c) =>
+      c.id === item.id ? { ...c, feito: !c.feito } : c
+    );
+    const proximaPendente = cronogramaAvaliacoes
+      .filter((c) => !c.feito)
+      .sort((a, b) => (a.data < b.data ? -1 : 1))[0];
+    const atualizado = await api.atualizarAluno(alunoId, {
+      cronogramaAvaliacoes,
+      proximaAvaliacaoData: proximaPendente?.data || null,
+    });
+    setAluno(atualizado);
   }
 
   async function salvar(e) {
@@ -186,6 +245,81 @@ export default function Avaliacoes() {
       <h1>Avaliação física — {aluno.nome}</h1>
       <p className="subtitle">Altura cadastrada: {aluno.altura || '—'} cm · Sexo: {aluno.sexo}</p>
       {erro && <div className="error-msg">{erro}</div>}
+
+      <div className="card">
+        <div className="row">
+          <h2 style={{ margin: 0 }}>Calendário de avaliações</h2>
+          <button type="button" className="btn-secondary btn-small" onClick={abrirGerarCronograma}>
+            {(aluno.cronogramaAvaliacoes || []).length ? 'Gerar de novo' : 'Gerar datas'}
+          </button>
+        </div>
+
+        {(() => {
+          const cronograma = aluno.cronogramaAvaliacoes || [];
+          const feitas = cronograma.filter((c) => c.feito).length;
+          const proximaPendente = cronograma.filter((c) => !c.feito).sort((a, b) => (a.data < b.data ? -1 : 1))[0];
+          return (
+            <>
+              {cronograma.length > 0 && (
+                <p className="meta" style={{ marginTop: 8 }}>
+                  {feitas} de {cronograma.length} feitas · faltam {cronograma.length - feitas} · próxima:{' '}
+                  {proximaPendente ? formatarData(proximaPendente.data) : 'nenhuma pendente 🎉'}
+                </p>
+              )}
+              {cronograma.length === 0 && !mostrarGerarCronograma && (
+                <p className="empty">Nenhum calendário gerado ainda — clique em "Gerar datas".</p>
+              )}
+              {cronograma.length > 0 && (
+                <div className="row" style={{ marginTop: 10, gap: 6, flexWrap: 'wrap' }}>
+                  {cronograma.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`checklist-item ${c.feito ? 'feito' : ''}`}
+                      onClick={() => alternarDataCronograma(c)}
+                    >
+                      {c.feito ? '☑' : '☐'} {formatarData(c.data)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+        {mostrarGerarCronograma && (
+          <form onSubmit={gerarCronograma} style={{ marginTop: 12 }}>
+            <div className="row" style={{ gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label>Data de início</label>
+                <input
+                  type="date"
+                  value={formCronograma.dataInicio}
+                  onChange={(e) => setFormCronograma({ ...formCronograma, dataInicio: e.target.value })}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label>Até (fim do pacote)</label>
+                <input
+                  type="date"
+                  value={formCronograma.dataFim}
+                  onChange={(e) => setFormCronograma({ ...formCronograma, dataFim: e.target.value })}
+                />
+              </div>
+            </div>
+            <label>A cada quantos dias</label>
+            <select value={formCronograma.intervalo} onChange={(e) => setFormCronograma({ ...formCronograma, intervalo: e.target.value })}>
+              <option value="30">30 dias</option>
+              <option value="45">45 dias</option>
+              <option value="60">60 dias</option>
+            </select>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary">Gerar datas</button>
+              <button type="button" className="btn-secondary" onClick={() => setMostrarGerarCronograma(false)}>Cancelar</button>
+            </div>
+          </form>
+        )}
+      </div>
 
       <div className="card">
         <div className="row" style={{ cursor: 'pointer' }} onClick={() => setAnamneseAberta((v) => !v)}>

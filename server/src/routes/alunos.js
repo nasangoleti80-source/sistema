@@ -106,6 +106,7 @@ router.post('/', async (req, res) => {
     // mas editável na mão pela treinadora quando precisar remarcar.
     proximaAvaliacaoData: null,
     checklistConsultoria: { ...CHECKLIST_VAZIO },
+    cronogramaAvaliacoes: [],
     senhaPortal: gerarSenhaPortal(),
     ativo: true,
     createdAt: new Date().toISOString(),
@@ -123,7 +124,7 @@ router.put('/:id', async (req, res) => {
   const {
     nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
-    proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal,
+    proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal, cronogramaAvaliacoes,
   } = req.body;
 
   const inicioFinal = dataInicio !== undefined ? dataInicio : atual.dataInicio;
@@ -157,6 +158,7 @@ router.put('/:id', async (req, res) => {
       ? { ...CHECKLIST_VAZIO, ...atual.checklistConsultoria, ...checklistConsultoria }
       : (atual.checklistConsultoria || { ...CHECKLIST_VAZIO }),
     senhaPortal: regenerarSenhaPortal ? gerarSenhaPortal() : (atual.senhaPortal || gerarSenhaPortal()),
+    cronogramaAvaliacoes: cronogramaAvaliacoes !== undefined ? cronogramaAvaliacoes : (atual.cronogramaAvaliacoes || []),
   };
   db.data.alunos[idx] = atualizado;
   await db.write();
