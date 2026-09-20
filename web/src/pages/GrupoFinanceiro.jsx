@@ -76,6 +76,7 @@ export default function GrupoFinanceiro() {
               contagem={consultoriaEmAtencao || null}
               alerta={consultoriaEmAtencao > 0}
             />
+            <Modulo para="/chamadas" icone="chamada" nome="Chamadas" oQueE="Ligação/vídeo mensal, amarrada ao período do pacote" />
           </div>
 
           {canaisComContagem.length > 0 && (

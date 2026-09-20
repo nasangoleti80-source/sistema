@@ -107,6 +107,7 @@ router.post('/', async (req, res) => {
     proximaAvaliacaoData: null,
     checklistConsultoria: { ...CHECKLIST_VAZIO },
     cronogramaAvaliacoes: [],
+    cronogramaChamadas: [],
     senhaPortal: gerarSenhaPortal(),
     ativo: true,
     createdAt: new Date().toISOString(),
@@ -124,7 +125,7 @@ router.put('/:id', async (req, res) => {
   const {
     nome, telefone, email, tipo, valorMensal, periodicidade, desconto, dataInicio,
     observacoes, comoConheceu, ativo, dataNascimento, altura, sexo, anamnese,
-    proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal, cronogramaAvaliacoes,
+    proximaAvaliacaoData, checklistConsultoria, regenerarSenhaPortal, cronogramaAvaliacoes, cronogramaChamadas,
   } = req.body;
 
   const inicioFinal = dataInicio !== undefined ? dataInicio : atual.dataInicio;
@@ -159,6 +160,7 @@ router.put('/:id', async (req, res) => {
       : (atual.checklistConsultoria || { ...CHECKLIST_VAZIO }),
     senhaPortal: regenerarSenhaPortal ? gerarSenhaPortal() : (atual.senhaPortal || gerarSenhaPortal()),
     cronogramaAvaliacoes: cronogramaAvaliacoes !== undefined ? cronogramaAvaliacoes : (atual.cronogramaAvaliacoes || []),
+    cronogramaChamadas: cronogramaChamadas !== undefined ? cronogramaChamadas : (atual.cronogramaChamadas || []),
   };
   db.data.alunos[idx] = atualizado;
   await db.write();
