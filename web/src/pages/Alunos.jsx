@@ -27,6 +27,7 @@ export default function Alunos() {
   const [form, setForm] = useState(FORM_VAZIO);
   const [erro, setErro] = useState('');
   const [mostrarInativos, setMostrarInativos] = useState(false);
+  const [filtroTipo, setFiltroTipo] = useState('todos');
   const [pacotes, setPacotes] = useState([]);
 
   async function carregar() {
@@ -111,7 +112,15 @@ export default function Alunos() {
     await carregar();
   }
 
-  const listaFiltrada = alunos.filter((a) => mostrarInativos || a.ativo);
+  const ehOnline = (tipo) => tipo?.startsWith('consultoria_online');
+  const ehSemipresencial = (tipo) => tipo === 'consultoria_semipresencial';
+  const FILTROS_TIPO = {
+    todos: () => true,
+    presencial: (a) => a.tipo === 'presencial',
+    online: (a) => ehOnline(a.tipo),
+    semipresencial: (a) => ehSemipresencial(a.tipo),
+  };
+  const listaFiltrada = alunos.filter((a) => (mostrarInativos || a.ativo) && FILTROS_TIPO[filtroTipo](a));
   const mes = mesAtual();
   const pacotesVencendo = pacotes
     .filter((p) => p.dataVencimento?.startsWith(mes))
@@ -139,6 +148,24 @@ export default function Alunos() {
           })}
         </div>
       )}
+
+      <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {[
+          ['todos', 'Todos'],
+          ['presencial', 'Presencial'],
+          ['online', 'Online'],
+          ['semipresencial', 'Semipresencial'],
+        ].map(([valor, rotulo]) => (
+          <button
+            key={valor}
+            type="button"
+            className={filtroTipo === valor ? 'btn-primary btn-small' : 'btn-secondary btn-small'}
+            onClick={() => setFiltroTipo(valor)}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
 
       <div className="row" style={{ marginBottom: 12 }}>
         <label className="checkbox-row" style={{ margin: 0 }}>
