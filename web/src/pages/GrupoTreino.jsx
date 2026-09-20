@@ -99,7 +99,7 @@ export default function GrupoTreino() {
 
           <h2>Avaliação e resultado</h2>
           <div className="modulos">
-            <Modulo para="/alunos" icone="avaliacoes" nome="Avaliações" oQueE="Dobras, medidas, anamnese e fotos — abre na ficha do aluno" />
+            <Modulo para="/avaliacoes" icone="avaliacoes" nome="Avaliações" oQueE="Calendário, dobras, medidas, anamnese e fotos" />
             <Modulo
               para="/resumo"
               icone="resumo"

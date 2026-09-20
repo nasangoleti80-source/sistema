@@ -10,6 +10,7 @@ import PerfilAluno from './pages/PerfilAluno.jsx';
 import Presenca from './pages/Presenca.jsx';
 import Pagamentos from './pages/Pagamentos.jsx';
 import Avaliacoes from './pages/Avaliacoes.jsx';
+import AvaliacoesHub from './pages/AvaliacoesHub.jsx';
 import Exercicios from './pages/Exercicios.jsx';
 import Treinos from './pages/Treinos.jsx';
 import TreinoSessoes from './pages/TreinoSessoes.jsx';
@@ -129,6 +130,7 @@ export default function App() {
           <Route path="/alunos/:alunoId" element={<PerfilAluno />} />
           <Route path="/presenca" element={<Presenca />} />
           <Route path="/pagamentos" element={<Pagamentos />} />
+          <Route path="/avaliacoes" element={<AvaliacoesHub />} />
           <Route path="/avaliacoes/:alunoId" element={<Avaliacoes />} />
           <Route path="/exercicios" element={<Exercicios />} />
           <Route path="/treinos" element={<Treinos />} />
