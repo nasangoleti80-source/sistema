@@ -205,12 +205,8 @@ export default function Presenca() {
 
   return (
     <div>
-      <h1>
-        Sua <em>agenda</em>
-      </h1>
-      <p className="subtitle">
-        Toque num dia para ver ou marcar consultas, aulas e faltas — como numa agenda de verdade.
-      </p>
+      <h1>Presença</h1>
+      <p className="subtitle">Toque num dia para ver e registrar as aulas.</p>
 
       <div className="month-nav">
         <button onClick={() => setMes(somarMes(mes, -1))}>‹</button>
@@ -230,7 +226,7 @@ export default function Presenca() {
         <p className="empty">Cadastre um aluno na aba Alunos para começar a usar a agenda.</p>
       )}
 
-      <div className="row" style={{ gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+      <div className="row" style={{ gap: 14, marginBottom: 10, flexWrap: 'wrap' }}>
         <span className="legenda-item"><span className="legenda-bola aula" /> Aula</span>
         <span className="legenda-item"><span className="legenda-bola consulta" /> Consulta</span>
         <span className="legenda-item"><span className="legenda-bola reposicao" /> Reposição</span>
@@ -247,24 +243,23 @@ export default function Presenca() {
           {grade.map((c) => {
             const doDia = aulasPorDia.get(c.iso) || [];
             const ehHoje = c.iso === hojeISO();
+            const selecionado = c.iso === diaSelecionado;
             return (
               <button
                 type="button"
                 key={c.iso + (c.foraDoMes ? '-fora' : '')}
-                className={`dia-celula ${c.foraDoMes ? 'fora-mes' : ''} ${ehHoje ? 'hoje' : ''}`}
+                className={`dia-celula ${c.foraDoMes ? 'fora-mes' : ''} ${ehHoje ? 'hoje' : ''} ${selecionado ? 'selecionado' : ''}`}
                 onClick={() => abrirDia(c.iso)}
               >
                 <span className="dia-numero">{c.dia}</span>
-                <span className="dia-chips">
+                <span className="dia-pontos">
                   {doDia.slice(0, 3).map((a) => (
                     <span
                       key={a.id}
-                      className={`dia-chip ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : a.tipo === 'reposicao' ? 'reposicao' : 'aula'}`}
-                    >
-                      {a.hora && `${a.hora} `}{nomeAluno(a.alunoId)}
-                    </span>
+                      className={`dia-ponto ${!a.realizada ? 'falta' : a.tipo === 'consulta' ? 'consulta' : a.tipo === 'reposicao' ? 'reposicao' : 'aula'}`}
+                    />
                   ))}
-                  {doDia.length > 3 && <span className="dia-chip-extra">+{doDia.length - 3}</span>}
+                  {doDia.length > 3 && <span className="dia-ponto-extra">+{doDia.length - 3}</span>}
                 </span>
               </button>
             );
