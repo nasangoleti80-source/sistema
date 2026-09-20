@@ -447,7 +447,7 @@ export default function Avaliacoes() {
                     title="Remover foto"
                     style={{
                       position: 'absolute', top: -6, right: -6, width: 22, height: 22, padding: 0,
-                      borderRadius: '50%', background: 'var(--negativo)', color: 'var(--noite)',
+                      borderRadius: '50%', background: 'var(--negativo-forte)', color: 'var(--osso)',
                       fontSize: 12, lineHeight: 1, fontWeight: 700,
                     }}
                   >
@@ -504,7 +504,7 @@ export default function Avaliacoes() {
                     title="Remover foto"
                     style={{
                       position: 'absolute', top: -6, right: -6, width: 20, height: 20, padding: 0,
-                      borderRadius: '50%', background: 'var(--negativo)', color: 'var(--noite)',
+                      borderRadius: '50%', background: 'var(--negativo-forte)', color: 'var(--osso)',
                       fontSize: 11, lineHeight: 1, fontWeight: 700,
                     }}
                   >

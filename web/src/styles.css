@@ -629,7 +629,7 @@ label {
 .legenda-bola.aula { background: var(--positivo); }
 .legenda-bola.consulta { background: var(--azul-claro); }
 .legenda-bola.reposicao { background: var(--atencao); }
-.legenda-bola.falta { background: var(--negativo); }
+.legenda-bola.falta { background: var(--negativo-forte); }
 
 .calendario {
   border: 1px solid var(--linha);
@@ -723,7 +723,7 @@ label {
 .dia-chip.aula { background: var(--positivo); }
 .dia-chip.consulta { background: var(--azul-claro); }
 .dia-chip.reposicao { background: var(--atencao); color: var(--noite); }
-.dia-chip.falta { background: var(--negativo); }
+.dia-chip.falta { background: var(--negativo-forte); color: var(--osso); }
 
 .dia-chip-extra {
   font-size: 10px;
