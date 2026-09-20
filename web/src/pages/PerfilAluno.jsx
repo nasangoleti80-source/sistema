@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  api, mesAtual, formatarMoeda, formatarData, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO,
+  api, mesAtual, formatarMoeda, formatarData, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, mensagemAcessoPortal,
 } from '../api.js';
 
 function iniciais(nome) {
@@ -89,8 +89,7 @@ export default function PerfilAluno() {
   useEffect(() => { carregar(); }, [alunoId]);
 
   async function copiarAcessoPortal() {
-    const link = `${window.location.origin}/portal/${alunoId}`;
-    const texto = `Seu acesso ao treino:\n${link}\nSenha: ${aluno.senhaPortal}`;
+    const texto = mensagemAcessoPortal(aluno, window.location.origin);
     try {
       await navigator.clipboard.writeText(texto);
       alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);

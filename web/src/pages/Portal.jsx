@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExercicioDoTreino from '../componentes/ExercicioDoTreino.jsx';
+import { Simbolo } from '../componentes/Marca.jsx';
 import {
   indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo, volumeSemanalPorZona, semanaAtualIntervalo,
   INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES, DIAS_SEMANA_SESSAO, TIPOS_DESAFIO,
@@ -459,6 +460,7 @@ export default function Portal() {
     };
     return (
       <div className="tela-senha-portal">
+        <Simbolo tamanho={48} titulo="Nayara Sangoleti" />
         <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
         <p className="subtitle">Digite a senha que sua treinadora te passou para entrar.</p>
         {erroSenha && <div className="error-msg">{erroSenha}</div>}

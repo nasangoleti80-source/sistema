@@ -343,9 +343,13 @@ p.subtitle {
 
 .tela-senha-portal {
   max-width: 360px;
-  margin: 15vh auto 0;
+  margin: 12vh auto 0;
   text-align: center;
   padding: 0 16px;
+}
+
+.tela-senha-portal svg {
+  margin-bottom: 6px;
 }
 
 .acao-rapida {
@@ -1479,14 +1483,6 @@ label {
 
 
 /* ------------------------------------------------ cabeçalho do portal e tema */
-
-/* O portal da aluna não mostra a assinatura da treinadora, e sim onde ela está. */
-.brand-portal {
-  font-family: var(--fonte-black);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
 
 .theme-toggle {
   margin-left: auto;

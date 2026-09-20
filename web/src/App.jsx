@@ -99,7 +99,7 @@ export default function App() {
             ←
           </button>
         )}
-        {isPortal ? <span className="brand-portal">Meu treino</span> : <Assinatura />}
+        <Assinatura />
         <button
           className="theme-toggle"
           onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')}

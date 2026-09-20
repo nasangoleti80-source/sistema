@@ -437,6 +437,21 @@ export function formatarData(data) {
   return `${dia}/${mes}/${ano}`;
 }
 
+/** Texto pronto pra copiar e mandar pelo WhatsApp — link + senha do portal. */
+export function mensagemAcessoPortal(aluno, origin) {
+  const primeiroNome = aluno.nome.split(' ')[0];
+  const link = `${origin}/portal/${aluno.id}`;
+  return [
+    `Oi, ${primeiroNome}! 🎉`,
+    '',
+    'Aqui está o seu acesso ao treino:',
+    `🔗 ${link}`,
+    `🔑 Senha: ${aluno.senhaPortal}`,
+    '',
+    'Qualquer dúvida, é só me chamar por aqui mesmo!',
+  ].join('\n');
+}
+
 
 /* ------------------------------------------------------------------ volume */
 
