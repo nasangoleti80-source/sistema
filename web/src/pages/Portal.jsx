@@ -481,21 +481,33 @@ export default function Portal() {
       }
     };
     return (
-      <div className="tela-senha-portal">
-        <Simbolo tamanho={48} titulo="Nayara Sangoleti" />
-        <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
-        <p className="subtitle">Digite a senha que sua treinadora te passou para entrar.</p>
-        {erroSenha && <div className="error-msg">{erroSenha}</div>}
-        <form onSubmit={conferirSenha} className="row" style={{ gap: 8 }}>
-          <input
-            autoFocus
-            value={senhaDigitada}
-            onChange={(e) => setSenhaDigitada(e.target.value)}
-            placeholder="Senha de acesso"
-            style={{ flex: 1, textTransform: 'uppercase' }}
-          />
-          <button type="submit" className="btn-primary">Entrar</button>
-        </form>
+      <div className="tela-login-capa">
+        <img src="/fotos/login-azul.png" alt="" className="tela-login-foto" />
+        <div className="tela-login-gradiente" />
+        <div className="tela-login-conteudo">
+          <Simbolo tamanho={30} titulo="Nayara Sangoleti" />
+          <h1 className="tela-login-titulo">NAYARA<br />SANGOLETI</h1>
+          <p className="tela-login-sub">
+            Olá, {aluno.nome.split(' ')[0]} — seu treino e sua dieta <em>funcionam para você</em>.
+          </p>
+
+          <div className="tela-login-cartao">
+            {erroSenha && <div className="error-msg">{erroSenha}</div>}
+            <form onSubmit={conferirSenha}>
+              <label>Senha</label>
+              <input
+                autoFocus
+                value={senhaDigitada}
+                onChange={(e) => setSenhaDigitada(e.target.value)}
+                placeholder="Senha de acesso"
+                style={{ textTransform: 'uppercase' }}
+              />
+              <button type="submit" className="btn-primary" style={{ width: '100%', height: 50, marginTop: 10 }}>
+                Entrar
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     );
   }
