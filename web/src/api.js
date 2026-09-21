@@ -452,6 +452,31 @@ export function mensagemAcessoPortal(aluno, origin) {
   ].join('\n');
 }
 
+/**
+ * Manda o texto direto pro app de mensagens do celular (WhatsApp, SMS...)
+ * quando o navegador suporta — sem precisar copiar e colar nada. Só cai pra
+ * área de transferência (ou pro prompt, se nem isso funcionar) em desktop ou
+ * navegadores sem suporte a compartilhamento nativo.
+ */
+export async function compartilharOuCopiar(texto, titulo) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: titulo, text: texto });
+      return 'compartilhado';
+    } catch (e) {
+      if (e?.name === 'AbortError') return 'cancelado';
+      // segue pro fallback de copiar se o compartilhamento falhar
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(texto);
+    return 'copiado';
+  } catch {
+    prompt('Copie o acesso do aluno:', texto);
+    return 'prompt';
+  }
+}
+
 
 /* ------------------------------------------------------------------ volume */
 

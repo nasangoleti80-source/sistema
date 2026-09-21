@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   api, mesAtual, formatarMoeda, formatarData, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, mensagemAcessoPortal,
+  compartilharOuCopiar,
 } from '../api.js';
 
 function iniciais(nome) {
@@ -90,12 +91,8 @@ export default function PerfilAluno() {
 
   async function copiarAcessoPortal() {
     const texto = mensagemAcessoPortal(aluno, window.location.origin);
-    try {
-      await navigator.clipboard.writeText(texto);
-      alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
-    } catch {
-      prompt('Copie o acesso do aluno:', texto);
-    }
+    const resultado = await compartilharOuCopiar(texto, `Acesso de ${aluno.nome.split(' ')[0]}`);
+    if (resultado === 'copiado') alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
   }
 
   async function gerarNovaSenha() {

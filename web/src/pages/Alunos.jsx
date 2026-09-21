@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData, mesAtual, mensagemAcessoPortal } from '../api.js';
+import { api, TIPOS_ALUNO, PERIODICIDADES, CANAIS_CAPTACAO, calcularVencimentoPlano, formatarMoeda, formatarData, mesAtual, mensagemAcessoPortal, compartilharOuCopiar } from '../api.js';
 import { useNavigate } from 'react-router-dom';
 
 const FORM_VAZIO = {
@@ -100,12 +100,8 @@ export default function Alunos() {
 
   async function copiarAcessoPortal(aluno) {
     const texto = mensagemAcessoPortal(aluno, window.location.origin);
-    try {
-      await navigator.clipboard.writeText(texto);
-      alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
-    } catch {
-      prompt('Copie o acesso do aluno:', texto);
-    }
+    const resultado = await compartilharOuCopiar(texto, `Acesso de ${aluno.nome.split(' ')[0]}`);
+    if (resultado === 'copiado') alert(`Copiado! Já pode colar e mandar para ${aluno.nome.split(' ')[0]}.\n\n${texto}`);
   }
 
   async function excluir(aluno) {

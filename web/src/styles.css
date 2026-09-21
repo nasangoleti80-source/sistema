@@ -343,26 +343,35 @@ p.subtitle {
 
 .tela-login-capa {
   position: fixed;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
   z-index: 20;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  /* Em tela larga de computador, sem width+max-width+margin:auto (em vez de
+     inset:0 esticando dos dois lados) o "cover" da foto — pensada pra celular,
+     bem estreita e alta — recortava só uma fatia de baixo da imagem e ficava
+     irreconhecível. Trava a coluna do tamanho de um celular e centraliza. */
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--noite);
 }
 
 .tela-login-foto {
-  position: fixed;
+  position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 58% 100%;
+  object-position: 58% 22%;
   z-index: 0;
 }
 
 .tela-login-gradiente {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 1;
   background: linear-gradient(
