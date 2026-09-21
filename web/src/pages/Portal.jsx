@@ -5,7 +5,58 @@ import { Simbolo } from '../componentes/Marca.jsx';
 import {
   indexarCatalogo, api, formatarData, formatarMoeda, temPacoteAtivo, volumeSemanalPorZona, semanaAtualIntervalo,
   INTENSIDADES_TREINO, TIPOS_REFEICAO, UNIDADES_ALIMENTO, MEDIDAS_CAMPOS, PERIODICIDADES, DIAS_SEMANA_SESSAO, TIPOS_DESAFIO,
+  duracaoEstimadaDia,
 } from '../api.js';
+
+const DIAS_SEMANA_EXTENSO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MESES_ABREV = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+function dataHeroLabel() {
+  const hoje = new Date();
+  return `${DIAS_SEMANA_EXTENSO[hoje.getDay()].toUpperCase()} · ${hoje.getDate()} ${MESES_ABREV[hoje.getMonth()]}`;
+}
+
+function formatarDuracaoCurta(min) {
+  if (!min) return '—';
+  if (min < 60) return `${min}MIN`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}H${String(m).padStart(2, '0')}` : `${h}H`;
+}
+
+const ABAS_PORTAL = [
+  { chave: 'inicio', label: 'Início' },
+  { chave: 'treino', label: 'Treino' },
+  { chave: 'endurance', label: 'Endurance' },
+  { chave: 'evolucao', label: 'Corpo' },
+  { chave: 'dieta', label: 'Dieta' },
+  { chave: 'videos', label: 'Play' },
+  { chave: 'mensagens', label: 'Chat' },
+];
+
+/** Ícones simples, uma linha só, do mesmo estilo dos atalhos rápidos —
+ * usados na barra fixa de baixo do portal do aluno. */
+function IconeAbaPortal({ nome }) {
+  const props = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (nome) {
+    case 'inicio':
+      return <svg {...props}><path d="M4 11 12 4l8 7" /><path d="M6 10v9h5v-6h2v6h5v-9" /></svg>;
+    case 'treino':
+      return <svg {...props}><path d="M6.5 6.5h11M6.5 17.5h11" /><path d="M4 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" /><path d="M16 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" /></svg>;
+    case 'endurance':
+      return <svg {...props}><path d="M3 12h4l2 6 4-12 2 6h6" /></svg>;
+    case 'evolucao':
+      return <svg {...props}><circle cx="12" cy="6" r="3" /><path d="M6 21v-2a6 6 0 0 1 12 0v2" /></svg>;
+    case 'dieta':
+      return <svg {...props}><path d="M3 11h18" /><path d="M6 11V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" /><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8" /></svg>;
+    case 'videos':
+      return <svg {...props}><path d="M8 5.5v13l11-6.5z" /></svg>;
+    case 'mensagens':
+      return <svg {...props}><path d="M4 5.5h16v10H9l-4 4z" /></svg>;
+    default:
+      return null;
+  }
+}
 import { ehVideo, extrairCapa, prepararFoto } from '../midia.js';
 import CarrosselOpcoes from '../components/CarrosselOpcoes.jsx';
 import { indexarAlimentos, nutrientesDaOpcao, nutrientesDaTroca, kcalCurto, resumoCurto } from '../nutricao.js';
@@ -527,42 +578,79 @@ export default function Portal() {
   const diasComRegistro = new Set(registros.map((r) => r.data));
   const refeicaoSeguinte = proximaRefeicao(dietas);
 
+  const primeiroTreino = treinos[0];
+  const diaHoje = primeiroTreino?.dias?.[0];
+  const totalSeriesDia = (diaHoje?.exercicios || []).reduce((s, ex) => s + (Number(ex.series) || 0), 0);
+  const feitoHoje = diaHoje && registros.some((r) => r.data === hojeStr && r.treinoId === primeiroTreino.id && r.diaLetra === diaHoje.letra);
+
   return (
     <div>
-      <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
-      <p className="subtitle">Seu espaço de acompanhamento</p>
+      {aba !== 'inicio' && (
+        <>
+          <h1>Olá, {aluno.nome.split(' ')[0]} 👋</h1>
+          <p className="subtitle">Seu espaço de acompanhamento</p>
 
-      {proximoPacote && (
-        <div className="card">
-          <div className="row">
-            <div className="name">Plano: {proximoPacote.nomePacote}</div>
-            <span className={`badge ${proximoPacote.status}`}>{proximoPacote.status}</span>
-          </div>
-          <div className="meta">Válido até {formatarData(proximoPacote.dataFim)} · Vencimento: {formatarData(proximoPacote.dataVencimento)}</div>
-        </div>
+          {proximoPacote && (
+            <div className="card">
+              <div className="row">
+                <div className="name">Plano: {proximoPacote.nomePacote}</div>
+                <span className={`badge ${proximoPacote.status}`}>{proximoPacote.status}</span>
+              </div>
+              <div className="meta">Válido até {formatarData(proximoPacote.dataFim)} · Vencimento: {formatarData(proximoPacote.dataVencimento)}</div>
+            </div>
+          )}
+        </>
       )}
 
-      <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {['inicio', 'treino', 'endurance', 'evolucao', 'dieta', 'videos', 'mensagens'].map((a) => (
-          <button key={a} className={aba === a ? 'btn-primary btn-small' : 'btn-secondary btn-small'} onClick={() => setAba(a)}>
-            {{ inicio: 'Início', treino: 'Treino', endurance: 'Endurance', evolucao: 'Evolução', dieta: 'Dieta', videos: 'PlayFlix', mensagens: 'Mensagens' }[a]}
+      <nav className="tabbar-portal">
+        {ABAS_PORTAL.map((a) => (
+          <button
+            key={a.chave}
+            type="button"
+            className={aba === a.chave ? 'active' : ''}
+            onClick={() => setAba(a.chave)}
+          >
+            <IconeAbaPortal nome={a.chave} />
+            <span>{a.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
       {aba === 'inicio' && (
         <>
-          <div className="row" style={{ gap: 10, marginBottom: 16 }}>
-            <button type="button" className="atalho-rapido" onClick={() => setAba('treino')}>
-              <span className="atalho-ic">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6.5 6.5h11M6.5 17.5h11" /><path d="M4 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" /><path d="M16 9V6a2 2 0 1 1 4 0v12a2 2 0 1 1-4 0v-3" />
-                </svg>
-              </span>
-              <span className="atalho-rotulo">Treino</span>
-              <span className="atalho-valor">{treinos[0]?.nome || 'Sem treino ativo'}</span>
-            </button>
+          <div className="portal-hero">
+            <div className="portal-hero-media">
+              <img src="/fotos/hero.jpg" alt="" className="portal-hero-foto" />
+              <div className="portal-hero-gradiente" />
+              <span className="portal-hero-data">{dataHeroLabel()}</span>
+              <p className="portal-hero-saudacao">Bom treino,<br /><em>{aluno.nome.split(' ')[0]}</em></p>
+            </div>
+            {diaHoje && (
+              <div className="portal-hero-cartao">
+                <span className="portal-hero-cartao-rotulo">Treino de hoje · {diaHoje.letra}</span>
+                <div className="name">{diaHoje.nome}</div>
+                <div className="portal-hero-stats">
+                  <div className="portal-hero-stat">
+                    <div className="valor">{(diaHoje.exercicios || []).length}</div>
+                    <div className="rotulo">Exercícios</div>
+                  </div>
+                  <div className="portal-hero-stat">
+                    <div className="valor">{formatarDuracaoCurta(duracaoEstimadaDia(diaHoje))}</div>
+                    <div className="rotulo">Duração</div>
+                  </div>
+                  <div className="portal-hero-stat">
+                    <div className="valor">{feitoHoje ? totalSeriesDia : 0}/{totalSeriesDia}</div>
+                    <div className="rotulo">Séries feitas</div>
+                  </div>
+                </div>
+                <button type="button" className="btn-primary" style={{ width: '100%' }} onClick={() => setAba('treino')}>
+                  {feitoHoje ? 'Continuar treino' : 'Começar treino'}
+                </button>
+              </div>
+            )}
+          </div>
 
+          <div className="row" style={{ gap: 10, marginBottom: 16 }}>
             <button type="button" className="atalho-rapido" onClick={() => alert('Lembrete: procure beber água ao longo do dia — a meta sugerida é cerca de 2 litros 💧')}>
               <span className="atalho-ic">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -583,6 +671,14 @@ export default function Portal() {
               <span className="atalho-valor">
                 {refeicaoSeguinte ? `${refeicaoSeguinte.horario} - ${TIPOS_REFEICAO[refeicaoSeguinte.tipo] || refeicaoSeguinte.nome}` : 'Sem dieta cadastrada'}
               </span>
+            </button>
+
+            <button type="button" className="atalho-rapido" onClick={() => setAba('evolucao')}>
+              <span className="atalho-ic">
+                <IconeAbaPortal nome="evolucao" />
+              </span>
+              <span className="atalho-rotulo">Avaliação</span>
+              <span className="atalho-valor">Ver seu corpo</span>
             </button>
           </div>
 
