@@ -37,6 +37,13 @@ export default function TreinoSessoes() {
     setTreino(atualizado);
   }
 
+  async function renomearTreino() {
+    const novoNome = prompt('Nome do treino:', treino.nome);
+    if (!novoNome || !novoNome.trim() || novoNome.trim() === treino.nome) return;
+    const atualizado = await api.atualizarTreino(treinoId, { nome: novoNome.trim() });
+    setTreino(atualizado);
+  }
+
   function moverSessao(indice, direcao) {
     const dias = [...treino.dias];
     const alvo = indice + direcao;
@@ -87,7 +94,10 @@ export default function TreinoSessoes() {
   return (
     <div>
       <Link to="/treinos">&larr; Voltar para treinos</Link>
-      <h1>{treino.nome}</h1>
+      <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+        <h1 style={{ margin: 0 }}>{treino.nome}</h1>
+        <button type="button" className="btn-secondary btn-small" onClick={renomearTreino} title="Renomear treino">✎</button>
+      </div>
       <p className="subtitle">{(treino.dias || []).length} sessão(ões)</p>
 
       {(treino.dias || []).map((dia, i) => (
