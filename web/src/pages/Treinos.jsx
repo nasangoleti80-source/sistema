@@ -68,6 +68,14 @@ export default function Treinos() {
     await carregar(alunoId);
   }
 
+  async function renomear(e, treino) {
+    e.stopPropagation();
+    const novoNome = prompt('Nome do treino:', treino.nome);
+    if (!novoNome || !novoNome.trim() || novoNome.trim() === treino.nome) return;
+    await api.atualizarTreino(treino.id, { nome: novoNome.trim() });
+    await carregar(alunoId);
+  }
+
   function ultimoTreinoData(treinoId) {
     const doTreino = registros.filter((r) => r.treinoId === treinoId).sort((a, b) => (a.data < b.data ? 1 : -1));
     return doTreino[0]?.data || null;
@@ -110,6 +118,9 @@ export default function Treinos() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                 <span className={`badge ${t.ativo ? 'pago' : 'sem-cobranca'}`}>{t.ativo ? 'Ativo' : 'Arquivado'}</span>
+                <button type="button" className="btn-secondary btn-small" onClick={(e) => renomear(e, t)} title="Renomear treino">
+                  ✎ Renomear
+                </button>
                 <button type="button" className="btn-secondary btn-small" onClick={(e) => alternarArquivado(e, t)}>
                   {t.ativo ? 'Arquivar' : 'Reativar'}
                 </button>
