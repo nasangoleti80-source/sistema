@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { acharNoCatalogo, capaDoExercicio, METODOS_TREINO, resumoMetodo } from '../api.js';
+import TimerDescanso from '../components/TimerDescanso.jsx';
 
 /**
  * Um exercício dentro de um treino, enriquecido com o catálogo.
@@ -52,6 +53,8 @@ export default function ExercicioDoTreino({ ex, indice, ordem }) {
           {doCatalogo?.ondeFica && <div className="onde-fica">Onde fica: {doCatalogo.ondeFica}</div>}
 
           {ex.observacao && <div className="obs-personal">Obs. do personal: {ex.observacao}</div>}
+
+          <TimerDescanso segundos={ex.descansoSeg || 60} />
         </div>
 
         {temDetalhe && (
