@@ -29,6 +29,7 @@ export default function Alunos() {
   const [erro, setErro] = useState('');
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [busca, setBusca] = useState('');
   const [pacotes, setPacotes] = useState([]);
 
   async function carregar() {
@@ -117,7 +118,19 @@ export default function Alunos() {
     semipresencial: (a) => a.tipo === 'consultoria_semipresencial',
     treino_dieta: (a) => a.tipo === 'consultoria_online_treino_dieta',
   };
-  const listaFiltrada = alunos.filter((a) => (mostrarInativos || a.ativo) && FILTROS_TIPO[filtroTipo](a));
+  function normalizar(texto) {
+    return (texto || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '');
+  }
+  const buscaNormalizada = normalizar(busca).trim();
+  const listaFiltrada = alunos.filter(
+    (a) =>
+      (mostrarInativos || a.ativo) &&
+      FILTROS_TIPO[filtroTipo](a) &&
+      (!buscaNormalizada || normalizar(a.nome).includes(buscaNormalizada) || (a.telefone || '').includes(busca.trim()))
+  );
   const mes = mesAtual();
   const pacotesVencendo = pacotes
     .filter((p) => p.dataVencimento?.startsWith(mes))
@@ -145,6 +158,14 @@ export default function Alunos() {
           })}
         </div>
       )}
+
+      <input
+        type="search"
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        placeholder="🔎 Buscar aluno por nome ou telefone..."
+        style={{ marginBottom: 12 }}
+      />
 
       <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {[
@@ -179,7 +200,11 @@ export default function Alunos() {
 
       {carregando && <p className="empty">Carregando...</p>}
       {!carregando && listaFiltrada.length === 0 && (
-        <p className="empty">Nenhum aluno cadastrado ainda. Toque em "Novo aluno" para começar.</p>
+        <p className="empty">
+          {alunos.length === 0
+            ? 'Nenhum aluno cadastrado ainda. Toque em "Novo aluno" para começar.'
+            : 'Nenhum aluno encontrado com esse filtro/busca.'}
+        </p>
       )}
 
       <div className="card">
