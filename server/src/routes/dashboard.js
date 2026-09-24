@@ -1,10 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { autenticar, exigirTreinador } from '../auth.js';
 
 const router = Router();
-
-router.use(autenticar, exigirTreinador);
 
 function statusAtual(pagamento, hojeStr) {
   if (pagamento.status === 'pago') return 'pago';
@@ -28,9 +25,8 @@ router.get('/', async (req, res) => {
 
   const porAluno = alunosAtivos.map((aluno) => {
     const aulas = aulasDoMes.filter((a) => a.alunoId === aluno.id);
-    const realizadas = aulas.filter((a) => a.status === 'presente' || a.status === 'reposicao').length;
-    const faltas = aulas.filter((a) => a.status === 'falta').length;
-    const reposicoes = aulas.filter((a) => a.status === 'reposicao').length;
+    const realizadas = aulas.filter((a) => a.realizada).length;
+    const faltas = aulas.filter((a) => !a.realizada).length;
     const pagamento = pagamentosDoMes.find((p) => p.alunoId === aluno.id) || null;
     return {
       alunoId: aluno.id,
@@ -38,7 +34,6 @@ router.get('/', async (req, res) => {
       tipo: aluno.tipo,
       aulasRealizadas: realizadas,
       faltas,
-      reposicoes,
       pagamento,
     };
   });
@@ -94,9 +89,8 @@ router.get('/', async (req, res) => {
   res.json({
     mes,
     totalAlunosAtivos: alunosAtivos.length,
-    totalAulasRealizadas: aulasDoMes.filter((a) => a.status === 'presente' || a.status === 'reposicao').length,
-    totalFaltas: aulasDoMes.filter((a) => a.status === 'falta').length,
-    totalReposicoes: aulasDoMes.filter((a) => a.status === 'reposicao').length,
+    totalAulasRealizadas: aulasDoMes.filter((a) => a.realizada).length,
+    totalFaltas: aulasDoMes.filter((a) => !a.realizada).length,
     totalAReceber,
     totalRecebido,
     totalPendente,

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { nanoid } from 'nanoid';
 import { db } from '../db.js';
-import { autenticar, exigirTreinador } from '../auth.js';
 
 export const PARQ_PERGUNTAS = [
   'Algum médico já disse que você possui um problema cardíaco e que só deveria realizar atividade física supervisionada?',
@@ -38,8 +37,6 @@ function anamneseVazia(alunoId) {
 }
 
 const router = Router();
-
-router.use(autenticar, exigirTreinador);
 
 // GET /api/anamneses?alunoId=xxx
 router.get('/', async (req, res) => {

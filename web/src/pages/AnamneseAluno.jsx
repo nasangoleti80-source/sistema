@@ -50,9 +50,9 @@ function vazia(alunoId) {
 }
 
 export default function AnamneseAluno() {
-  const { id } = useParams();
+  const { alunoId } = useParams();
   const [aluno, setAluno] = useState(null);
-  const [form, setForm] = useState(vazia(id));
+  const [form, setForm] = useState(vazia(alunoId));
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
@@ -60,21 +60,21 @@ export default function AnamneseAluno() {
 
   useEffect(() => {
     setCarregando(true);
-    Promise.all([api.obterAluno(id), api.obterAnamnese(id)])
+    Promise.all([api.obterAluno(alunoId), api.obterAnamnese(alunoId)])
       .then(([a, an]) => {
         setAluno(a);
-        setForm(an || vazia(id));
+        setForm(an || vazia(alunoId));
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
-  }, [id]);
+  }, [alunoId]);
 
   async function salvar(e) {
     e.preventDefault();
     setErro('');
     setSalvando(true);
     try {
-      const salva = await api.salvarAnamnese(id, form);
+      const salva = await api.salvarAnamnese(alunoId, form);
       setForm(salva);
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);
@@ -91,7 +91,7 @@ export default function AnamneseAluno() {
 
   return (
     <div>
-      <Link to="/alunos" style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none' }}>‹ Voltar pra Alunos</Link>
+      <Link to={`/alunos/${alunoId}`} style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none' }}>‹ Voltar pro perfil</Link>
       <h1>Anamnese de {aluno?.nome}</h1>
       <p className="subtitle">Preencha depois da conversa inicial com o aluno. Só você vê isso.</p>
 
